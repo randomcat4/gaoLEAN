@@ -293,6 +293,23 @@ theorem rankTwo_middleSpectrumAlternative
     middleSpectrumAlternative_of_plusMinusGMO
       s Q D a b q ha2 rfl rfl hcard hthreshold hpm hGMO
 
+/-- The `K = 0` leaf of the non-full middle branch, using exactly the
+manuscript's small-Davenport input and checked identity-padding theorem. -/
+theorem hasProductOneSubsequenceOfTwice_of_middleNonfull_bot
+    (s : List (Group A)) (Q D a b : ℕ)
+    (hlen : s.length = 2 * Q + D)
+    (hQ : Q = Nat.card A)
+    (hDQ : D ≤ Q) (haD : a ≤ D)
+    (htotal : a + b = 2 * Q + D)
+    (hAodd : Odd (Nat.card A))
+    (hsmall : SmallDavenportProductOneFreeAtMost (Group A) D)
+    (h : MiddleNonfullConcentrationOutput s b ⊥) :
+    HasProductOneSubsequenceOfCard s (2 * Q) := by
+  have hDb : D ≤ b - Q + 2 :=
+    by omega
+  exact rcStatement_bot_of_smallDavenport s Q D b hlen hQ hDb hsmall
+    (h.rotationCapacity hAodd)
+
 end ConcreteGDihedral
 
 end GaoLean
@@ -302,3 +319,4 @@ end GaoLean
 #print axioms GaoLean.ConcreteGDihedral.MiddleNonfullConcentrationOutput.ofRotationConcentration
 #print axioms GaoLean.ConcreteGDihedral.middleSpectrumAlternative_of_plusMinusGMO
 #print axioms GaoLean.ConcreteGDihedral.rankTwo_middleSpectrumAlternative
+#print axioms GaoLean.ConcreteGDihedral.hasProductOneSubsequenceOfTwice_of_middleNonfull_bot

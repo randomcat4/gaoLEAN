@@ -20,6 +20,7 @@ import GaoLean.GAOARLowerBound
 import GaoLean.GAOARGMOInterfaces
 import GaoLean.GAOARRankTwo
 import GaoLean.GAOARRankTwoMiddle
+import GaoLean.GAOARRankTwoSubgroups
 import GaoLean.PGCapacity
 import GaoLean.PGSpectrum
 import GaoLean.PGGMO

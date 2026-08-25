@@ -40,3 +40,14 @@
   conditions, then derived the source-labelled subgroup concentration.
 - Specialized all numerical gates for `2 ≤ a ≤ 2q-1`; the remaining rank-two
   obligation is exactly the `K=0`/line-completion part of the manuscript.
+
+## Round 5 — 2026-08-26
+
+- Closed the `K = 0` non-full middle leaf from the explicit generalized-
+  dihedral small-Davenport provider and the existing checked identity-padding
+  construction.
+- Proved internally that every nonzero proper additive subgroup of `F_q²` is
+  a one-dimensional `ZMod q` subspace, hence both it and its quotient have
+  cardinality `q`.
+- No classification assumption was added; the remaining rank-two branch is
+  now literally the manuscript's one-dimensional line completion.
