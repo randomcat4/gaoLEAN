@@ -257,6 +257,87 @@ theorem exists_disjoint_quotientCrossPairReservoir
     rw [hω]
     exact hEndpoint ω hωR
 
+/-- Under the strict half-cardinality inequality, construct the full kernel
+reservoir together with a heavy support value not used by any of its endpoint
+values.  This is the strengthened form of the M42 reservoir construction
+needed to reserve `q - 1` fresh copies for the cross pairs. -/
+theorem exists_kernel_reservoir_with_unusedHeavyValue
+    [FiniteDimensional (ZMod q) V]
+    (C : Ω → V) (φ : V →ₗ[ZMod q] Q) (β : Q)
+    (hvectorSpan :
+      vectorSpan (ZMod q)
+        ((thresholdSupport C (q - 1) : Finset V) : Set V) = LinearMap.ker φ)
+    (hstrict : Module.finrank (ZMod q) (LinearMap.ker φ) <
+      (thresholdSupport C (q - 1)).card / 2)
+    (hfibre : ∀ x ∈ thresholdSupport C (q - 1), φ x = β)
+    (htwo : (2 : ZMod q) ≠ 0) :
+    ∃ R : OccurrenceReservoir (F := ZMod q) C
+        (Module.finrank (ZMod q) (LinearMap.ker φ)) (q - 1),
+      ∃ x ∈ thresholdSupport C (q - 1),
+        Submodule.span (ZMod q) (Set.range R.direction) = LinearMap.ker φ ∧
+        (∀ ω ∈ OccurrenceReservoir.endpoints R, φ (C ω) = β) ∧
+        ∀ ω ∈ OccurrenceReservoir.endpoints R, C ω ≠ x := by
+  classical
+  have hmatch := IndependentDifferenceMatching.exists_maximum_matching_at_formula
+    (F := ZMod q) (A := thresholdSupport C (q - 1)) htwo
+  rw [hvectorSpan, min_eq_left (Nat.le_of_lt hstrict)] at hmatch
+  rcases hmatch with ⟨M, hmax⟩
+  rcases IndependentDifferenceMatching.exists_two_unused_of_card_lt_half M hstrict with
+    ⟨x, hxHeavy, hxUnused, _x', _hx'Heavy, _hx'Unused, _hxx'⟩
+  let R := M.toOccurrenceReservoir C (q - 1)
+  have hleftValue : ∀ p, C (R.left p) = M.left p.1 := by
+    intro p
+    exact M.toOccurrenceReservoir_left_value C (q - 1) p.1 p.2
+  have hrightValue : ∀ p, C (R.right p) = M.right p.1 := by
+    intro p
+    exact M.toOccurrenceReservoir_right_value C (q - 1) p.1 p.2
+  have hleftFibre : ∀ p, φ (C (R.left p)) = β := by
+    intro p
+    rw [hleftValue p]
+    exact hfibre (M.left p.1) (M.left_mem p.1)
+  have hrightFibre : ∀ p, φ (C (R.right p)) = β := by
+    intro p
+    rw [hrightValue p]
+    exact hfibre (M.right p.1) (M.right_mem p.1)
+  have hqpos : 0 < q - 1 := by
+    have hq2 : 2 ≤ q := (Fact.out : q.Prime).two_le
+    omega
+  let j : Fin (q - 1) := ⟨0, hqpos⟩
+  have hspanle :
+      Submodule.span (ZMod q) (Set.range R.direction) ≤ LinearMap.ker φ := by
+    rw [Submodule.span_le]
+    rintro _ ⟨i, rfl⟩
+    change φ (R.direction i) = 0
+    rw [← R.difference_eq i j, map_sub, hrightFibre (i, j),
+      hleftFibre (i, j), sub_self]
+  have hfinrank :
+      Module.finrank (ZMod q)
+          (Submodule.span (ZMod q) (Set.range R.direction)) =
+        Module.finrank (ZMod q) (LinearMap.ker φ) := by
+    rw [finrank_span_eq_card R.independent]
+    simp
+  have hspanExact :
+      Submodule.span (ZMod q) (Set.range R.direction) = LinearMap.ker φ :=
+    Submodule.eq_of_le_of_finrank_eq hspanle hfinrank
+  have hEndpoint : ∀ ω ∈ OccurrenceReservoir.endpoints R, φ (C ω) = β := by
+    intro ω hω
+    rcases Finset.mem_union.mp hω with hω | hω
+    · rcases Finset.mem_image.mp hω with ⟨p, _hp, rfl⟩
+      exact hleftFibre p
+    · rcases Finset.mem_image.mp hω with ⟨p, _hp, rfl⟩
+      exact hrightFibre p
+  have hUnusedEndpoints :
+      ∀ ω ∈ OccurrenceReservoir.endpoints R, C ω ≠ x := by
+    intro ω hω
+    rcases Finset.mem_union.mp hω with hω | hω
+    · rcases Finset.mem_image.mp hω with ⟨p, _hp, rfl⟩
+      rw [hleftValue p]
+      exact (hxUnused (Sum.inl p.1)).symm
+    · rcases Finset.mem_image.mp hω with ⟨p, _hp, rfl⟩
+      rw [hrightValue p]
+      exact (hxUnused (Sum.inr p.1)).symm
+  exact ⟨R, x, hxHeavy, hspanExact, hEndpoint, hUnusedEndpoints⟩
+
 /-- Combine the independent kernel toggles, `q - 1` variable quotient
 toggles, and outside-endpoint fillers.  This is the occurrence-level core of
 the large-exceptional-set branch. -/
@@ -386,9 +467,43 @@ theorem exists_fixedCardinality_sum_of_kernel_and_crossPairs
     dsimp only [z]
     abel
 
+/-- Source-shaped large-exceptional-set branch.  The kernel reservoir, unused
+heavy value, cross pairs, quotient toggles, kernel correction, and fillers are
+all constructed internally. -/
+theorem exists_fixedCardinality_sum_of_largeExceptionalSet
+    [FiniteDimensional (ZMod q) V]
+    (C : Ω → V) (φ : V →ₗ[ZMod q] Q) (β : Q)
+    (ψ : Q ≃ₗ[ZMod q] ZMod q) (E : Finset Ω)
+    (hvectorSpan :
+      vectorSpan (ZMod q)
+        ((thresholdSupport C (q - 1) : Finset V) : Set V) = LinearMap.ker φ)
+    (hstrict : Module.finrank (ZMod q) (LinearMap.ker φ) <
+      (thresholdSupport C (q - 1)).card / 2)
+    (hfibre : ∀ x ∈ thresholdSupport C (q - 1), φ x = β)
+    (htwo : (2 : ZMod q) ≠ 0)
+    (hExceptional : ∀ ω, ω ∈ E ↔ φ (C ω) ≠ β)
+    (hEcard : q - 1 ≤ E.card)
+    (d : ℕ)
+    (hbase : (Module.finrank (ZMod q) (LinearMap.ker φ) + 1) * (q - 1) ≤ d)
+    (hcapacity : d +
+      (Module.finrank (ZMod q) (LinearMap.ker φ) + 1) * (q - 1) ≤
+        Fintype.card Ω)
+    (y : V) :
+    ∃ I : Finset Ω, I.card = d ∧ (∑ ω ∈ I, C ω) = y := by
+  rcases exists_kernel_reservoir_with_unusedHeavyValue C φ β hvectorSpan
+      hstrict hfibre htwo with
+    ⟨R, x, hxHeavy, hspan, hEndpoint, hxUnused⟩
+  have hxFibre : φ x = β := hfibre x hxHeavy
+  rcases exists_disjoint_quotientCrossPairReservoir R φ β E hExceptional
+      hEndpoint x hxHeavy hxFibre hxUnused hEcard with ⟨P, hdisjoint⟩
+  exact exists_fixedCardinality_sum_of_kernel_and_crossPairs R φ β ψ hspan
+    P hdisjoint d hbase hcapacity y
+
 end OccurrenceReservoir
 
 end GaoFormal
 
 #print axioms GaoFormal.OccurrenceReservoir.exists_fixedCardinality_sum_of_kernel_and_crossPairs
 #print axioms GaoFormal.OccurrenceReservoir.exists_disjoint_quotientCrossPairReservoir
+#print axioms GaoFormal.OccurrenceReservoir.exists_kernel_reservoir_with_unusedHeavyValue
+#print axioms GaoFormal.OccurrenceReservoir.exists_fixedCardinality_sum_of_largeExceptionalSet
