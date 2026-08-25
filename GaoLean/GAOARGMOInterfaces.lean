@@ -20,7 +20,7 @@ open scoped BigOperators
 variable {A : Type*} [AddCommGroup A] [Fintype A]
 
 /-- An exact-cardinality occurrence-labelled signed sum. -/
-structure HasPlusMinusSumOfCard (xs : List A) (n : ℕ) (y : A) : Prop where
+structure HasPlusMinusSumOfCard (xs : List A) (n : ℕ) (y : A) where
   positive : Selection xs
   negative : Selection xs
   disjoint : Disjoint positive negative
@@ -32,13 +32,13 @@ structure HasPlusMinusSumOfCard (xs : List A) (n : ℕ) (y : A) : Prop where
 /-- Every group element is represented by an exact `n`-occurrence signed
 subsum of `xs`. -/
 def PlusMinusSpectrumFull (xs : List A) (n : ℕ) : Prop :=
-  ∀ y : A, HasPlusMinusSumOfCard xs n y
+  ∀ y : A, Nonempty (HasPlusMinusSumOfCard xs n y)
 
 /-- The complete non-full conclusion of GMO Corollary 1.3 specialized to
 weights `{+1,-1}`.  `sourceCoset` records `supp(S') ⊆ α+K`; the two
 `weightCoset` fields record `{x,-x} ⊆ β+K` for every retained occurrence.
 The cardinality bound counts occurrences, including repeated values. -/
-structure PlusMinusGMOConcentration (xs : List A) : Prop where
+structure PlusMinusGMOConcentration (xs : List A) where
   K : AddSubgroup A
   strict : K < ⊤
   alpha : A
