@@ -1,6 +1,7 @@
 import GaoLean.GAOARGMOInterfaces
 import GaoLean.PGOrdinaryGMOBridge
 import GaoLean.PGWeightedGMOTransport
+import GaoLean.PGSynthesis
 
 /-!
 # Rank-two GAO-AR proof
