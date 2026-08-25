@@ -51,3 +51,15 @@
   cardinality `q`.
 - No classification assumption was added; the remaining rank-two branch is
   now literally the manuscript's one-dimensional line completion.
+
+## Round 6 — 2026-08-26
+
+- Proved the general internal comparison `D_±(A) ≤ |A|` by transporting an
+  ordinary zero-sum subsequence with all signs positive.
+- Built an occurrence-faithful coordinate sequence for rotations lying in a
+  fixed rank-two line; source occurrence labels are retained through the
+  subtype transport.
+- Closed the manuscript's `s ≤ q` line leaf from the explicit ordinary-GMO
+  provider on the prime-order line.
+- The only remaining line leaf is `s > q`: the dihedral quotient extraction
+  followed by the second structural GMO application.

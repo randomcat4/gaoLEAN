@@ -1,4 +1,5 @@
 import GaoLean.PlusMinus
+import GaoLean.PGDavenportBound
 
 /-!
 # Internal plus-minus bounds used by the GAO-AR proof
@@ -13,6 +14,15 @@ namespace GaoLean
 section BinarySubsetSums
 
 variable {A : Type*} [AddCommGroup A] [Fintype A]
+
+/-- The elementary comparison `D_±(A) ≤ |A|`: use the ordinary zero-sum
+subsequence and give every selected occurrence the positive sign. -/
+theorem plusMinusDavenportAtMost_natCard :
+    PlusMinusDavenportAtMost A (Nat.card A) := by
+  intro s hs
+  obtain ⟨I, hI, hsum⟩ := hasNonemptyZeroSum_of_length_natCard s hs
+  refine ⟨I, hI, fun _ => .positive, ?_⟩
+  simpa [PlusMinusSign.act] using hsum
 
 /-- If the number of subsets of `m` labelled positions exceeds the group
 cardinality, two subset sums collide and their symmetric difference is a
@@ -190,5 +200,6 @@ theorem primeRankTwo_plusMinusDavenportAtMost
 end GaoLean
 
 #print axioms GaoLean.plusMinusDavenportAtMost_of_natCard_lt_two_pow
+#print axioms GaoLean.plusMinusDavenportAtMost_natCard
 #print axioms GaoLean.zmod3sq_plusMinusDavenportAtMost_three
 #print axioms GaoLean.primeRankTwo_plusMinusDavenportAtMost
