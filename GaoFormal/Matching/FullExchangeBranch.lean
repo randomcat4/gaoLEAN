@@ -499,6 +499,140 @@ theorem exists_fixedCardinality_sum_of_largeExceptionalSet
   exact exists_fixedCardinality_sum_of_kernel_and_crossPairs R φ β ψ hspan
     P hdisjoint d hbase hcapacity y
 
+/-- The small-exceptional-set output of the affine dichotomy.  All geometric
+and quotient data are canonical consequences of the heavy support; the
+certificate records the exact labelled exceptional-subset equivalence needed
+by the one-translation argument. -/
+def SmallAffineHyperplaneCertificate
+    (C : Ω → V) (d : ℕ) : Prop :=
+  let S := thresholdSupport C (q - 1)
+  let W := vectorSpan (ZMod q) ((S : Finset V) : Set V)
+  ∃ α ∈ S,
+    α ∉ W ∧
+    Module.finrank (ZMod q) W + 1 = Module.finrank (ZMod q) V ∧
+    (let φ := W.mkQ
+     let β := φ α
+     ∃ E : Finset Ω,
+       E.card ≤ q - 2 ∧
+       (∀ ω, ω ∈ E ↔ φ (C ω) ≠ β) ∧
+       ∀ y : V,
+         (∃ I : Finset Ω, I.card = d ∧ (∑ ω ∈ I, C ω) = y) ↔
+           ∃ J : Finset Ω, J ⊆ E ∧
+             φ y - d • β = ∑ ω ∈ J, (φ (C ω) - β))
+
+/-- Complete raw-support affine dichotomy.  If the heavy support spans
+affinely, M42 gives full exact exchange.  Otherwise its affine direction is a
+hyperplane.  At least `q - 1` exceptional labels trigger the cross-pair
+construction above and again give full exchange; fewer labels produce the
+exact small affine-hyperplane certificate used after one translation. -/
+theorem fullExchange_or_smallAffineHyperplaneCertificate
+    [FiniteDimensional (ZMod q) V]
+    (C : Ω → V)
+    (hS : (thresholdSupport C (q - 1)).Nonempty)
+    (hlinear : Submodule.span (ZMod q)
+      ((thresholdSupport C (q - 1) : Finset V) : Set V) = ⊤)
+    (hhalf : Module.finrank (ZMod q) V ≤
+      (thresholdSupport C (q - 1)).card / 2)
+    (htwo : (2 : ZMod q) ≠ 0)
+    (d : ℕ)
+    (hbase : Module.finrank (ZMod q) V * (q - 1) ≤ d)
+    (hcapacity : d + Module.finrank (ZMod q) V * (q - 1) ≤
+      Fintype.card Ω) :
+    (∀ y : V,
+      ∃ I : Finset Ω, I.card = d ∧ (∑ ω ∈ I, C ω) = y) ∨
+      SmallAffineHyperplaneCertificate C d := by
+  classical
+  let S := thresholdSupport C (q - 1)
+  let W := vectorSpan (ZMod q) ((S : Finset V) : Set V)
+  by_cases hfull : W = ⊤
+  · left
+    intro y
+    exact exists_fixedCardinality_sum_of_fullHeavySupport C hfull hhalf
+      htwo d hbase hcapacity y
+  · rcases exists_affineHyperplaneGeometry_of_linearSpan_eq_top S hS
+        hlinear hfull with ⟨α, hαS, hαnot, hdim, hdiff⟩
+    let φ := W.mkQ
+    let β := φ α
+    let E := Finset.univ.filter fun ω => φ (C ω) ≠ β
+    have hker : W = LinearMap.ker φ := by
+      simpa [φ] using (Submodule.ker_mkQ W).symm
+    have hfibre : ∀ x ∈ S, φ x = β := by
+      intro x hx
+      rw [← sub_eq_zero, ← map_sub]
+      exact LinearMap.mem_ker.mp (hker ▸ hdiff x hx)
+    have hExceptional : ∀ ω, ω ∈ E ↔ φ (C ω) ≠ β := by
+      intro ω
+      simp [E]
+    have hstrictW : Module.finrank (ZMod q) W < S.card / 2 := by
+      omega
+    have hstrictKer : Module.finrank (ZMod q) (LinearMap.ker φ) <
+        S.card / 2 := by
+      rw [← hker]
+      exact hstrictW
+    have hquotRank : Module.finrank (ZMod q) (V ⧸ W) = 1 := by
+      have hquot := W.finrank_quotient_add_finrank
+      omega
+    let ψ : (V ⧸ W) ≃ₗ[ZMod q] ZMod q :=
+      LinearEquiv.ofFinrankEq (ZMod q) (V ⧸ W) (ZMod q) (by
+        simpa using hquotRank)
+    by_cases hlarge : q - 1 ≤ E.card
+    · left
+      intro y
+      have hbaseKer :
+          (Module.finrank (ZMod q) (LinearMap.ker φ) + 1) * (q - 1) ≤ d := by
+        rw [← hker, hdim]
+        exact hbase
+      have hcapacityKer :
+          d + (Module.finrank (ZMod q) (LinearMap.ker φ) + 1) * (q - 1) ≤
+            Fintype.card Ω := by
+        rw [← hker, hdim]
+        exact hcapacity
+      exact exists_fixedCardinality_sum_of_largeExceptionalSet C φ β ψ E
+        hker hstrictKer hfibre htwo hExceptional hlarge d hbaseKer
+        hcapacityKer y
+    · right
+      have hsmall : E.card ≤ q - 2 := by omega
+      have hhalfKer : Module.finrank (ZMod q) (LinearMap.ker φ) ≤
+          S.card / 2 := Nat.le_of_lt hstrictKer
+      have hbaseFullDim :
+          (Module.finrank (ZMod q) W + 1) * (q - 1) ≤ d := by
+        rw [hdim]
+        exact hbase
+      have hcapacityFullDim :
+          d + (Module.finrank (ZMod q) W + 1) * (q - 1) ≤
+            Fintype.card Ω := by
+        rw [hdim]
+        exact hcapacity
+      have hEbudget : E.card ≤ q - 1 := by omega
+      have hbaseSmall :
+          Module.finrank (ZMod q) (LinearMap.ker φ) * (q - 1) + E.card ≤ d := by
+        rw [← hker]
+        calc
+          Module.finrank (ZMod q) W * (q - 1) + E.card ≤
+              Module.finrank (ZMod q) W * (q - 1) + (q - 1) :=
+            Nat.add_le_add_left hEbudget _
+          _ = (Module.finrank (ZMod q) W + 1) * (q - 1) := by ring
+          _ ≤ d := hbaseFullDim
+      have hcapacitySmall :
+          d + Module.finrank (ZMod q) (LinearMap.ker φ) * (q - 1) + E.card ≤
+            Fintype.card Ω := by
+        rw [← hker]
+        calc
+          d + Module.finrank (ZMod q) W * (q - 1) + E.card ≤
+              d + Module.finrank (ZMod q) W * (q - 1) + (q - 1) :=
+            Nat.add_le_add_left hEbudget _
+          _ = d + (Module.finrank (ZMod q) W + 1) * (q - 1) := by ring
+          _ ≤ Fintype.card Ω := hcapacityFullDim
+      change SmallAffineHyperplaneCertificate C d
+      dsimp only [SmallAffineHyperplaneCertificate]
+      refine ⟨α, hαS, hαnot, hdim, ?_⟩
+      dsimp only
+      refine ⟨E, hsmall, hExceptional, ?_⟩
+      intro y
+      exact fixedCardinality_sum_iff_exceptionalOffsetSubset_of_heavySupport
+        C φ β E hker hhalfKer hfibre htwo hExceptional d hbaseSmall
+        hcapacitySmall y
+
 end OccurrenceReservoir
 
 end GaoFormal
@@ -507,3 +641,4 @@ end GaoFormal
 #print axioms GaoFormal.OccurrenceReservoir.exists_disjoint_quotientCrossPairReservoir
 #print axioms GaoFormal.OccurrenceReservoir.exists_kernel_reservoir_with_unusedHeavyValue
 #print axioms GaoFormal.OccurrenceReservoir.exists_fixedCardinality_sum_of_largeExceptionalSet
+#print axioms GaoFormal.OccurrenceReservoir.fullExchange_or_smallAffineHyperplaneCertificate
