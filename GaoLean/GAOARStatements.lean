@@ -37,9 +37,8 @@ def GAOARV1Statement : Prop :=
 to the order of the represented generalized-dihedral group. -/
 theorem card_primeVectorDihedral
     (q r : ℕ) [NeZero q] :
-    Fintype.card (PrimeVectorDihedral q r) = 2 * q ^ r := by
-  simp [PrimeVectorDihedral, PrimeVectorSpace,
-    ConcreteGDihedral.Group, Nat.mul_comm]
+    Nat.card (PrimeVectorDihedral q r) = 2 * q ^ r := by
+  simp [PrimeVectorSpace, Nat.mul_comm]
 
 end GaoLean
 
