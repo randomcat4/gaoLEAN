@@ -26,11 +26,13 @@ theorem gaoAR_lowerThreshold_of_ordinaryDavenport
         ¬HasProductOneSubsequenceOfCard s (2 * q ^ r) := by
   let A := PrimeVectorSpace q r
   let D := r * (q - 1) + 1
-  have hcard : Nat.card A = q ^ r := by
+  have hFcard : Fintype.card A = q ^ r := by
     simp [A, PrimeVectorSpace]
+  have hcard : Nat.card A = q ^ r := by
+    simpa [Nat.card_eq_fintype_card] using hFcard
   have hDle : D ≤ Nat.card A := by
     exact ordinaryDavenportConstant_le_natCard D hD
-  have hwitness : ConcreteGDihedral.SmallDavenportWitness
+  have hwitness : SmallDavenportWitness
       (ConcreteGDihedral.Group A) D :=
     ConcreteGDihedral.smallDavenportWitness_of_isOrdinaryDavenportConstant
       D hD
@@ -39,21 +41,11 @@ theorem gaoAR_lowerThreshold_of_ordinaryDavenport
       (A := A) D hDle hwitness
   intro n hn
   have hn' : n < 2 * Nat.card A + D := by
-    simpa [D, hcard, Nat.add_assoc] using hn
+    simpa [D, hFcard, Nat.add_assoc] using hn
   obtain ⟨s, hslen, hsfree⟩ := hcounter n hn'
   refine ⟨s, hslen, ?_⟩
-  simpa [A, hcard] using hsfree
-
-/-- The lower conjunct of the frozen GAO-AR statement.  This declaration is
-deliberately not an upper-bound theorem. -/
-theorem gaoARV1_lower_of_ordinaryDavenport
-    (q r : ℕ) [NeZero q]
-    (hD : IsOrdinaryDavenportConstant (PrimeVectorSpace q r)
-      (r * (q - 1) + 1)) :
-    (GAOARV1 q r).2 := by
-  exact gaoAR_lowerThreshold_of_ordinaryDavenport q r hD
+  simpa [A, hFcard] using hsfree
 
 end GaoLean
 
 #print axioms GaoLean.gaoAR_lowerThreshold_of_ordinaryDavenport
-#print axioms GaoLean.gaoARV1_lower_of_ordinaryDavenport
