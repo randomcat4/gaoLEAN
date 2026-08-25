@@ -29,3 +29,14 @@
 - Server build: `GaoLean.GAOARRankTwo`, 8687 jobs, successful.
 - Axiom prints contain only `propext`, `Classical.choice`, and `Quot.sound`;
   the middle range remains explicitly open.
+
+## Round 4 — 2026-08-26
+
+- Transported the exact structural GMO alternative from the labelled
+  rotation-coordinate sequence back to original source occurrences.
+- In the full-spectrum branch, combined the selected rotations with a
+  balanced even reflection choice and closed the exact `2q²` ordering.
+- In the non-full branch, preserved the proper subgroup and both weight-coset
+  conditions, then derived the source-labelled subgroup concentration.
+- Specialized all numerical gates for `2 ≤ a ≤ 2q-1`; the remaining rank-two
+  obligation is exactly the `K=0`/line-completion part of the manuscript.

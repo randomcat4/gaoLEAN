@@ -8,7 +8,8 @@
 | Rank 2 low-reflection branch | rank-two section, `a ≤ 1` | proved | ordinary GMO provider |
 | `D_±(F_q²) ≤ q` | rank-two preliminaries | proved | internal subset sums + `q=3` linear dependence |
 | Rank 2 high-reflection branch | rank-two section, `a ≥ 2q` | proved | weighted GMO provider |
-| Rank 2 middle branch | rank-two section, `2 ≤ a ≤ 2q-1` | open | internal + weighted GMO provider |
+| Rank 2 middle first GMO split | rank-two section, `2 ≤ a ≤ 2q-1` | proved | structural GMO provider |
+| Rank 2 concentrated line completion | rank-two section | open | rank-one quotient lemma + second structural GMO |
 | Rank 3 upper bound | rank-three section | open | internal + named published inputs |
 | Line completion | rank-three section | open | internal |
 | Residual-state producer | residual-front-end | open | internal |
