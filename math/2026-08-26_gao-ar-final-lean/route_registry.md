@@ -1,0 +1,16 @@
+# Route registry
+
+| Route | Role | Current state | Completion evidence |
+|---|---|---|---|
+| S | Frozen statement and semantics | verified | server build of `GAOARStatements` |
+| L | Standard exact-threshold lower bound | active | pending Lean theorem |
+| R2 | Direct rank-two upper bound | pending | pending |
+| R3 | Rank-three and line completion | pending | pending |
+| RF | Rank-free residual-state producer | pending | pending |
+| A | Affine dichotomy consumer | verified component | M46, not top-level proof |
+| T | One-translation consumer | verified component | M43, not top-level proof |
+| X | External theorem interfaces | pending exact freeze | pending |
+| Z | Three-way final assembly | pending | pending |
+
+Routes are not interchangeable.  In particular, A and T cannot be reported
+as the GAO-AR theorem without RF, the low-rank routes, L, X, and Z.
