@@ -70,7 +70,7 @@ theorem rankTwo_lowReflection_upper
     dsimp only [a, b]
     rw [ConcreteGDihedral.card_reflectionOccurrences_add_card_rotationOccurrences,
       hlen]
-    simp [Q, D]
+    simp [Q, D, Nat.add_assoc]
   obtain ⟨hout⟩ :=
     ConcreteGDihedral.exists_lowReflectionTargetOutput_of_ordinaryGMO
       s Q D a b hQcard rfl htotal hlow hordinary
@@ -106,7 +106,7 @@ theorem rankTwo_highReflection_upper
     dsimp only [a, b]
     rw [ConcreteGDihedral.card_reflectionOccurrences_add_card_rotationOccurrences,
       hlen]
-    simp [Q, D]
+    simp [Q, D, Nat.add_assoc]
   have hhigh' : D + 1 ≤ a := by
     dsimp only [D, a]
     omega
