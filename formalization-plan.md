@@ -75,7 +75,8 @@ PG-GAO-v1 (separate paper branch; it does not depend on affine matching)
 | M9 | Occurrence-labelled capacity Corollary 2.1 | `LEAN_FULLY_CHECKED` |
 | M35 | Sharp `F₂²` characteristic-two counterexample and exact maximum one | `LEAN_FULLY_CHECKED` |
 | M36 | Infinite cyclic counterexample to unconditional raw/padded capacity entry | `LEAN_FULLY_DISPROVED` |
-| M10 | Affine exchange and arbitrary-rank integration | `LEAN_PARTIAL` (M39–M43; reverse/full-exchange and one-translation consumers checked, geometric dichotomy and residual producer open) |
+| M10 | Affine exchange and arbitrary-rank integration | `LEAN_PARTIAL` (M39–M46; affine dichotomy and one-translation consumers checked, residual producer and final assembly open) |
+| M46 | Disjoint cross-pair construction, `e≥q-1` full exchange, and raw-support affine dichotomy | `LEAN_CHECKED` |
 | P1 | Occurrence/product-one semantics and concrete generalized-dihedral model | `LEAN_CHECKED` |
 | P2 | PG-PM restricted-coefficient deletion bridge and odd arithmetic | `LEAN_CONDITIONAL` on external output |
 | P3 | Middle-regime arithmetic, odd-quotient descent leaf, padding and translation pullback | `LEAN_CHECKED` |
@@ -103,11 +104,11 @@ PG-GAO-v1 (separate paper branch; it does not depend on affine matching)
 | P5b2 | Nonzero proper-subgroup RC/ZR branch proofs and controller assembly | both labelled extractions and internal consumers/scheduler `LEAN_CHECKED`; GMO/GJM providers remain |
 | P5c | PG-O4 occurrence split, exact upper synthesis, PG-O1c lower-bound construction, and conditional PG-GAO composition | internal dispatcher/lower construction `LEAN_CHECKED`; final equality `LEAN_CONDITIONAL` on explicit external providers |
 
-M9 is closed. M39–M43 close the labelled affine reverse/full-exchange
-consumers and the one-translation guard, arithmetic, extraction, exact
-completion, and pullback. M10 remains partial because the complete geometric
-dichotomy and the rank-free residual-state producer have not been assembled
-as Lean theorems. The independent PG-GAO branch still starts
+M9 is closed. M39–M46 close the labelled affine reverse/full-exchange
+consumers, the full raw-support affine dichotomy, and the one-translation
+guard, arithmetic, extraction, exact completion, and pullback. M10 remains
+partial because the rank-free residual-state producer and final GAO-AR
+assembly have not been built as Lean theorems. The independent PG-GAO branch still starts
 with exact occurrence semantics and explicit external-theorem interfaces.
 P1–P5b1 now have the coverage recorded above.  Well-founded scheduling, both
 zero bases modulo GJM, and group-level exact pullback are closed. The
@@ -340,3 +341,11 @@ remaining `e ≥ q - 1` branch.  For `q - 1` labelled nonzero increments in
 subset sum.  M45-B must still build the disjoint cross-pair occurrence family,
 join it to the kernel reservoir, and perform filler bookkeeping.  This is the
 frozen server-migration restart point.
+
+M45-B/M46 closes that restart point.  The code constructs an unused heavy
+value, globally disjoint heavy/exceptional cross pairs, quotient and kernel
+toggles, and outside-endpoint fillers.  The resulting raw-support theorem
+splits into full exact exchange or a canonical hyperplane certificate with
+at most `q-2` exceptional labels.  The remaining GAO-AR work begins after this
+affine theorem: residual-state production, low-rank/lower-bound imports, and
+top-level assembly.

@@ -23,8 +23,8 @@ lake build GaoFormal.AxiomAudit
 ```
 
 工具链固定为 Lean `v4.32.0`，Mathlib 固定为公开标签 `v4.32.0`。
-最新冻结点见 `milestone-45.md`：M45-A 已完成；服务器端从 M45-B 的
-cross-pair occurrence assembly 继续。
+最新验收点见 `milestone-46.md`：M45-B 的 cross-pair occurrence assembly、
+`e≥q-1` full-exchange 分支及顶层 affine dichotomy 已完成并在服务器验证。
 
 PG 分支的真实覆盖与外部阻塞见 `pg-coverage.md`。冻结 PG-GAO 陈述已编译，
 但陈述定义不计作证明；当前 PG-PM 仅为显式外部参数下的条件结论。PG-O3
@@ -216,9 +216,9 @@ M43 已完成 one-translation 的内部机械链：统一证明 `|S|>2h` 与两�
 统一公理审计仅含 `propext`、`Classical.choice`、`Quot.sound`，且已移除 M35 曾出现
 的 `native_decide` 信任项。
 
-因此当前不能把 `GAO-AR-v1` 标为 `LEAN_FULL`。尚缺的是从原始残余假设构造完整
-affine dichotomy（尤其 `e≥q-1` 分支）、rank-free residual-state producer，以及
-rank 2/3 与 lower bound 到顶层 exact-length constant 的无条件装配。
+因此当前不能把 `GAO-AR-v1` 标为 `LEAN_FULL`。尚缺的是 rank-free
+residual-state producer，以及 rank 2/3 与 lower bound 到顶层 exact-length
+constant 的无条件装配；完整 affine dichotomy 已在 M46 闭合。
 
 M44 已把上述 affine dichotomy 的几何前端闭合：从 heavy support 的线性张成满、
 仿射方向未满这两个原始条件，Lean 自动选择基点 `α`，证明方向空间余维为一，
@@ -227,8 +227,9 @@ M44 已把上述 affine dichotomy 的几何前端闭合：从 heavy support 的�
 仍未闭合的是 `e≥q-1` 的构造性 full-exchange 分支，所以总状态不升级为
 `LEAN_FULL`。
 
-M45-A 已进一步核验该分支的商方向核心：`q-1` 个带 occurrence 标签、允许数值
-重复但逐个非零的 `ZMod q` 增量，其标签子集和覆盖整个域。目标构建 8664 jobs，
-统一审计 8714 jobs，均 exit 0。服务器端应从 M45-B 继续：选取未被内部匹配使用
-的 heavy value，构造与 exceptional labels 不交的 cross pairs，再与 kernel
-reservoir 和 fillers 合并。
+M45-A 已核验商方向核心：`q-1` 个带 occurrence 标签、允许数值重复但逐个非零的
+`ZMod q` 增量，其标签子集和覆盖整个域。M45-B/M46 随后构造未用 heavy value、
+与 kernel endpoints 不交的 heavy/exceptional cross pairs、kernel correction 与
+fillers，并证明 raw-support 顶层二分：要么对每个目标都有 exact-`d` exchange，
+要么得到 `E.card≤q-2` 的规范仿射超平面证书。新增定理均只依赖 Mathlib 常规三项；
+总体状态仍为 `LEAN_PARTIALLY_CHECKED`，边界见 `milestone-46.md`。

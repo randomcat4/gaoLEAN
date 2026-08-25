@@ -635,3 +635,17 @@ so M10 and `GAO-AR-v1` stay partial.
 M45-A proves the labelled Cauchy--Davenport coverage used by the cross-pair
 quotient layer.  The occurrence-disjoint cross-pair construction and its
 combination with the kernel reservoir remain M45-B.
+
+## M45-B / M46: complete affine exchange dichotomy
+
+- Target `lake build GaoFormal.Matching.FullExchangeBranch`: 8665 jobs,
+  exit 0.
+- The new cross-pair, unused-heavy, large-exceptional, and top-level dichotomy
+  declarations report only `propext`, `Classical.choice`, and `Quot.sound`.
+- Final unified build, unified audit, and forbidden scan: see the repository
+  gate commit containing this entry.
+
+M46 constructs the complete occurrence-labelled `e≥q-1` exchange and joins
+it with the full-affine and small-exceptional branches.  Thus the affine
+dichotomy is `LEAN_FULL`; `GAO-AR-v1` remains `LEAN_PARTIAL` at the later
+residual producer, low-rank/lower-bound, and top-level assembly boundaries.

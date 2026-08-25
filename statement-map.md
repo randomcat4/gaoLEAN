@@ -48,8 +48,8 @@ at the formula size, while `card_eq_min_finrank_vectorSpan_half_of_maximum`
 shows every maximum matching has that size.  This pair is statement-faithful
 to Theorem 1.1.
 
-The affine reverse/full-exchange consumers and the one-translation internal
-mechanics are now inside this certificate. The complete geometric dichotomy,
+The affine reverse/full-exchange consumers, complete raw-support dichotomy,
+and one-translation internal mechanics are now inside the checked graph. The
 rank-free residual-state producer, rank-two/rank-three upper branches, lower
 bound, and top-level GAO-AR-v1 equality remain outside it. Therefore the
 companion project as a whole remains `LEAN_PARTIALLY_CHECKED`.
@@ -454,7 +454,7 @@ occurrence transport.
 |---|---|---|
 | A linearly spanning finite support with proper affine direction has codimension-one direction | `OccurrenceReservoir.exists_affineHyperplaneGeometry_of_linearSpan_eq_top` | Chooses `α` from the support, proves `α ∉ W`, `finrank W + 1 = finrank V`, and `x - α ∈ W` for every support point. Checked. |
 | Form the quotient fibre and exact exceptional labels without caller data | `OccurrenceReservoir.exists_affineHyperplaneCertificate_of_linearSpan_eq_top` | Uses `W.mkQ`, `β = mkQ α`, and a constructed `E` with `ω ∈ E ↔ mkQ (C ω) ≠ β`; then invokes the M42 exact equivalence. Checked. |
-| Complete the affine dichotomy | not yet declared | The constructive `E.card ≥ q - 1` full-exchange branch and its split from the exceptional certificate remain open. |
+| Complete the affine dichotomy | `OccurrenceReservoir.fullExchange_or_smallAffineHyperplaneCertificate` | Checked in M46: full affine span or `E.card≥q-1` yields full exact exchange; otherwise the canonical certificate has `E.card≤q-2`. |
 
 ## Variable-direction quotient coverage (M45-A)
 
@@ -462,4 +462,13 @@ occurrence transport.
 |---|---|---|
 | Preserve repeated quotient increments as separate labels | `labelledSubsetSums`; `labelledSubsetSums_insert` | The powerset is taken on the index set, not the value support. Checked. |
 | `q-1` nonzero cross-pair increments cover the prime cyclic quotient | `exists_labelled_subset_sum_eq_of_nonzero` | Finite-set induction plus `ZMod.cauchy_davenport`; every quotient target has an actual labelled toggle subset. Checked. |
-| Combine quotient toggles with kernel toggles and fillers | not yet declared | Frozen M45-B server restart point. |
+| Combine quotient toggles with kernel toggles and fillers | `OccurrenceReservoir.exists_fixedCardinality_sum_of_kernel_and_crossPairs` | Checked: quotient selection, kernel correction, endpoint-disjoint fillers, exact cardinality, and exact target sum. |
+
+## Complete large-exceptional affine branch (M45-B/M46)
+
+| Natural-language step | Lean declaration | Fidelity / coverage |
+|---|---|---|
+| Leave a heavy value outside the kernel matching | `OccurrenceReservoir.exists_kernel_reservoir_with_unusedHeavyValue` | Strict half-cardinality produces two unused support vertices; one is retained and proved absent from every occurrence-reservoir endpoint. Checked. |
+| Pair `q-1` exceptional labels with disjoint copies of the unused heavy value | `OccurrenceReservoir.exists_disjoint_quotientCrossPairReservoir` | All labels are globally distinct, kernel-disjoint, and every quotient increment is nonzero. Checked occurrence-wise. |
+| Close the `E.card≥q-1` source-shaped branch | `OccurrenceReservoir.exists_fixedCardinality_sum_of_largeExceptionalSet` | Internally constructs both reservoirs, performs quotient and kernel correction, and supplies exact-cardinality fillers. Checked. |
+| Split the raw heavy-support hypotheses | `OccurrenceReservoir.fullExchange_or_smallAffineHyperplaneCertificate` | Returns full exact exchange in both full-affine and large-exceptional cases; otherwise returns the exact labelled certificate with `E.card≤q-2`. `LEAN_FULL` for the affine-dichotomy statement. |
