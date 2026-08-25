@@ -15,6 +15,7 @@ import GaoLean.PGBase
 import GaoLean.PGInduction
 import GaoLean.PGTranslation
 import GaoLean.GAOAROneTranslation
+import GaoLean.GAOARStatements
 import GaoLean.PGCapacity
 import GaoLean.PGSpectrum
 import GaoLean.PGGMO

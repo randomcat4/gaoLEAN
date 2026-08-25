@@ -279,3 +279,4 @@ import GaoFormal
 #print axioms GaoLean.ConcreteGDihedral.hasAllRotationProductOneSubsequence_of_preGMOFullExactExchange
 #print axioms GaoLean.ConcreteGDihedral.hasAllRotationProductOneSubsequence_of_extractedFullExactExchange
 #print axioms GaoLean.ConcreteGDihedral.hasAllRotationProductOneSubsequence_of_oneTranslationExtraction
+#print axioms GaoLean.card_primeVectorDihedral
