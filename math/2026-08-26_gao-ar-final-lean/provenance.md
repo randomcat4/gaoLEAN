@@ -9,3 +9,11 @@
 
 Each formal declaration must be traceable either to a manuscript obligation,
 an already proved local lemma, Mathlib, or a named external provider.
+
+## GMO source check
+
+The provider `PlusMinusGMOStructuralProvider` follows Grynkiewicz--Marchan--
+Ordaz, Corollary 1.3 (arXiv:0903.2810v1): full `n`-term weighted spectrum, or
+a proper subgroup `K`, source coset `alpha+K`, common weight coset `beta+K`,
+and at least `|S|-|G/K|+2` retained occurrences.  The separate existence
+provider follows Corollary 1.2.
