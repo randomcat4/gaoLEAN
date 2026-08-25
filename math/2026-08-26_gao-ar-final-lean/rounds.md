@@ -16,3 +16,16 @@
 - Axiom print contains only `propext`, `Classical.choice`, and `Quot.sound`.
 - Froze the occurrence-labelled `{+1,-1}` specialization of GMO Corollary
   1.3, retaining both coset conditions and the exact concentration count.
+
+## Round 3 — 2026-08-26
+
+- Closed the rank-two low-reflection branch `a ≤ 1` from the explicit
+  ordinary-GMO provider.
+- Proved the manuscript-internal bound `D_±(F_q²) ≤ q`: binary subset-sum
+  collision for `q ≥ 5`, and linear dependence over `F₃` for `q = 3`.
+- Closed the rank-two high-reflection branch `a ≥ 2q` from the explicit
+  weighted-GMO provider, with the internal plus-minus bound no longer an
+  assumption.
+- Server build: `GaoLean.GAOARRankTwo`, 8687 jobs, successful.
+- Axiom prints contain only `propext`, `Classical.choice`, and `Quot.sound`;
+  the middle range remains explicitly open.

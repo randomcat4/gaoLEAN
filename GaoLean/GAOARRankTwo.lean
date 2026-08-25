@@ -1,4 +1,5 @@
 import GaoLean.GAOARGMOInterfaces
+import GaoLean.GAOARPlusMinusBounds
 import GaoLean.PGOrdinaryGMOBridge
 import GaoLean.PGWeightedGMOTransport
 import GaoLean.PGSynthesis
@@ -77,12 +78,11 @@ theorem rankTwo_lowReflection_upper
   exact ConcreteGDihedral.hasProductOneSubsequenceOfTwice_of_lowReflectionTargetOutput
     s Q hQcard hout
 
-/-- The `a ≥ 2q` branch of the manuscript's rank-two upper bound.  The
-plus-minus Davenport bound is kept as the exact still-to-be-internalized
-input `D_±(F_q²) ≤ q`; it is not silently inferred. -/
+/-- The `a ≥ 2q` branch of the manuscript's rank-two upper bound.  Its
+internal `D_±(F_q²) ≤ q` input is discharged by the self-contained
+binary-subset-sum/`q = 3` proof in `GAOARPlusMinusBounds`. -/
 theorem rankTwo_highReflection_upper
-    (q : ℕ) [NeZero q] (hq : 0 < q)
-    (hpm : PlusMinusDavenportAtMost (PrimeVectorSpace q 2) q)
+    (q : ℕ) [NeZero q] (hqPrime : Nat.Prime q) (hqodd : Odd q)
     (hweighted : WeightedGMOPrescribedLengthProvider
       (PrimeVectorSpace q 2))
     (s : List (PrimeVectorDihedral q 2))
@@ -95,6 +95,7 @@ theorem rankTwo_highReflection_upper
   let D := 2 * (q - 1) + 1
   let a := (reflectionOccurrences s).card
   let b := (rotationOccurrences s).card
+  have hqpos : 0 < q := hqPrime.pos
   have hQpos : 0 < Q := by
     positivity
   have hQcard : Q = Nat.card A := by
@@ -113,6 +114,8 @@ theorem rankTwo_highReflection_upper
   have hpmMargin : q ≤ (D + 1) / 2 := by
     dsimp only [D]
     omega
+  have hpm : PlusMinusDavenportAtMost A q :=
+    primeRankTwo_plusMinusDavenportAtMost q hqPrime hqodd
   obtain ⟨hout⟩ :=
     ConcreteGDihedral.exists_highReflectionTargetOutput_of_plusMinusDavenport
       s Q D a b q hQpos hQcard hDodd rfl rfl htotal hhigh' hpmMargin
