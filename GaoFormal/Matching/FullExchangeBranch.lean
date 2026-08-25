@@ -544,6 +544,9 @@ theorem fullExchange_or_smallAffineHyperplaneCertificate
   classical
   let S := thresholdSupport C (q - 1)
   let W := vectorSpan (ZMod q) ((S : Finset V) : Set V)
+  change S.Nonempty at hS
+  change Submodule.span (ZMod q) ((S : Finset V) : Set V) = ⊤ at hlinear
+  change Module.finrank (ZMod q) V ≤ S.card / 2 at hhalf
   by_cases hfull : W = ⊤
   · left
     intro y
@@ -551,6 +554,9 @@ theorem fullExchange_or_smallAffineHyperplaneCertificate
       htwo d hbase hcapacity y
   · rcases exists_affineHyperplaneGeometry_of_linearSpan_eq_top S hS
         hlinear hfull with ⟨α, hαS, hαnot, hdim, hdiff⟩
+    change α ∉ W at hαnot
+    change Module.finrank (ZMod q) W + 1 = Module.finrank (ZMod q) V at hdim
+    change ∀ x ∈ S, x - α ∈ W at hdiff
     let φ := W.mkQ
     let β := φ α
     let E := Finset.univ.filter fun ω => φ (C ω) ≠ β
@@ -573,7 +579,7 @@ theorem fullExchange_or_smallAffineHyperplaneCertificate
       have hquot := W.finrank_quotient_add_finrank
       omega
     let ψ : (V ⧸ W) ≃ₗ[ZMod q] ZMod q :=
-      LinearEquiv.ofFinrankEq (ZMod q) (V ⧸ W) (ZMod q) (by
+      LinearEquiv.ofFinrankEq (V ⧸ W) (ZMod q) (by
         simpa using hquotRank)
     by_cases hlarge : q - 1 ≤ E.card
     · left
@@ -626,7 +632,6 @@ theorem fullExchange_or_smallAffineHyperplaneCertificate
       change SmallAffineHyperplaneCertificate (q := q) C d
       dsimp only [SmallAffineHyperplaneCertificate]
       refine ⟨α, hαS, hαnot, hdim, ?_⟩
-      dsimp only
       refine ⟨E, hsmall, hExceptional, ?_⟩
       intro y
       exact fixedCardinality_sum_iff_exceptionalOffsetSubset_of_heavySupport
