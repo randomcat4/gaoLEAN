@@ -56,13 +56,13 @@ theorem rankTwo_lowReflection_upper
       (PrimeVectorSpace q 2) (2 * (q - 1) + 1))
     (s : List (PrimeVectorDihedral q 2))
     (hlen : s.length = 2 * q ^ 2 + 2 * (q - 1) + 1)
-    (hlow : (ConcreteGDihedral.reflectionOccurrences s).card ≤ 1) :
+    (hlow : (reflectionOccurrences s).card ≤ 1) :
     HasProductOneSubsequenceOfCard s (2 * q ^ 2) := by
   let A := PrimeVectorSpace q 2
   let Q := q ^ 2
   let D := 2 * (q - 1) + 1
-  let a := (ConcreteGDihedral.reflectionOccurrences s).card
-  let b := (ConcreteGDihedral.rotationOccurrences s).card
+  let a := (reflectionOccurrences s).card
+  let b := (rotationOccurrences s).card
   have hQcard : Q = Nat.card A := by
     simp [Q, A, PrimeVectorSpace]
   have htotal : a + b = 2 * Q + D := by
@@ -86,13 +86,13 @@ theorem rankTwo_highReflection_upper
     (s : List (PrimeVectorDihedral q 2))
     (hlen : s.length = 2 * q ^ 2 + 2 * (q - 1) + 1)
     (hhigh : 2 * q ≤
-      (ConcreteGDihedral.reflectionOccurrences s).card) :
+      (reflectionOccurrences s).card) :
     HasProductOneSubsequenceOfCard s (2 * q ^ 2) := by
   let A := PrimeVectorSpace q 2
   let Q := q ^ 2
   let D := 2 * (q - 1) + 1
-  let a := (ConcreteGDihedral.reflectionOccurrences s).card
-  let b := (ConcreteGDihedral.rotationOccurrences s).card
+  let a := (reflectionOccurrences s).card
+  let b := (rotationOccurrences s).card
   have hQpos : 0 < Q := by
     positivity
   have hQcard : Q = Nat.card A := by
