@@ -282,7 +282,7 @@ theorem exists_kernel_reservoir_with_unusedHeavyValue
     (F := ZMod q) (A := thresholdSupport C (q - 1)) htwo
   rw [hvectorSpan, min_eq_left (Nat.le_of_lt hstrict)] at hmatch
   rcases hmatch with ⟨M, hmax⟩
-  rcases IndependentDifferenceMatching.exists_two_unused_of_card_lt_half M hstrict with
+  rcases IndependentDifferenceMatching.exists_two_unused_of_card_lt_half M (by simpa using hstrict) with
     ⟨x, hxHeavy, hxUnused, _x', _hx'Heavy, _hx'Unused, _hxx'⟩
   let R := M.toOccurrenceReservoir C (q - 1)
   have hleftValue : ∀ p, C (R.left p) = M.left p.1 := by
