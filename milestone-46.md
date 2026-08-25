@@ -30,8 +30,10 @@ Verification receipt:
   exit 0;
 - all new declarations report only `propext`, `Classical.choice`, and
   `Quot.sound` in the target build;
-- the unified build, unified axiom audit, and forbidden-declaration scan are
-  recorded in `build-log.md` after the final repository gate.
+- full `lake build`: 8715 jobs, exit 0;
+- unified `lake build GaoFormal.AxiomAudit`: 8715 jobs, exit 0;
+- forbidden scan over `GaoFormal` and `GaoLean` found no `sorry`, `admit`,
+  declaration `axiom`, `unsafe`, or `native_decide`.
 
 This closes the affine-dichotomy item frozen after M44/M45-A.  It does not by
 itself prove the complete arbitrary-rank Gao constant.

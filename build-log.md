@@ -642,8 +642,11 @@ combination with the kernel reservoir remain M45-B.
   exit 0.
 - The new cross-pair, unused-heavy, large-exceptional, and top-level dichotomy
   declarations report only `propext`, `Classical.choice`, and `Quot.sound`.
-- Final unified build, unified audit, and forbidden scan: see the repository
-  gate commit containing this entry.
+- Full `lake build`: 8715 jobs, exit 0.
+- Unified `lake build GaoFormal.AxiomAudit`: 8715 jobs, exit 0; the audited
+  declarations use only the same three standard axioms.
+- Forbidden scan over `GaoFormal` and `GaoLean`: no `sorry`, `admit`,
+  declaration `axiom`, `unsafe`, or `native_decide` match.
 
 M46 constructs the complete occurrence-labelled `e≥q-1` exchange and joins
 it with the full-affine and small-exceptional branches.  Thus the affine
