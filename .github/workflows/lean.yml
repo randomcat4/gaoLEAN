@@ -1,0 +1,48 @@
+name: Lean CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lean-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build pinned Lean project
+        uses: leanprover/lean-action@v1
+        env:
+          LEAN_NUM_THREADS: "2"
+        with:
+          auto-config: false
+          build: true
+          build-args: "GaoFormal GaoLean"
+          test: false
+          lint: false
+          use-mathlib-cache: true
+
+      - name: Run repository axiom audit
+        run: lake env lean GaoFormal/AxiomAudit.lean
+
+      - name: Reject placeholders and local axioms
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RIniE --include='*.lean' \
+            '(^|[^[:alnum:]_])(sorry|admit)([^[:alnum:]_]|$)|^[[:space:]]*(axiom|unsafe)([[:space:]]|$)' \
+            GaoFormal GaoLean GaoFormal.lean GaoLean.lean; then
+            echo "::error::Found a forbidden declaration or proof placeholder."
+            exit 1
+          fi
