@@ -8,5 +8,6 @@ import GaoFormal.Matching.ExchangeSelection
 import GaoFormal.Matching.FiniteFieldCoverage
 import GaoFormal.Matching.AffineReverse
 import GaoFormal.Matching.VariableDirectionCoverage
+import GaoFormal.Matching.FullExchangeBranch
 import GaoFormal.Matching.CharacteristicTwoBoundary
 import GaoLean
