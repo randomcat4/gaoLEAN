@@ -540,7 +540,7 @@ theorem fullExchange_or_smallAffineHyperplaneCertificate
       Fintype.card Ω) :
     (∀ y : V,
       ∃ I : Finset Ω, I.card = d ∧ (∑ ω ∈ I, C ω) = y) ∨
-      SmallAffineHyperplaneCertificate C d := by
+      SmallAffineHyperplaneCertificate (q := q) C d := by
   classical
   let S := thresholdSupport C (q - 1)
   let W := vectorSpan (ZMod q) ((S : Finset V) : Set V)
@@ -623,7 +623,7 @@ theorem fullExchange_or_smallAffineHyperplaneCertificate
             Nat.add_le_add_left hEbudget _
           _ = d + (Module.finrank (ZMod q) W + 1) * (q - 1) := by ring
           _ ≤ Fintype.card Ω := hcapacityFullDim
-      change SmallAffineHyperplaneCertificate C d
+      change SmallAffineHyperplaneCertificate (q := q) C d
       dsimp only [SmallAffineHyperplaneCertificate]
       refine ⟨α, hαS, hαnot, hdim, ?_⟩
       dsimp only
