@@ -685,3 +685,13 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
   no matches.
 - Status remains `LEAN_CONDITIONAL`; the remaining package includes both
   cited inputs and paper-internal Davenport statements not yet formalized.
+
+## 2026-08-26: independent paragraph audits and main review
+
+- Two independent read-only paragraph audits both returned `CRITICAL_GAPS`.
+- Main review confirmed no circular target/controller field in the remaining-input package.
+- Added and compiled the general group-cardinality theorem and the exact-length/
+  all-lengths-at-least threshold equivalence.
+- `lake build GaoLean.PGStatements GaoLean.PR7ThirteenPage`: 8724 jobs, exit 0.
+- Final status remains `CRITICAL_GAPS / LEAN_CONDITIONAL`; Proposition 3.1,
+  Lemma 5.2, Olson, GJM, and GMO are the remaining load-bearing boundaries.

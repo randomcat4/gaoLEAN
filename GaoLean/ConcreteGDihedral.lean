@@ -71,6 +71,12 @@ abbrev Group :=
   SemidirectProduct (Multiplicative A) (Multiplicative (ZMod 2))
     (inversionAction A)
 
+/-- The concrete generalized-dihedral group has twice the cardinality of
+its rotation kernel. -/
+theorem card_group [Fintype A] :
+    Nat.card (Group A) = 2 * Nat.card A := by
+  simp [Group, Nat.mul_comm]
+
 /-- Canonical rotations in the concrete semidirect product. -/
 def rotation : Multiplicative A →* Group A :=
   SemidirectProduct.inl
@@ -143,6 +149,7 @@ theorem data_refl (a : A) :
 end GaoLean.ConcreteGDihedral
 
 #print axioms GaoLean.ConcreteGDihedral.inversionZHom_two
+#print axioms GaoLean.ConcreteGDihedral.card_group
 #print axioms GaoLean.ConcreteGDihedral.flip_mul_rotation
 #print axioms GaoLean.ConcreteGDihedral.data_refl_left
 #print axioms GaoLean.ConcreteGDihedral.data_refl_right

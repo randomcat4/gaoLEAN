@@ -20,7 +20,7 @@
 
 | 正文位置 | 数学内容 | Lean 锚点 | 状态与边界 |
 |---|---|---|---|
-| Abstract, Introduction Theorem 1.1 | `E(Dih(A))=2|A|+D(A)`，奇阿贝尔 `p` 群核 | `PGStatements.PGGaoV1Statement`; `PR7ThirteenPage.PR7ThirteenPageMainStatement` | `CONDITIONAL`；完整量词与 exact `2|A|` 已冻结 |
+| Abstract, Introduction Theorem 1.1 | `E(Dih(A))=2|A|+D(A)`，奇阿贝尔 `p` 群核 | `PGStatements.PGGaoV1Statement`; `PR7ThirteenPage.PR7ThirteenPageMainStatement` | `CONDITIONAL`；完整量词与 exact `2|A|` 已冻结；exact/at-least 语义桥和 `|Dih(A)|=2|A|` 已证 |
 | Introduction, explicit invariant-factor formula | `D(A)=1+sum(p^lambda_i-1)` | `IsOrdinaryDavenportConstant A D` 参数 | `NOT_MAPPED`；Olson 公式未在 Lean 内证明 |
 | Introduction, `d(Dih(A))=D(A)` equivalence | GJM small Davenport identity | `SmallDavenportProductOneFreeAtMost`; quotient analogue | `CONDITIONAL`；只使用所需上界接口，未形式化文献等号 |
 | Introduction, `C_3^2` example | 五项积一自由见证与 17 个单位元补齐 | 通用 `PGDavenportBridge` 与 `PGLowerBound` | `PARTIAL`；通用构造已核验，正文的字面五项例子未单独命名 |
@@ -39,7 +39,7 @@
 | Proposition 4.3 full branch | 平衡反射 + `ell` 个旋转闭合 | `PGMiddleReflection`; `PGSpectrum` | `CONDITIONAL` 于 signed full-spectrum 输出 |
 | Proposition 4.3 non-full branch | 共同陪集推出真实 `K`-集中，`K=0` padding | `PGMiddleNonfull`; `PGMiddleAssembly`; `PGBase` | `CONDITIONAL` 于 structural GMO；奇阶商桥已检查 |
 | §5 definitions `P_S(K), Q(K)` | 固定源 RC 与通用全旋转 ZR 同时控制 | `PGController`; `PGControllerClosure`; `PGInduction` | `CHECKED` |
-| Lemma 5.2 | Davenport subgroup/quotient 拼接不等式 | `Dker K + Dquot K <= D+1` 顶层字段；抽取模块消费 | `PARTIAL`；算术消费已检查，正文的零和自由拼接证明未形式化 |
+| Lemma 5.2 | Davenport subgroup/quotient 拼接不等式 | `Dker K + Dquot K <= D+1` 顶层字段；抽取模块消费 | `CONDITIONAL`；算术消费已检查，正文的零和自由拼接证明未形式化 |
 | Lemma 5.3 | target-length estimate | `PGCapacity`; extraction 中的 target bounds | `CHECKED` |
 | Lemma 5.4 | concentration transitivity | `PGCapacity.residual_capacity_composition*` | `CHECKED` |
 | Lemma 5.5 | quotient defect correction | `PGReflectionOrdering`; `PGReflectionChannel` | `CHECKED` |
@@ -54,7 +54,7 @@
 | Theorem 5.1 base cases | `P_S(0)` 与 `Q(0)` 分别证明 | `PGBase`; `PGInduction.concreteControllerAt_bot_of_smallDavenport` | `CONDITIONAL` 于 small-Davenport |
 | Theorem 5.1 induction | 每次严格下降 `H<K`，同时强归纳 | `PGInduction`; `PGControllerClosure`; `GAOARResidualController` | `CHECKED` 的调度器，整体 `CONDITIONAL` 于 source providers |
 | §6 main completion | 三个 reflection regimes 与上下界装配 | `PGReflectionRegimes`; `PGSynthesis`; `GAOARFinal` | `CONDITIONAL`；未把 desired upper bound 作为参数 |
-| Corollary 6.1 | homocyclic / elementary-abelian 数值公式 | rank 2/3 特化另有模块；一般 homocyclic 数值桥无顶层定理 | `PARTIAL`；Olson 数值特化未完整导出 |
+| Corollary 6.1 | homocyclic / elementary-abelian 数值公式 | 无一般 homocyclic 顶层定理 | `NOT_MAPPED`；Olson 数值特化未导出 |
 
 ## 当前严格裁决
 
@@ -68,6 +68,9 @@
 4. Proposition 3.1 的论文内群代数证明；
 5. Lemma 5.2 的论文内 Davenport 拼接证明及由精确常数到当前 `Dker/Dquot` 包的构造；
 6. 一般 homocyclic 数值 corollary 的最终 Lean 导出。
+
+两个独立审计后，主实例另行补证了 `|Dih(A)|=2|A|` 与 exact-length/
+at-least threshold 等价；它们不再列为缺口，也不改变以上承重裁决。
 
 因此当前不是该 13 页稿的无条件完整 Lean；准确状态是主证明骨架
 `LEAN_CONDITIONAL`，并有上述逐段缺口账。

@@ -15,3 +15,5 @@
 | P7-L11 | exact lower threshold | PROVED_HERE from ordinary Davenport | STRICTLY_WEAKER | `PGDavenportBridge`, `PGLowerBound` |
 | P7-L12 | exact PR #7 main statement | PROVED_HERE conditionally | EQUIVALENT | `PR7ThirteenPage.pr7ThirteenPageMain_of_remainingInputs` |
 | P7-L13 | invariant-factor/homocyclic numeric corollaries | OPEN | STRICTLY_WEAKER | no general exported bridge |
+| P7-L14 | `|Dih(A)|=2|A|` | PROVED_HERE | STRICTLY_WEAKER | `ConcreteGDihedral.card_group` |
+| P7-L15 | exact threshold 与 all-lengths-at-least threshold 等价 | PROVED_HERE | EQUIVALENT | `PGStatements.isExactProductOneThreshold_iff_isAtLeast` |

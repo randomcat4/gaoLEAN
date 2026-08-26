@@ -22,3 +22,16 @@
 - 最终条件式 theorem 的公理依赖仅为 `propext`、`Classical.choice`、
   `Quot.sound`。
 - 禁用声明/占位符扫描无命中；`git diff --check` 通过。
+
+## R3：两个独立逐段审计
+
+- 两位验证者均在禁止读取现成映射和彼此报告的条件下只读检查。
+- 两份报告独立给出 `CRITICAL_GAPS`，并一致确认 remaining-input 包无目标循环。
+- 共同确认 Proposition 3.1、Lemma 5.2、Olson、GJM、GMO 尚未闭合。
+
+## R4：主实例复查与展示层补证
+
+- 主实例逐项复核两份报告、原稿、Lean signatures 和服务器构建。
+- 新增一般群阶定理和 exact/at-least threshold 等价，不改变冻结目标或承重前提。
+- `lake build GaoLean.PGStatements GaoLean.PR7ThirteenPage`：8724 jobs，退出码 0。
+- 裁决保持 `CRITICAL_GAPS / LEAN_CONDITIONAL`。
