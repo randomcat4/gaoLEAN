@@ -95,3 +95,16 @@
 - Server module and whole-repository build succeeded (8725 jobs).  The main
   line theorem's axiom print contains only `propext`, `Classical.choice`, and
   `Quot.sound`.
+
+## Round 9 — 2026-08-26
+
+- Connected the first middle-range GMO output to the zero-subgroup base and
+  the two concentrated-line leaves without a residual controller assumption.
+- Proved `rankTwo_middle_upper` for the complete range `2 ≤ a ≤ 2q-1`.
+- Dispatched the low, middle, and high reflection ranges to obtain the complete
+  `rankTwo_upper` theorem at length `2q² + 2(q-1) + 1`.
+- All cited literature inputs remain explicit proposition parameters; no
+  condition was strengthened or hidden during assembly.
+- Whole-repository server build succeeded (8726 jobs).  Both assembled
+  theorem axiom prints contain only `propext`, `Classical.choice`, and
+  `Quot.sound`.
