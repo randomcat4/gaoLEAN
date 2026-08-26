@@ -13,7 +13,11 @@
 | Rank 2 subgroup classification | rank-two section | proved | internal linear algebra |
 | `D_±(K) ≤ |K|` | rank-two line branch | proved | internal ordinary zero-sum reduction |
 | Rank 2 line, `s ≤ q` | rank-two section | proved | ordinary GMO provider on the line |
-| Rank 2 line, `s > q` | rank-two section | open | dihedral quotient lemma + second structural GMO |
+| Dihedral reflection block | preliminaries, Lemma `Dihedral blocks` (1) | proved | internal Cauchy--Davenport argument |
+| `d(D₂q) ≤ q` | preliminaries, Lemma `Dihedral blocks` (2), upper half | proved | internal occurrence-labelled extraction |
+| Dihedral block with complement `≤ q` | preliminaries, Lemma `Dihedral blocks` (3) | proved | internal maximum block + preceding bound |
+| Dihedral lower witness `d(D₂q) ≥ q` | preliminaries, Lemma `Dihedral blocks` (2), lower half | open | explicit sequence witness |
+| Rank 2 line, `s > q` | rank-two section | open | second structural GMO and lift-defect cancellation |
 | Rank 2 concentrated line completion | rank-two section | open | remaining `s > q` row |
 | Rank 3 upper bound | rank-three section | open | internal + named published inputs |
 | Line completion | rank-three section | open | internal |

@@ -1,5 +1,6 @@
 import GaoLean.GAOARRankTwoMiddle
 import GaoLean.GAOARRankTwoSubgroups
+import GaoLean.GAOARDihedralBlocks
 
 /-!
 # Rank-two concentrated-line completion

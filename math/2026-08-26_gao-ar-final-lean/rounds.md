@@ -63,3 +63,16 @@
   provider on the prime-order line.
 - The only remaining line leaf is `s > q`: the dihedral quotient extraction
   followed by the second structural GMO application.
+
+## Round 7 — 2026-08-26
+
+- Formalized the manuscript's Cauchy--Davenport proof of the prime dihedral
+  reflection-block lemma, retaining repeated source occurrences.
+- Proved internally that every `q+1`-term sequence over `D₂q` has a nonempty
+  product-one subsequence, hence `d(D₂q) ≤ q`.
+- Transported the result through an arbitrary prime-cardinality additive
+  quotient and back to the original labelled source.
+- Combined it with the existing maximum reflection-containing quotient block
+  construction; the literal complement is now checked to have at most `q`
+  occurrences.
+- Axiom prints contain only `propext`, `Classical.choice`, and `Quot.sound`.
