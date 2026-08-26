@@ -121,3 +121,18 @@
   than being silently replaced by a stronger constant.
 - All new theorem axiom prints contain only `propext`, `Classical.choice`, and
   `Quot.sound`.
+
+## Round 11 — 2026-08-26
+
+- Proved the line-completion signed-lifting fact in the exact range used by
+  the manuscript.  Structural GMO supplies the spectrum; its non-full branch
+  contradicts the presence of `q-1` nonzero labelled occurrences.
+- Proved the labelled fixed-cardinality replacement construction from `q-1`
+  exceptions to a heavy value, reusing the checked Cauchy--Davenport subset-
+  sum coverage theorem.
+- Used finite pigeonhole to produce a heavy value with at least `3q-3`
+  occurrences and obtained the manuscript's exact dichotomy: at most `q-2`
+  exceptions, or full fixed-cardinality sum coverage throughout
+  `q-1 ≤ d ≤ 3q-4`.
+- Axiom prints for all auxiliary facts contain only `propext`,
+  `Classical.choice`, and `Quot.sound`.
