@@ -1,12 +1,17 @@
 # GAO Lean companion
 
+当前论文基准已纠正为 `randomcat4/gao0824` PR #7 的 13 页 arXiv 稿
+（`paper/arxiv-rewrite-2026-08-24@6d4ab81`），不是 gao0823 PR #8 的早期八页稿。
+精确来源—Lean 逐段映射见 `pr7-13-page-map.md`。
+
 Lean 4.32 的版本控制形式化伴随工程。当前只按实际机械覆盖记账：
 independent-difference matching、occurrence-labelled fixed-cardinality
 exchange、affine-hyperplane 双向证书及自动几何前端、one-translation 内部机械链，
 秩二/秩三上界、任意秩同时残差控制器及最终冻结主命题装配，均已经由 Lean
-检查。当前准确总状态为 `LEAN_CONDITIONAL`：内部证明图已经闭合，但引用文献中的
-GMO、受限系数及 small-Davenport 输入仍是显式 theorem parameters，因此不是
-无条件顶层定理。
+检查。当前准确总状态为 `LEAN_CONDITIONAL`：主控制器与顶层条件式装配已经闭合，
+但 GMO、受限系数、small-Davenport，以及论文内部 Davenport 拼接/子群界的若干
+source-facing 输入仍是显式 theorem parameters，因此不是无条件顶层定理，也不能
+说成“只剩已发表文献输入”。
 
 `gao0824` 的无条件 sequence-level raw/padded capacity-entry 命题也已由完整
 无限循环族在 Lean 中证否：原序列的 labelled exact-target 规避、每个真子群

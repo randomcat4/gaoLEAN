@@ -2,13 +2,15 @@ import GaoLean.GAOARResidualController
 import GaoLean.PGSourceAssembly
 
 /-!
-# Final source-facing GAO-AR assembly
+# Final source-facing assembly for the 13-page PR #7 manuscript
 
-The remaining package below consists only of recognizable literature inputs:
-the generalized-dihedral small Davenport bound, restricted coefficients,
-ordinary/weighted prescribed-length GMO, ordinary and signed structural GMO,
-and subgroup/quotient Davenport bounds with their concatenation inequality.
-No controller or desired upper conclusion is included as an input.
+The source is `randomcat4/gao0824` PR #7 at commit `6d4ab81`, whose main
+statement is the odd abelian p-group theorem `PG-GAO-v1`.  The package below
+contains the still-unformalized source-facing inputs: cited small-Davenport,
+restricted-coefficient and GMO results, together with subgroup Davenport
+bounds and the concatenation inequality that the paper proves informally.
+Thus this boundary is broader than "literature inputs only".  It contains no
+controller, branch output, or desired Gao upper conclusion.
 -/
 
 namespace GaoLean.ConcreteGDihedral
@@ -109,8 +111,9 @@ theorem pgGaoV1_of_structuralUpperInputs_and_ordinaryDavenport
     D hDQ hAodd
       (pgGaoUpperInputs_of_structuralUpperInputs D hDQ hAodd hsource) hD
 
-/-- Exact literature-input boundary under the frozen odd-prime p-group
-quantifiers. -/
+/-- Exact remaining-input boundary under the frozen odd-prime p-group
+quantifiers.  Some fields are cited results and some are paper-internal
+statements not yet reconstructed in Lean. -/
 def PGGaoStructuralRemainingInputs : Prop :=
   ∀ (p : ℕ) (A : Type u),
     [AddCommGroup A] → [Fintype A] → [Nontrivial A] →
@@ -119,7 +122,8 @@ def PGGaoStructuralRemainingInputs : Prop :=
       PGGaoStructuralUpperInputs A D
 
 /-- Final conditional realization of the frozen manuscript statement.  Its
-sole argument is the explicit collection of cited source theorems above. -/
+sole argument is the explicit collection of remaining source statements
+above; this theorem must not be reported as unconditional. -/
 theorem pgGaoV1Statement_of_structuralRemainingInputs
     (hremaining : PGGaoStructuralRemainingInputs.{u}) :
     PGGaoV1Statement.{u} := by

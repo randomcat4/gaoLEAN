@@ -15,7 +15,9 @@ the ambient exact target `2|A|`.
 
 Finally, `GaoLean/GAOARFinal.lean` proves the frozen fully quantified
 `PGGaoV1Statement` from `PGGaoStructuralRemainingInputs`.  This remaining
-input contains only recognizable cited-source theorem interfaces.  It does
+input contains recognizable cited-source theorem interfaces as well as
+subgroup Davenport bounds and the concatenation inequality that the 13-page
+paper proves informally but this project has not yet reconstructed.  It does
 not contain a residual controller, a branch output, or the desired Gao upper
 bound.
 
