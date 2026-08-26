@@ -26,6 +26,8 @@ import GaoLean.GAOARRankTwoLineLarge
 import GaoLean.GAOARRankTwoCompletion
 import GaoLean.GAOARRankThree
 import GaoLean.GAOARRankThreeLineAux
+import GaoLean.GAOARRankThreeQuotient
+import GaoLean.GAOARRankThreeLine
 import GaoLean.GAOARDihedralBlocks
 import GaoLean.PGCapacity
 import GaoLean.PGSpectrum

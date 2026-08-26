@@ -652,3 +652,10 @@ M46 constructs the complete occurrence-labelled `e≥q-1` exchange and joins
 it with the full-affine and small-exceptional branches.  Thus the affine
 dichotomy is `LEAN_FULL`; `GAO-AR-v1` remains `LEAN_PARTIAL` at the later
 residual producer, low-rank/lower-bound, and top-level assembly boundaries.
+## R3-L: complete line completion
+
+The rank-three line route now derives the quotient small-Davenport bound by
+complement lifting, closes both quotient alternatives and the few-nonzero
+identity leaf, and exposes `rankThree_line_upper` with the manuscript's stated
+hypotheses.  The whole remote build completed successfully with 8730 jobs;
+the new axiom prints contain no `sorryAx` or paper-specific axiom.

@@ -22,10 +22,10 @@
 | Rank 2 complete upper bound | rank-two section | proved | named ordinary/weighted/structural GMO + ambient small-Davenport interfaces |
 | Rank 3 outer reflection ranges | rank-three section | proved | ordinary/weighted GMO + explicit `D_±(F_q³)` input |
 | Rank 3 first stabilizer descent | rank-three section | proved | structural GMO + explicit `D_±(F_q³)` input |
-| Rank 3 upper bound | rank-three section | open | remaining concentrated-subspace descent and line completion |
+| Rank 3 upper bound | rank-three section | open | remaining two-dimensional concentrated-subspace descent; line completion proved |
 | Line completion: signed lifting | rank-three section | proved | structural GMO on the prime line; non-full branch contradicted internally |
 | Line completion: fixed-cardinality sums | rank-three section | proved | labelled Cauchy--Davenport coverage + finite pigeonhole |
-| Line completion | rank-three section | open | quotient small-Davenport lift and two quotient alternatives assembly |
+| Line completion | rank-three section | proved | quotient bound derived from ambient bound; few-nonzero, reflection, and no-reflection alternatives assembled |
 | Residual-state producer | residual-front-end | open | internal |
 | Affine dichotomy | reduction | proved (M46) | internal |
 | One-translation consumer | reduction | proved (M43) | internal |

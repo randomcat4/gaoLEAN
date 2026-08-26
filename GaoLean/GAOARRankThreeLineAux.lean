@@ -36,6 +36,28 @@ noncomputable def otherValueOccurrences
   classical
   exact Finset.univ.filter fun i => occurrenceValue xs i ≠ a
 
+theorem card_valueOccurrences_add_card_otherValueOccurrences
+    {A : Type*} (xs : List A) (a : A) :
+    (valueOccurrences xs a).card +
+      (otherValueOccurrences xs a).card = xs.length := by
+  classical
+  have hpartition : valueOccurrences xs a ∪ otherValueOccurrences xs a =
+      Finset.univ := by
+    ext i
+    by_cases h : occurrenceValue xs i = a <;>
+      simp [valueOccurrences, otherValueOccurrences, h]
+  have hdis : Disjoint (valueOccurrences xs a)
+      (otherValueOccurrences xs a) := by
+    rw [Finset.disjoint_left]
+    intro i hi hj
+    have hi' : occurrenceValue xs i = a := by
+      simpa [valueOccurrences] using hi
+    have hj' : occurrenceValue xs i ≠ a := by
+      simpa [otherValueOccurrences] using hj
+    exact hj' hi'
+  rw [← Finset.card_union_of_disjoint hdis, hpartition]
+  simp
+
 theorem card_nonzeroOccurrences_add_card_zeroOccurrences
     {A : Type*} [Zero A] (xs : List A) :
     (nonzeroOccurrences xs).card +

@@ -136,3 +136,22 @@
   `q-1 ≤ d ≤ 3q-4`.
 - Axiom prints for all auxiliary facts contain only `propext`,
   `Classical.choice`, and `Quot.sound`.
+
+## Round 12 — 2026-08-26
+
+- Constructed an additive section `V/J → V` from a genuine linear complement
+  and proved that the induced generalized-dihedral map is a right inverse to
+  the quotient map.
+- Formalized the manuscript's `2q+(q-1)` lifting contradiction, deriving the
+  quotient small-Davenport bound `d(G(V/J)) ≤ 2q-1` from the ambient bound
+  `d(G(V)) ≤ 3q-2`; the quotient bound is no longer an independent input.
+- Closed the reflection-containing quotient alternative by maximum labelled
+  extraction and signed lifting in the line.
+- Closed the no-reflection alternative: quotient zero-sum extraction followed
+  either by full fixed-cardinality exchange or by one rotation translation,
+  zero-layer greedy extraction, identity padding, and same-label pullback.
+- Closed the initial few-nonzero line leaf and assembled the exact manuscript
+  line-completion theorem `rankThree_line_upper`, retaining the stated special-
+  count hypothesis.
+- Whole-repository server build succeeded (8730 jobs).  Every new theorem's
+  axiom print contains only `propext`, `Classical.choice`, and `Quot.sound`.
