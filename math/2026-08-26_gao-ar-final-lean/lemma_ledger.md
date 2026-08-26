@@ -17,8 +17,8 @@
 | `d(D₂q) ≤ q` | preliminaries, Lemma `Dihedral blocks` (2), upper half | proved | internal occurrence-labelled extraction |
 | Dihedral block with complement `≤ q` | preliminaries, Lemma `Dihedral blocks` (3) | proved | internal maximum block + preceding bound |
 | Dihedral lower witness `d(D₂q) ≥ q` | preliminaries, Lemma `Dihedral blocks` (2), lower half | open | explicit sequence witness |
-| Rank 2 line, `s > q` | rank-two section | open | second structural GMO and lift-defect cancellation |
-| Rank 2 concentrated line completion | rank-two section | open | remaining `s > q` row |
+| Rank 2 line, `s > q` | rank-two section | proved | structural GMO provider on the line + ambient small-Davenport provider |
+| Rank 2 concentrated line completion | rank-two section | assembly open | connect the proved `s ≤ q` and `s > q` leaves to the first-GMO output |
 | Rank 3 upper bound | rank-three section | open | internal + named published inputs |
 | Line completion | rank-three section | open | internal |
 | Residual-state producer | residual-front-end | open | internal |

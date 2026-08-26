@@ -76,3 +76,22 @@
   construction; the literal complement is now checked to have at most `q`
   occurrences.
 - Axiom prints contain only `propext`, `Classical.choice`, and `Quot.sound`.
+
+## Round 8 — 2026-08-26
+
+- Proved a literal first-reflection insertion identity: positive rotations
+  are inserted before the lifted quotient word and negative rotations after
+  its first reflection, so their signed sum cancels the kernel defect.
+- Transported the second structural-GMO selection occurrence-by-occurrence
+  from the line-valued coordinate list to the original source, checking
+  disjointness, exact cardinality, and multiset equality.
+- Closed the non-full second-GMO branch: a proper subgroup of the prime-order
+  line is proved internally to be zero, after which the existing checked
+  identity-padding base applies.
+- Derived the source-shaped quotient small-Davenport interface from the
+  genuine small-Davenport theorem on the quotient group.
+- Closed the complete `s > q` line leaf from the prime dihedral block lemma,
+  including `|R| ≤ q`, `τ ≥ q-1`, `m ≥ |K|`, and the GMO threshold.
+- Server module and whole-repository build succeeded (8725 jobs).  The main
+  line theorem's axiom print contains only `propext`, `Classical.choice`, and
+  `Quot.sound`.
