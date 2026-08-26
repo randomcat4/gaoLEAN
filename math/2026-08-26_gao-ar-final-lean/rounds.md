@@ -155,3 +155,32 @@
   count hypothesis.
 - Whole-repository server build succeeded (8730 jobs).  Every new theorem's
   axiom print contains only `propext`, `Classical.choice`, and `Quot.sound`.
+
+## Round 13 — 2026-08-26
+
+- Proved internally that a nonzero proper additive subgroup of `F_q³` has
+  cardinality `q` or `q²`, and that a nonzero proper subgroup inside a
+  cardinality-`q²` plane has cardinality `q` after mapping back to the ambient
+  source.
+- Proved the cardinality-only signed bound `D_±(K) ≤ 2q-1` for `|K|=q²` by
+  labelled subset-sum collision.
+- Closed the complete plane-stabilizer leaf: small special count uses ordinary
+  GMO, large special count uses prime-quotient reflection extraction, and the
+  second non-full signed-GMO branch descends exactly to zero or a line.
+- Assembled `rankThree_middle_upper` and `rankThree_upper` with the manuscript
+  hypotheses unchanged.
+
+## Round 14 — 2026-08-26
+
+- Added source-shaped ordinary structural GMO interfaces retaining full
+  prescribed spectra or exact affine-coset concentration.
+- Translated ordinary and signed structural GMO outputs occurrence-by-
+  occurrence into the rank-free rotation and reflection channels.
+- Constructed the simultaneous fixed-source/all-auxiliary-source residual
+  controller by strict subgroup induction; the old custom channel-provider
+  assumptions are absent from the new theorem boundary.
+- Assembled all three reflection regimes, the checked lower construction, and
+  the exact frozen p-group statement in `GAOARFinal.lean`.
+- The final theorem is `LEAN_CONDITIONAL`: its sole package contains explicit
+  statements of the cited literature inputs, not a controller or the desired
+  conclusion.

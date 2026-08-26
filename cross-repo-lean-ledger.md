@@ -1,6 +1,6 @@
 # Cross-repository Gao Lean ledger
 
-Snapshot date: 2026-08-25 (America/New_York).
+Snapshot date: 2026-08-26 (America/New_York).
 
 This ledger deduplicates the substantive mathematical outputs in the GitHub
 repositories `randomcat4/gao0822`, `randomcat4/gao0823`, `randomcat4/gao0824`,
@@ -27,11 +27,11 @@ is listed for scope control and is never counted as a Lean failure.
 | Occurrence-labelled heavy-support pair reservoir and fixed-cardinality exchange | `VERIFIED` in `gao0823` | Corollary 2.1 reservoir plus its exact-`d` sumset consequence | `LEAN_FULL` (M9, M40–M42) | none for the full-exchange consumer |
 | Sharp characteristic-two boundary on `F₂²` | `VERIFIED` counterexample in `gao0823` | unique canonical boundary witness | `LEAN_FULL` (M35) | none |
 | Affine exchange / labelled-hyperplane alternative | `VERIFIED` in `gao0823` | reusable front end for one-translation | `LEAN_FULL` (M39–M46, including the `e≥q-1` occurrence construction and raw-support split) | none for this theorem-level dichotomy |
-| One-translation arbitrary-rank integration | `VERIFIED` after audit in `gao0823` | supersedes the incomplete standalone `range-proof03` route | `LEAN_PARTIAL` (M43 mechanics plus M46 affine input checked) | construct the rank-free residual-state producer and connect it to the consumer |
-| `GAO-AR-v1`: `E((C_q^r)⋊C₂)=2q^r+r(q-1)+1` | `VERIFIED` for odd prime `q`, `r≥2` | absorbs `gao0822` rank 2/3 results and the same result noted in the C8 repository | `LEAN_PARTIAL` through M46 | finish residual producer, rank 2/3, lower bound, and top-level assembly |
+| One-translation arbitrary-rank integration | `VERIFIED` after audit in `gao0823` | supersedes the incomplete standalone `range-proof03` route | `LEAN_FULL` as a reusable consumer (M43/M46) | none for the consumer; final theorem uses the direct structural controller |
+| `GAO-AR-v1`: `E((C_q^r)⋊C₂)=2q^r+r(q-1)+1` | `VERIFIED` for odd prime `q`, `r≥2` | absorbed by the broader p-group statement; direct rank 2/3 proofs also compiled | `LEAN_CONDITIONAL` | formalize/import the explicit cited-source package |
 | `HP-GAO-v1` homocyclic prime-power theorem | `VERIFIED` in `gao0823` | separate specialization, not implied by the prime-field M10 code | `NOT_FORMALIZED` | freeze exact source DAG and external zero-sum inputs |
-| `PG-GAO-v1`: `E(A⋊_{-1}C₂)=2|A|+D(A)` for odd abelian p-groups | `VERIFIED` in `gao0823`; method refinements in `gao0824` | one canonical theorem across both repositories | `LEAN_PARTIAL` through M34 | formalize ordinary/weighted GMO, restricted coefficients, and GJM/Olson inputs |
-| Fixed-target subgroup descent | `PROVED` in `gao0824` | overlaps the checked PG controller, but has broader all-odd-order statement | `LEAN_PARTIAL` | compare the broader frozen quantifiers, then close external providers |
+| `PG-GAO-v1`: `E(A⋊_{-1}C₂)=2|A|+D(A)` for odd abelian p-groups | `VERIFIED` in `gao0823`; method refinements in `gao0824` | one canonical theorem across both repositories | `LEAN_CONDITIONAL` (M48 final frozen statement) | formalize/import ordinary/weighted/structural GMO, restricted coefficients, and GJM/Olson inputs |
+| Fixed-target subgroup descent | `PROVED` in `gao0824` | now realized by the checked simultaneous `RC`/`ZR` controller under source inputs | `LEAN_CONDITIONAL` | external source inputs only |
 | Capacity-flag surplus and stability theorem | `PROVED` in `gao0824` | independent reusable structure theorem | `LEAN_PARTIAL` arithmetic only | migrate full flag recurrence, equality, and near-equality classification |
 | Low-reflection affine front end | `PROVED` in `gao0824`; final existence is standard GMO | overlaps PG low branch | `LEAN_PARTIAL` | formalize the precise affine/anchored output alternative |
 | Exact `a=2,3,4,5,6` reflection origin-entry front ends | corrected versions `PROVED` in `gao0824` | `a=2,3` overlap the earlier front end; `a=4,5,6` are new sharpenings | `LEAN_PARTIAL` arithmetic/word fragments | formalize gap classifications, exceptional groups, labelled outputs, and GMO application |

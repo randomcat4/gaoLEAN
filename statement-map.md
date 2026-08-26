@@ -49,19 +49,33 @@ shows every maximum matching has that size.  This pair is statement-faithful
 to Theorem 1.1.
 
 The affine reverse/full-exchange consumers, complete raw-support dichotomy,
-and one-translation internal mechanics are now inside the checked graph. The
-rank-free residual-state producer, rank-two/rank-three upper branches, lower
-bound, and top-level GAO-AR-v1 equality remain outside it. Therefore the
-companion project as a whole remains `LEAN_PARTIALLY_CHECKED`.
+one-translation mechanics, rank-two/rank-three upper branches, rank-free
+residual controller, lower construction, and final frozen-statement assembly
+are now inside the checked graph.  The companion project is
+`LEAN_CONDITIONAL` because the cited literature inputs remain explicit
+parameters.
 
 ## PG-GAO statement boundary
 
 `PG-GAO-v1` is the exact equality `E(A⋊_{-1}C₂)=2|A|+D(A)` for nontrivial
-finite odd abelian `p`-groups.  No Lean declaration in this milestone states
-or proves that equality.  Olson, GJM, Troi–Zannier/CFS, and GMO are not present
+finite odd abelian `p`-groups.  The declaration
+`pgGaoV1Statement_of_structuralRemainingInputs` now proves the fully
+quantified frozen statement from a source-theorem package. Olson, GJM,
+Troi–Zannier/CFS, and GMO are not present
 in Mathlib under the required statements; future use must be explicit
 parameters and reported `LEAN_CONDITIONAL` until those inputs themselves are
 formalized or imported from an audited library.
+
+## Final structural boundary (M48)
+
+| Natural-language step | Lean declaration | Fidelity / remaining boundary |
+|---|---|---|
+| Ordinary GMO full spectrum or affine concentration | `OrdinaryGMOStructuralProvider` | Exact occurrence-labelled source interface; explicit literature parameter |
+| Rotation channel from ordinary structural GMO | `hasAllRotationProductOneSubsequence_of_rotationPreGMO_structural` | Full branch uses the literal `Bprime`; non-full branch preserves labels and translates to strict `H<K` |
+| Reflection channel from signed structural GMO | `hasProductOneSubsequence_of_reflectionPreGMO_structural` | Cancels the actual lifted defect; non-full concentration maps back to the ambient subgroup |
+| Simultaneous arbitrary-rank controller | `concretePGO3ControllerSkeleton_of_structuralGMO` | Both zero bases and every strict recursive call are internal |
+| Exact upper package from source theorems | `pgGaoUpperInputs_of_structuralUpperInputs` | Low/high/middle split and first concentration are constructed internally |
+| Fully quantified frozen theorem | `pgGaoV1Statement_of_structuralRemainingInputs` | `LEAN_CONDITIONAL`; sole input is the explicit cited-source package |
 
 The target repository now contains the frozen statement and its largest safe
 front-end closure; see `pg-coverage.md`.  In particular, the restricted-

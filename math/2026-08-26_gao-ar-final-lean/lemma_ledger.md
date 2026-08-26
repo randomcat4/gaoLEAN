@@ -22,14 +22,17 @@
 | Rank 2 complete upper bound | rank-two section | proved | named ordinary/weighted/structural GMO + ambient small-Davenport interfaces |
 | Rank 3 outer reflection ranges | rank-three section | proved | ordinary/weighted GMO + explicit `D_±(F_q³)` input |
 | Rank 3 first stabilizer descent | rank-three section | proved | structural GMO + explicit `D_±(F_q³)` input |
-| Rank 3 upper bound | rank-three section | open | remaining two-dimensional concentrated-subspace descent; line completion proved |
+| Rank 3 subgroup classification | rank-three section | proved | internal `ZMod q` linear algebra; nonzero proper subgroups have size `q` or `q²` |
+| `D_±(K) ≤ 2q-1` for `|K|=q²` | rank-three plane descent | proved | internal labelled subset-sum collision |
+| Rank 3 plane stabilizer descent | rank-three section | proved | ordinary/signed structural GMO interfaces + checked zero/line descent |
+| Rank 3 upper bound | rank-three section | proved | complete low/middle/high assembly |
 | Line completion: signed lifting | rank-three section | proved | structural GMO on the prime line; non-full branch contradicted internally |
 | Line completion: fixed-cardinality sums | rank-three section | proved | labelled Cauchy--Davenport coverage + finite pigeonhole |
 | Line completion | rank-three section | proved | quotient bound derived from ambient bound; few-nonzero, reflection, and no-reflection alternatives assembled |
-| Residual-state producer | residual-front-end | open | internal |
+| Residual-state producer | residual-front-end | proved | direct ordinary/signed structural-GMO transport + simultaneous strict-subgroup induction |
 | Affine dichotomy | reduction | proved (M46) | internal |
 | One-translation consumer | reduction | proved (M43) | internal |
 | Weighted structural theorem | GMO Cor. 1.3 | exact specialized interface frozen | external |
-| Final assembly | main theorem | open | depends on all rows above |
+| Final assembly | main theorem | proved conditionally | exact frozen statement from explicit cited-source package; no controller/conclusion input |
 
 “Proved” here means a checked reusable Lean declaration, not a prose claim.

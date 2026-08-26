@@ -422,6 +422,16 @@ theorem ReflectionChannelPreGMOData.tau_ge_of_davenport_split
   rw [h.tau_eq]
   omega
 
+/-- Inequality form corresponding to the ordinary Davenport concatenation
+bound. -/
+theorem ReflectionChannelPreGMOData.tau_ge_of_davenport_bound
+    {s : List (Group A)} {Q D a b Dk Dq : ℕ} {K : AddSubgroup A}
+    (h : ReflectionChannelPreGMOData s Q D a b K)
+    (hbound : Dk + Dq ≤ D + 1) (hRsmall : h.R.card ≤ Dq) :
+    Dk - 1 ≤ h.tau := by
+  rw [h.tau_eq]
+  omega
+
 /-- The GMO threshold `M ≥ m + (Dpm-1)` follows once the external
 `Dpm≤Dk` comparison is supplied. -/
 theorem ReflectionChannelPreGMOData.signed_reservoir_threshold
@@ -683,6 +693,7 @@ end GaoLean.ConcreteGDihedral
 #print axioms GaoLean.ConcreteGDihedral.reflection_target_base_ge_card_subgroup
 #print axioms GaoLean.ConcreteGDihedral.exists_reflectionChannelPreGMOData
 #print axioms GaoLean.ConcreteGDihedral.ReflectionChannelPreGMOData.tau_ge_of_davenport_split
+#print axioms GaoLean.ConcreteGDihedral.ReflectionChannelPreGMOData.tau_ge_of_davenport_bound
 #print axioms GaoLean.ConcreteGDihedral.ReflectionChannelPreGMOData.signed_reservoir_threshold
 #print axioms GaoLean.ConcreteGDihedral.ReflectionChannelPreGMOData.target_ge_card_subgroup
 #print axioms GaoLean.ConcreteGDihedral.ReflectionChannelExtractedFullOutput.toFullOutput

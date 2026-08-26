@@ -367,6 +367,17 @@ theorem RotationChannelPreGMOData.defect_ge_of_davenport_split
   rw [h.d_eq]
   omega
 
+/-- Inequality form used by the manuscript's concatenation bound
+`D(K)+D(A/K)-1 ≤ D(A)`. -/
+theorem RotationChannelPreGMOData.defect_ge_of_davenport_bound
+    {s : List (Group A)} {Q D a b : ℕ} {K : AddSubgroup A}
+    (h : RotationChannelPreGMOData s Q D a b K)
+    (Dk Dq : ℕ) (hbound : Dk + Dq ≤ D + 1)
+    (hfreeBound : a + h.B0.card ≤ Dq) :
+    Dk - 1 ≤ h.d := by
+  rw [h.d_eq]
+  omega
+
 /-- The first half of the source's GMO length threshold:
 `M ≥ (M-d)+(Dk-1)`. -/
 theorem RotationChannelPreGMOData.reservoir_threshold
@@ -581,5 +592,6 @@ end GaoLean.ConcreteGDihedral
 #print axioms GaoLean.ConcreteGDihedral.RotationChannelPreGMOData.coordinateSum_Bprime_mem
 #print axioms GaoLean.ConcreteGDihedral.RotationChannelPreGMOData.free_remainder_bound
 #print axioms GaoLean.ConcreteGDihedral.RotationChannelPreGMOData.defect_ge_of_davenport_split
+#print axioms GaoLean.ConcreteGDihedral.RotationChannelPreGMOData.defect_ge_of_davenport_bound
 #print axioms GaoLean.ConcreteGDihedral.RotationChannelPreGMOData.target_ge_card_subgroup
 #print axioms GaoLean.ConcreteGDihedral.rotationChannelPreparation_of_extraction

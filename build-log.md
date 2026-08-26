@@ -659,3 +659,14 @@ complement lifting, closes both quotient alternatives and the few-nonzero
 identity leaf, and exposes `rankThree_line_upper` with the manuscript's stated
 hypotheses.  The whole remote build completed successfully with 8730 jobs;
 the new axiom prints contain no `sorryAx` or paper-specific axiom.
+
+## M48: rank-three plane descent, rank-free controller, and final assembly
+
+- `rankThree_plane_upper`, `rankThree_middle_upper`, and `rankThree_upper`
+  compile with only `propext`, `Classical.choice`, and `Quot.sound`.
+- `concretePGO3ControllerSkeleton_of_structuralGMO` constructs the complete
+  simultaneous residual controller from named source inputs.
+- `pgGaoV1Statement_of_structuralRemainingInputs` realizes the exact frozen
+  p-group statement conditionally on the explicit cited-source package.
+- Full remote `lake build`: 8735 jobs, exit 0.
+- No project-specific axiom or `sorryAx` appears in the new theorem audits.

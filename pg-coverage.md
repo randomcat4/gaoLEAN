@@ -316,3 +316,21 @@ routing are `LEAN_CHECKED`; only existence of the published generic weighted
 GMO provider remains `LEAN_CONDITIONAL`. Overall status remains
 `LEAN_PARTIALLY_CHECKED` because weighted GMO and the other external provider
 families are not yet proved.
+
+## M48 superseding final boundary
+
+`GAOARResidualController.lean` now translates the published ordinary and
+signed structural GMO alternatives directly into the rotation and reflection
+channels.  It maps every internal subgroup back into the ambient group,
+checks the internal quotient cardinality, preserves occurrence labels, and
+constructs the simultaneous strict-subgroup `RC`/`ZR` controller.  The former
+custom `RotationChannelGMOProvider` and `ReflectionChannelGMOProvider` fields
+are absent from the new final boundary.
+
+`GAOARFinal.lean` constructs all three reflection regimes, the residual
+controller, the exact upper threshold, and the lower counterexample family,
+then proves the fully quantified frozen `PGGaoV1Statement` from
+`PGGaoStructuralRemainingInputs`.  Hence the internal proof graph is complete.
+The exact status is `LEAN_CONDITIONAL`, since the remaining package consists
+of explicit cited literature inputs not currently proved in Mathlib or this
+repository.

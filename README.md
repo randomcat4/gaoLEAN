@@ -3,8 +3,10 @@
 Lean 4.32 的版本控制形式化伴随工程。当前只按实际机械覆盖记账：
 independent-difference matching、occurrence-labelled fixed-cardinality
 exchange、affine-hyperplane 双向证书及自动几何前端、one-translation 内部机械链，
-以及若干精确反例已经由 Lean 检查。`GAO-AR-v1` 与 `PG-GAO-v1` 仍为部分形式化，
-不是无条件顶层定理。
+秩二/秩三上界、任意秩同时残差控制器及最终冻结主命题装配，均已经由 Lean
+检查。当前准确总状态为 `LEAN_CONDITIONAL`：内部证明图已经闭合，但引用文献中的
+GMO、受限系数及 small-Davenport 输入仍是显式 theorem parameters，因此不是
+无条件顶层定理。
 
 `gao0824` 的无条件 sequence-level raw/padded capacity-entry 命题也已由完整
 无限循环族在 Lean 中证否：原序列的 labelled exact-target 规避、每个真子群
@@ -23,8 +25,11 @@ lake build GaoFormal.AxiomAudit
 ```
 
 工具链固定为 Lean `v4.32.0`，Mathlib 固定为公开标签 `v4.32.0`。
-最新验收点见 `milestone-46.md`：M45-B 的 cross-pair occurrence assembly、
-`e≥q-1` full-exchange 分支及顶层 affine dichotomy 已完成并在服务器验证。
+最新验收点见 `milestone-48.md`：秩三平面下降、任意秩结构 GMO 控制器及冻结
+`PGGaoV1Statement` 的最终条件式装配均已完成并在服务器验证。
+
+下文保留各历史里程碑当时的边界描述；其中写有“仍缺”“partial”或
+“NOT_FORMALIZED”的段落是过程记录，已由 M48 的最新状态取代。
 
 PG 分支的真实覆盖与外部阻塞见 `pg-coverage.md`。冻结 PG-GAO 陈述已编译，
 但陈述定义不计作证明；当前 PG-PM 仅为显式外部参数下的条件结论。PG-O3

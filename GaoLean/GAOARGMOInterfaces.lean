@@ -19,6 +19,34 @@ open scoped BigOperators
 
 variable {A : Type*} [AddCommGroup A] [Fintype A]
 
+/-- Every group element is represented by an exact `n`-occurrence ordinary
+subsum. -/
+def OrdinarySpectrumFull (xs : List A) (n : ℕ) : Prop :=
+  ∀ y : A, ∃ I : Selection xs,
+    I.card = n ∧ ∑ i ∈ I, occurrenceValue xs i = y
+
+/-- Complete non-full ordinary GMO conclusion, retaining the affine source
+coset and its occurrence count. -/
+structure OrdinaryGMOConcentration (xs : List A) where
+  K : AddSubgroup A
+  strict : K < ⊤
+  alpha : A
+  selected : Selection xs
+  sourceCoset : ∀ i ∈ selected, occurrenceValue xs i - alpha ∈ K
+  card_lower :
+    xs.length - Nat.card (A ⧸ K) + 2 ≤ selected.card
+
+/-- Source-shaped ordinary-weight structural GMO theorem.  This interface is
+a proposition parameter for the cited theorem, never a project axiom. -/
+def OrdinaryGMOStructuralProvider
+    (A : Type*) [AddCommGroup A] [Fintype A] : Prop :=
+  ∀ (xs : List A) (n d : ℕ),
+    Nat.card A ≤ n →
+    OrdinaryDavenportAtMost A d →
+    n + d - 1 ≤ xs.length →
+    OrdinarySpectrumFull xs n ∨
+      Nonempty (OrdinaryGMOConcentration xs)
+
 /-- An exact-cardinality occurrence-labelled signed sum. -/
 structure HasPlusMinusSumOfCard (xs : List A) (n : ℕ) (y : A) where
   positive : Selection xs

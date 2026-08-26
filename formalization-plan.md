@@ -8,7 +8,9 @@ natural-language/Lean statement comparison.  External mathematics absent from
 Mathlib may appear only as an explicit theorem parameter; it must then be
 reported as `LEAN_CONDITIONAL`, never as an axiom or a completed Gao proof.
 
-Current overall status: `LEAN_PARTIALLY_CHECKED`.
+Current overall status: `LEAN_CONDITIONAL`.  The internal proof graph and the
+fully quantified frozen statement are compiled; only the explicitly listed
+literature inputs remain parameters.
 
 ## Dependency DAG
 
@@ -75,7 +77,7 @@ PG-GAO-v1 (separate paper branch; it does not depend on affine matching)
 | M9 | Occurrence-labelled capacity Corollary 2.1 | `LEAN_FULLY_CHECKED` |
 | M35 | Sharp `F₂²` characteristic-two counterexample and exact maximum one | `LEAN_FULLY_CHECKED` |
 | M36 | Infinite cyclic counterexample to unconditional raw/padded capacity entry | `LEAN_FULLY_DISPROVED` |
-| M10 | Affine exchange and arbitrary-rank integration | `LEAN_PARTIAL` (M39–M46; affine dichotomy and one-translation consumers checked, residual producer and final assembly open) |
+| M10 | Affine exchange and arbitrary-rank integration | `LEAN_CHECKED` components; the final p-group route is closed independently by the structural residual controller |
 | M46 | Disjoint cross-pair construction, `e≥q-1` full exchange, and raw-support affine dichotomy | `LEAN_CHECKED` |
 | P1 | Occurrence/product-one semantics and concrete generalized-dihedral model | `LEAN_CHECKED` |
 | P2 | PG-PM restricted-coefficient deletion bridge and odd arithmetic | `LEAN_CONDITIONAL` on external output |
@@ -103,6 +105,14 @@ PG-GAO-v1 (separate paper branch; it does not depend on affine matching)
 | P5b2r | Labelled reflection quotient extraction `T=U⊔R`, lifted defect/parity, (5.6)-(5.9) arithmetic, and reflection preparation from a narrow provider | internal extraction `LEAN_CHECKED`; quotient small-Davenport and signed GMO provider explicit |
 | P5b2 | Nonzero proper-subgroup RC/ZR branch proofs and controller assembly | both labelled extractions and internal consumers/scheduler `LEAN_CHECKED`; GMO/GJM providers remain |
 | P5c | PG-O4 occurrence split, exact upper synthesis, PG-O1c lower-bound construction, and conditional PG-GAO composition | internal dispatcher/lower construction `LEAN_CHECKED`; final equality `LEAN_CONDITIONAL` on explicit external providers |
+| R3-P | Rank-three plane descent and complete rank-three upper bound | `LEAN_CHECKED` |
+| RF | Direct ordinary/signed structural-GMO residual producer and simultaneous controller | `LEAN_CHECKED` conditional only on named source inputs |
+| Z | Fully quantified frozen main statement from final cited-source package | `LEAN_CONDITIONAL` |
+
+M48 supersedes the historical open-boundary narrative below: the rank-free
+residual producer and final frozen-statement assembly are now compiled in
+`GAOARResidualController.lean` and `GAOARFinal.lean`.  External source theorems
+remain explicit, so the result is conditional rather than unconditional.
 
 M9 is closed. M39–M46 close the labelled affine reverse/full-exchange
 consumers, the full raw-support affine dichotomy, and the one-translation

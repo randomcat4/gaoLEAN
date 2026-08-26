@@ -197,9 +197,40 @@ theorem primeRankTwo_plusMinusDavenportAtMost
     have hpow := sq_lt_two_pow_of_five_le hq5
     simpa [Nat.card_eq_fintype_card, hq.ne_zero] using hpow
 
+/-- Cardinality-only form of the rank-two estimate needed for an arbitrary
+two-dimensional subgroup inside `F_q^3`.  The manuscript only needs the
+weaker bound `D_±(K) ≤ 2q-1`; binary subset-sum collision proves it without
+choosing coordinates on `K`. -/
+theorem squareCard_plusMinusDavenportAtMost_two_mul_sub_one
+    {K : Type*} [AddCommGroup K] [Fintype K]
+    (q : ℕ) (hq : Nat.Prime q) (hqodd : Odd q)
+    (hKcard : Nat.card K = q ^ 2) :
+    PlusMinusDavenportAtMost K (2 * q - 1) := by
+  apply plusMinusDavenportAtMost_of_natCard_lt_two_pow
+  rw [hKcard]
+  have hq3 : 3 ≤ q := by
+    by_contra h
+    have hq2 := hq.two_le
+    have hqeq : q = 2 := by omega
+    subst q
+    norm_num at hqodd
+  by_cases hq3eq : q = 3
+  · subst q
+    norm_num
+  · have hq5 : 5 ≤ q := by
+      have hq4 : q ≠ 4 := by
+        intro h
+        subst q
+        norm_num at hq
+      omega
+    have hsquare : q ^ 2 < 2 ^ q := by
+      exact sq_lt_two_pow_of_five_le hq5
+    exact hsquare.trans_le (Nat.pow_le_pow_right (by omega) (by omega))
+
 end GaoLean
 
 #print axioms GaoLean.plusMinusDavenportAtMost_of_natCard_lt_two_pow
 #print axioms GaoLean.plusMinusDavenportAtMost_natCard
 #print axioms GaoLean.zmod3sq_plusMinusDavenportAtMost_three
 #print axioms GaoLean.primeRankTwo_plusMinusDavenportAtMost
+#print axioms GaoLean.squareCard_plusMinusDavenportAtMost_two_mul_sub_one

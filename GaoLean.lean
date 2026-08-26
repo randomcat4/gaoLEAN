@@ -28,6 +28,11 @@ import GaoLean.GAOARRankThree
 import GaoLean.GAOARRankThreeLineAux
 import GaoLean.GAOARRankThreeQuotient
 import GaoLean.GAOARRankThreeLine
+import GaoLean.GAOARRankThreeSubgroups
+import GaoLean.GAOARRankThreePlane
+import GaoLean.GAOARRankThreeCompletion
+import GaoLean.GAOARResidualController
+import GaoLean.GAOARFinal
 import GaoLean.GAOARDihedralBlocks
 import GaoLean.PGCapacity
 import GaoLean.PGSpectrum
