@@ -108,3 +108,16 @@
 - Whole-repository server build succeeded (8726 jobs).  Both assembled
   theorem axiom prints contain only `propext`, `Classical.choice`, and
   `Quot.sound`.
+
+## Round 10 — 2026-08-26
+
+- Specialized the checked rank-independent occurrence/GMO machinery to
+  `F_q³`.
+- Closed the rank-three low-reflection and high-reflection ranges.
+- Formalized the first middle-range structural-GMO split and closed its full
+  spectrum branch; the non-full branch now exposes the exact labelled proper-
+  subgroup concentration used by the manuscript's dimension descent.
+- The published `D_±(F_q³)` estimate remains a visible theorem input rather
+  than being silently replaced by a stronger constant.
+- All new theorem axiom prints contain only `propext`, `Classical.choice`, and
+  `Quot.sound`.

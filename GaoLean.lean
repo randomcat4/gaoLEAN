@@ -24,6 +24,7 @@ import GaoLean.GAOARRankTwoSubgroups
 import GaoLean.GAOARRankTwoLine
 import GaoLean.GAOARRankTwoLineLarge
 import GaoLean.GAOARRankTwoCompletion
+import GaoLean.GAOARRankThree
 import GaoLean.GAOARDihedralBlocks
 import GaoLean.PGCapacity
 import GaoLean.PGSpectrum
