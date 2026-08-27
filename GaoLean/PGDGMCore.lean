@@ -1340,31 +1340,37 @@ theorem dgmCrossedH12_le_D2_stabilizer
 /-- A nonempty finite set properly contained in one `H`-coset has stabilizer
 strictly smaller than `H`.  This is the exact proper-coset argument used for
 `H₁₂,H₁,H₂ < H`. -/
+theorem stabilizer_le_of_nonempty_subset_quotientFiber
+    (H : AddSubgroup A) (D : Finset A) (hD : D.Nonempty)
+    (q : A ⧸ H) (hfiber : ∀ x ∈ D, (x : A ⧸ H) = q) :
+    AddAction.stabilizer A (D : Set A) ≤ H := by
+  intro a ha
+  have hDcopy := hD
+  obtain ⟨x, hx⟩ := hDcopy
+  have haFin : a ∈ D.addStab := by
+    have haSet : a ∈ (AddAction.stabilizer A (D : Set A) : Set A) := ha
+    rw [← Finset.coe_addStab hD] at haSet
+    exact haSet
+  have htranslate := (Finset.mem_addStab hD).1 haFin
+  have hax : a + x ∈ D := by
+    have : a + x ∈ a +ᵥ D :=
+      Finset.mem_vadd_finset.mpr ⟨x, hx, rfl⟩
+    rwa [htranslate] at this
+  have hqeq : (a + x : A ⧸ H) = (x : A ⧸ H) :=
+    (hfiber (a + x) hax).trans (hfiber x hx).symm
+  have hzero : (a : A ⧸ H) = 0 := by
+    apply add_right_cancel (b := (x : A ⧸ H))
+    simpa using hqeq
+  exact (QuotientAddGroup.eq_zero_iff a).1 hzero
+
 theorem stabilizer_lt_of_proper_quotientFiber
     (H : AddSubgroup A) (D : Finset A) (hD : D.Nonempty)
     (q : A ⧸ H)
     (hfiber : ∀ x ∈ D, (x : A ⧸ H) = q)
     {y : A} (hyq : (y : A ⧸ H) = q) (hyD : y ∉ D) :
     AddAction.stabilizer A (D : Set A) < H := by
-  have hle : AddAction.stabilizer A (D : Set A) ≤ H := by
-    intro a ha
-    have hDcopy := hD
-    obtain ⟨x, hx⟩ := hDcopy
-    have haFin : a ∈ D.addStab := by
-      have haSet : a ∈ (AddAction.stabilizer A (D : Set A) : Set A) := ha
-      rw [← Finset.coe_addStab hD] at haSet
-      exact haSet
-    have htranslate := (Finset.mem_addStab hD).1 haFin
-    have hax : a + x ∈ D := by
-      have : a + x ∈ a +ᵥ D :=
-        Finset.mem_vadd_finset.mpr ⟨x, hx, rfl⟩
-      rwa [htranslate] at this
-    have hqeq : (a + x : A ⧸ H) = (x : A ⧸ H) :=
-      (hfiber (a + x) hax).trans (hfiber x hx).symm
-    have hzero : (a : A ⧸ H) = 0 := by
-      apply add_right_cancel (b := (x : A ⧸ H))
-      simpa using hqeq
-    exact (QuotientAddGroup.eq_zero_iff a).1 hzero
+  have hle : AddAction.stabilizer A (D : Set A) ≤ H :=
+    stabilizer_le_of_nonempty_subset_quotientFiber H D hD q hfiber
   refine lt_of_le_of_ne hle ?_
   intro heq
   have hDcopy := hD
@@ -3056,6 +3062,74 @@ theorem mem_dgmQuotientRefinementFiber_iff
       dgmQuotientRefinementMap L H hLH q = r := by
   classical
   simp [dgmQuotientRefinementFiber]
+
+/-- A proof-relevant choice counted modulo a coarse subgroup is the sum of
+its multiplicities over the fine quotient cosets lying above that coarse
+coset.  This is the exact pattern-refinement identity used when a DGM
+counterexample passes from its original stabilizer to the stabilizer of a
+minimal convergent portion. -/
+theorem LayerSubsumChoice.quotientMultiplicity_eq_sum_refinementFiber
+    (L H : AddSubgroup A) [Fintype (A ⧸ L)] [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ L)] [DecidableEq (A ⧸ H)] (hLH : L ≤ H)
+    {P : List (Finset A)} {n : ℕ} {y : A}
+    (h : LayerSubsumChoice P n y) (r : A ⧸ H) :
+    h.quotientMultiplicity H r =
+      ∑ q ∈ dgmQuotientRefinementFiber L H hLH r,
+        h.quotientMultiplicity L q := by
+  classical
+  induction h with
+  | zero P => simp [LayerSubsumChoice.quotientMultiplicity]
+  | skip h ih => simpa [LayerSubsumChoice.quotientMultiplicity] using ih
+  | @take B P n b y hb h ih =>
+      simp only [LayerSubsumChoice.quotientMultiplicity,
+        Finset.sum_add_distrib]
+      rw [ih]
+      simp [dgmQuotientRefinementFiber, dgmQuotientRefinementMap_mk]
+
+/-- A fine quotient pattern induced by an actual choice refines every
+coarser pattern realized by that same choice. -/
+theorem LayerSubsumChoice.realizesPattern_of_realizes_quotientPattern_of_le
+    (L H : AddSubgroup A) [Fintype (A ⧸ L)] [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ L)] [DecidableEq (A ⧸ H)] (hLH : L ≤ H)
+    {P : List (Finset A)} {n : ℕ} {y z : A}
+    (base : LayerSubsumChoice P n y) (μ : QuotientPattern H n)
+    (hbase : base.RealizesPattern μ)
+    (candidate : LayerSubsumChoice P n z)
+    (hcandidate : candidate.RealizesPattern (base.quotientPattern L)) :
+    candidate.RealizesPattern μ := by
+  intro r
+  calc
+    candidate.quotientMultiplicity H r =
+        ∑ q ∈ dgmQuotientRefinementFiber L H hLH r,
+          candidate.quotientMultiplicity L q :=
+      candidate.quotientMultiplicity_eq_sum_refinementFiber L H hLH r
+    _ = ∑ q ∈ dgmQuotientRefinementFiber L H hLH r,
+          base.quotientMultiplicity L q := by
+      apply Finset.sum_congr rfl
+      intro q hq
+      exact hcandidate q
+    _ = base.quotientMultiplicity H r :=
+      (base.quotientMultiplicity_eq_sum_refinementFiber L H hLH r).symm
+    _ = μ r := hbase r
+
+/-- Every sum realizing the fine pattern canonically induced by one witness
+also realizes the witness's original coarse pattern.  Thus refinement never
+creates sums outside the source pattern spectrum. -/
+theorem patternSubsumSpectrum_quotientPattern_subset_of_realizes_of_le
+    (L H : AddSubgroup A) [Fintype (A ⧸ L)] [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ L)] [DecidableEq (A ⧸ H)] (hLH : L ≤ H)
+    {P : List (Finset A)} {n : ℕ} {y : A}
+    (base : LayerSubsumChoice P n y) (μ : QuotientPattern H n)
+    (hbase : base.RealizesPattern μ) :
+    patternSubsumSpectrum P (base.quotientPattern L) ⊆
+      patternSubsumSpectrum P μ := by
+  intro z hz
+  obtain ⟨⟨candidate, hcandidate⟩⟩ :=
+    (mem_patternSubsumSpectrum_iff P (base.quotientPattern L) z).1 hz
+  exact (mem_patternSubsumSpectrum_iff P μ z).2
+    ⟨⟨candidate,
+      LayerSubsumChoice.realizesPattern_of_realizes_quotientPattern_of_le
+        L H hLH base μ hbase candidate hcandidate⟩⟩
 
 /-- One `L`-fiber in an `L`-saturated finite set has exactly `|L|` points. -/
 theorem card_filter_add_dgmSubgroupFinset_eq
@@ -4904,6 +4978,25 @@ def DGMPatternConvergent
         (stabilizerDgmCappedMultiplicitySum D P' n - n + 1) ≤
       D.card + Nat.card K *
         (dgmCappedMultiplicitySum K (B :: C :: P) n - n)
+
+/-- The stabilizer of a nonempty convergent is contained in the original
+pattern subgroup.  Indeed, the convergent lies inside one quotient coset of
+that subgroup.  This supplies the genuine refinement map `A/H → A/K` used
+below; it is not an additional hypothesis on the crossed construction. -/
+theorem dgmPatternConvergent_stabilizer_le_original
+    [Fintype A] {K : AddSubgroup A} {n : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (B C : Finset A) (P : List (Finset A))
+    (μ : QuotientPattern K n) (D : Finset A)
+    (hD : DGMPatternConvergent B C P μ D) :
+    AddAction.stabilizer A (D : Set A) ≤ K := by
+  unfold DGMPatternConvergent at hD
+  dsimp only at hD
+  rcases hD with ⟨hDne, _, hDupper, _⟩
+  apply stabilizer_le_of_nonempty_subset_quotientFiber
+    K D hDne μ.quotientSum
+  intro x hx
+  exact patternSubsumSpectrum_quotient_eq _ μ (hDupper hx)
 
 /-- The transformed pattern spectrum is the initial convergent whenever the
 strictly smaller transformed instance satisfies Theorem 3.1. -/
