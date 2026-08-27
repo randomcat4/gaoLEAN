@@ -2131,6 +2131,30 @@ theorem oddPlusMinusGMOProviders
   exact ⟨weightedGMOPrescribedLengthProvider_of_corollary12Source hpackage.1,
     hstruct.1, hstruct.2⟩
 
+/-- The same closure in the literal field shape used by the final 13-page
+assembly.  In particular, the subgroup provider is polymorphic in the
+`Fintype K` instance requested by that assembly, rather than being tied to
+this file's canonical local instance. -/
+theorem oddPlusMinusGMOProviders_for_finalAssembly
+    (hDGM : ∀ (C : Type u) [AddCommGroup C] [Fintype C],
+      FiniteDGMSetpartitionInput C)
+    (B : Type u) [AddCommGroup B] [Fintype B]
+    (hodd : Odd (Nat.card B)) :
+    WeightedGMOPrescribedLengthProvider B ∧
+      PlusMinusGMOStructuralProvider B ∧
+      (∀ (K : AddSubgroup B) [Fintype K],
+        PlusMinusGMOStructuralProvider K) := by
+  have hpackage := plusMinusGMOSourcePackage_of_oddDGM hDGM B hodd
+  refine ⟨
+    weightedGMOPrescribedLengthProvider_of_corollary12Source hpackage.1,
+    plusMinusGMOStructuralProvider_of_corollary13Source hpackage.2, ?_⟩
+  intro K _finK
+  have hoddK : Odd (Nat.card K) :=
+    Odd.of_dvd_nat hodd (AddSubgroup.card_addSubgroup_dvd_card K)
+  exact plusMinusGMOStructuralProvider_of_corollary13Source
+    (plusMinusCorollary13Source_of_oddStep6 hDGM
+      (fun _C _group _finite ↦ oddPlusMinusTrivialStabilizerStep) K hoddK)
+
 end GaoLean
 
 #print axioms GaoLean.theorem11_singleLayer_membership_is_not_paired_containment
@@ -2156,3 +2180,4 @@ end GaoLean
 #print axioms GaoLean.plusMinusGMOSourcePackage_of_oddDGM
 #print axioms GaoLean.oddPlusMinusStructuralProviders
 #print axioms GaoLean.oddPlusMinusGMOProviders
+#print axioms GaoLean.oddPlusMinusGMOProviders_for_finalAssembly

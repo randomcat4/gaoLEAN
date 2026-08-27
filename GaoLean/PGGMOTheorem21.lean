@@ -1394,6 +1394,69 @@ theorem Theorem21SetPartition.quotientIncidenceAt_move_eq_add_one
   simp
 
 omit [Fintype A] in
+/-- Quotient equality modulo a smaller subgroup remains quotient equality
+modulo every larger subgroup. -/
+theorem quotient_eq_of_subgroup_le
+    {H K : AddSubgroup A} (hHK : H ≤ K) {x y : A}
+    (hxy : QuotientAddGroup.mk' H x = QuotientAddGroup.mk' H y) :
+    QuotientAddGroup.mk' K x = QuotientAddGroup.mk' K y := by
+  apply QuotientAddGroup.eq_iff_sub_mem.mpr
+  exact hHK (QuotientAddGroup.eq_iff_sub_mem.mp hxy)
+
+omit [Fintype A] in
+/-- Moving one representative of a quotient-duplicated source class cannot
+delete any cellwise quotient image for a larger subgroup.  The source image
+is unchanged, the target image only grows, and all other images are fixed.
+This is the quotient-image half of the repeated (3.1) admissibility check. -/
+theorem Theorem21SetPartition.quotientImagesIncluded_moveOccurrence_of_mono
+    {xs : List A} {n m : ℕ} {P Q : Theorem21SetPartition xs n m}
+    {H K : AddSubgroup A} (hHK : H ≤ K)
+    {q d : Fin n} {i : Occurrence xs} {x : A}
+    (hqd : q ≠ d) (hiq : i ∈ P.cells q)
+    (hix : occurrenceValue xs i = x)
+    (hdouble : P.IsHDoubledInCell H q x)
+    (hQcells : ∀ c, Q.cells c = P.moveOccurrenceCells q d i c) :
+    P.quotientImagesIncluded Q K := by
+  classical
+  rcases hdouble with ⟨_hxq, y, hyq, hyx, hyquot⟩
+  have hyquotK : QuotientAddGroup.mk' K y =
+      QuotientAddGroup.mk' K (occurrenceValue xs i) := by
+    apply quotient_eq_of_subgroup_le hHK
+    simpa [hix] using hyquot
+  intro c
+  by_cases hcq : c = q
+  · subst c
+    rw [Theorem21SetPartition.valueCell_eq_erase_of_moveOccurrence
+      (P := P) (Q := Q) (q := q) (d := d) (i := i) hiq hQcells]
+    rw [quotientLayer_eraseValue_eq_of_duplicate K (P.valueCell q) hyq
+      (by simpa [hix] using hyx) hyquotK]
+  · by_cases hcd : c = d
+    · subst c
+      rw [Theorem21SetPartition.valueCell_eq_insert_of_moveOccurrence
+        (P := P) (Q := Q) (q := q) (d := d) (i := i) hqd hQcells]
+      intro z hz
+      obtain ⟨a, ha, haz⟩ :=
+        (mem_quotientLayer_iff K (P.valueCell d) z).1 hz
+      apply (mem_quotientLayer_iff K
+        (insertValue (occurrenceValue xs i) (P.valueCell d)) z).2
+      refine ⟨a, ?_, haz⟩
+      unfold insertValue
+      exact Finset.mem_insert_of_mem ha
+    · rw [Theorem21SetPartition.valueCell_eq_of_moveOccurrence_of_ne
+        (P := P) (Q := Q) (q := q) (d := d) (i := i) hQcells hcq hcd]
+
+omit [Fintype A] in
+/-- Cellwise quotient-image inclusion is transitive. -/
+theorem Theorem21SetPartition.quotientImagesIncluded_trans
+    {xs : List A} {n m : ℕ} {P Q R : Theorem21SetPartition xs n m}
+    {H : AddSubgroup A}
+    (hPQ : P.quotientImagesIncluded Q H)
+    (hQR : Q.quotientImagesIncluded R H) :
+    P.quotientImagesIncluded R H := by
+  intro c
+  exact (hPQ c).trans (hQR c)
+
+omit [Fintype A] in
 /-- A doubled exception therefore produces an honest replacement with the
 same labelled support and strictly larger quotient-incidence objective. -/
 theorem Theorem21SetPartition.exists_moveOccurrence_quotientIncidenceAt_eq_add_one
@@ -1574,6 +1637,60 @@ theorem Definition1ExtremalChain.mem_final_of_monotoneReplacement
         hPtailSubsetQ
 
 omit [Fintype A] in
+/-- Membership in a stage fixes the cardinality of the tail whose index is
+that stage.  At stage zero this is full-sumset maximality; at a successor it
+is the final cardinality equality stored by the preceding transition. -/
+theorem Definition1ExtremalChain.tail_card_eq_chosen_of_mem
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    {r : ℕ} {state : Definition1ExtremalState xs seed n}
+    (chain : Definition1ExtremalChain xs seed n r state)
+    {Q : Theorem21SetPartition xs n seed.card}
+    (hQ : Q ∈ state.upsilon) :
+    (Q.tailSumset r).card = (state.chosen.tailSumset r).card := by
+  cases chain with
+  | initial state valid =>
+      have hcard := (valid.mem_upsilon_iff Q).1 hQ
+      simpa [Theorem21SetPartition.tailSumset,
+        Theorem21SetPartition.tailValueCells,
+        Theorem21SetPartition.sumset] using hcard
+  | @next r previous prior state F step =>
+      exact (step.mem_next_upsilon_iff Q).1 hQ |>.2.2.2.2
+
+omit [Fintype A] in
+/-- Practical successor constructor for the recursive exchange certificate.
+The paper supplies inclusions (3.1), not an a priori equality for the current
+tail.  Previous-stage membership fixes the relevant cardinality, so current
+tail inclusion forces equality and supplies the `hQtail` field automatically.
+-/
+theorem Definition1ExtremalChain.MonotoneReplacement.next_of_tail_subsets
+    {xs : List A} {seed : Selection xs} {n r : ℕ}
+    {previous : Definition1ExtremalState xs seed n}
+    {prior : Definition1ExtremalChain xs seed n r previous}
+    {state : Definition1ExtremalState xs seed n}
+    {F P Q : Theorem21SetPartition xs n seed.card}
+    {step : Definition1Transition r previous state F}
+    (hprior : MonotoneReplacement P Q prior)
+    (hPnext : P ∈ state.upsilon)
+    (hPtailSubsetQ : P.tailSumset r ⊆ Q.tailSumset r)
+    (hFimagesQ : F.quotientImagesIncluded Q
+      (AddAction.stabilizer A
+        (previous.chosen.tailSumset r : Set A)))
+    (hPnextTailSubsetQ : P.tailSumset (r + 1) ⊆
+      Q.tailSumset (r + 1)) :
+    MonotoneReplacement P Q
+      (Definition1ExtremalChain.next prior state F step) := by
+  have hQprevious := prior.mem_final_of_monotoneReplacement hprior
+  have hQcard := prior.tail_card_eq_chosen_of_mem hQprevious
+  have hPdata := (step.mem_next_upsilon_iff P).1 hPnext
+  have hPtail : P.tailSumset r = previous.chosen.tailSumset r :=
+    hPdata.2.1
+  have hQtail : Q.tailSumset r = previous.chosen.tailSumset r := by
+    exact (Finset.eq_of_subset_of_card_le
+      (hPtail ▸ hPtailSubsetQ) (by rw [hQcard])).symm
+  exact MonotoneReplacement.next prior state F step hprior hPnext hQtail
+    hFimagesQ hPnextTailSubsetQ
+
+omit [Fintype A] in
 /-- Full-layer sumsets are monotone under layerwise inclusion. -/
 theorem fullLayerSumSpectrum_mono
     [DecidableEq A]
@@ -1690,6 +1807,123 @@ theorem Theorem21SetPartition.tailSumset_subset_moveOccurrence_of_erase_eq
   exact fullLayerSumSpectrum_mono
     (P.forall₂_tailValueCellsAfterErase_moveOccurrence hqd hiq hQcells r)
 
+omit [AddCommGroup A] [Fintype A] in
+/-- Replacing a valid list position and then dropping an earlier prefix gives
+the unchanged intermediate prefix, the replacement, and the old suffix.
+This is the list bookkeeping behind the paper's removal of `x` from cell
+`q` in every tail beginning no later than `q`. -/
+theorem List.drop_set_eq_take_append_cons_drop
+    {X : Type*} (L : List X) (x : X) {r q : ℕ}
+    (hrq : r ≤ q) (hq : q < L.length) :
+    (L.set q x).drop r =
+      (L.drop r).take (q - r) ++ x :: L.drop (q + 1) := by
+  induction r generalizing L q with
+  | zero =>
+      induction L generalizing q with
+      | nil => simp at hq
+      | cons a L ih =>
+          cases q with
+          | zero => simp
+          | succ q =>
+              simp only [List.length_cons, Nat.succ_lt_succ_iff] at hq
+              simpa using ih (q := q) (Nat.zero_le q) hq
+  | succ r ih =>
+      cases L with
+      | nil => simp at hq
+      | cons a L =>
+          cases q with
+          | zero => omega
+          | succ q =>
+              have hrq' : r ≤ q := by omega
+              have hq' : q < L.length := by simpa using hq
+              simpa using ih (L := L) (q := q) hrq' hq'
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Updating one coordinate of a finite tuple and converting it to a list is
+the same as converting first and using `List.set`. -/
+theorem List.ofFn_ite_eq_set {X : Type*} {n : ℕ}
+    (f : Fin n → X) (q : Fin n) (x : X) :
+    List.ofFn (fun c ↦ if c = q then x else f c) =
+      (List.ofFn f).set q.val x := by
+  induction n with
+  | zero => exact Fin.elim0 q
+  | succ n ih =>
+      refine Fin.cases ?_ (fun q ↦ ?_) q
+      · simp [List.ofFn_succ]
+      · have hzero : (0 : Fin (n + 1)) ≠ q.succ := by
+          intro h
+          have := congrArg Fin.val h
+          simp at this
+        simp [List.ofFn_succ, hzero, ih]
+
+omit [AddCommGroup A] [Fintype A] in
+/-- The conditional `List.ofFn` definition of the erased value-cell list is
+literally a single valid `List.set`. -/
+theorem Theorem21SetPartition.valueCellsAfterErase_eq_set
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (q : Fin n) (x : A) :
+    P.valueCellsAfterErase q x =
+      P.valueCells.set q.val (eraseValue (P.valueCell q) x) := by
+  classical
+  unfold Theorem21SetPartition.valueCellsAfterErase
+    Theorem21SetPartition.valueCells
+  have hfun :
+      (fun c : Fin n ↦
+        if c = q then eraseValue (P.valueCell c) x else P.valueCell c) =
+      (fun c : Fin n ↦
+        if c = q then eraseValue (P.valueCell q) x else P.valueCell c) := by
+    funext c
+    by_cases hcq : c = q
+    · subst c
+      simp
+    · simp [hcq]
+  rw [hfun]
+  simpa using List.ofFn_ite_eq_set
+    (fun c : Fin n ↦ P.valueCell c) q (eraseValue (P.valueCell q) x)
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Exact decomposition of the erased tail around its modified cell. -/
+theorem Theorem21SetPartition.tailValueCellsAfterErase_decompose
+    {xs : List A} {n m r : ℕ} (P : Theorem21SetPartition xs n m)
+    (q : Fin n) (x : A) (hrq : r ≤ q.val) :
+    P.tailValueCellsAfterErase q x r =
+      (P.valueCells.drop r).take (q.val - r) ++
+        eraseValue (P.valueCell q) x :: P.valueCells.drop (q.val + 1) := by
+  classical
+  unfold Theorem21SetPartition.tailValueCellsAfterErase
+  rw [P.valueCellsAfterErase_eq_set]
+  exact List.drop_set_eq_take_append_cons_drop P.valueCells
+    (eraseValue (P.valueCell q) x) hrq (by
+      rw [P.length_valueCells]
+      exact q.isLt)
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Exact decomposition of the unmodified tail around the same cell. -/
+theorem Theorem21SetPartition.tailValueCells_decompose
+    {xs : List A} {n m r : ℕ} (P : Theorem21SetPartition xs n m)
+    (q : Fin n) (hrq : r ≤ q.val) :
+    P.tailValueCells r =
+      (P.valueCells.drop r).take (q.val - r) ++
+        P.valueCell q :: P.valueCells.drop (q.val + 1) := by
+  classical
+  unfold Theorem21SetPartition.tailValueCells
+  calc
+    P.valueCells.drop r =
+        (P.valueCells.drop r).take (q.val - r) ++
+          P.valueCells.drop (r + (q.val - r)) :=
+      (List.drop_take_append_drop P.valueCells r (q.val - r)).symm
+    _ = (P.valueCells.drop r).take (q.val - r) ++
+        P.valueCell q :: P.valueCells.drop (q.val + 1) := by
+      have hqLength : q.val < P.valueCells.length := by
+        rw [P.length_valueCells]
+        exact q.isLt
+      have hdropq : P.valueCells.drop q.val =
+          P.valueCells[q.val] :: P.valueCells.drop (q.val + 1) :=
+        List.drop_eq_getElem_cons hqLength
+      have hget : P.valueCells[q.val] = P.valueCell q := by
+        simp [Theorem21SetPartition.valueCells]
+      rw [Nat.add_sub_of_le hrq, hdropq, hget]
+
 omit [Fintype A] in
 /-- Full-layer sumsets turn list concatenation into pointwise finite-set
 addition. -/
@@ -1705,6 +1939,180 @@ theorem fullLayerSumSpectrum_append [DecidableEq A]
   | cons C L ih =>
       simp only [List.cons_append, fullLayerSumSpectrum_cons, ih]
       exact (add_assoc _ _ _).symm
+
+omit [Fintype A] in
+/-- A full-layer sumset of nonempty layers is nonempty.  This elementary
+fact is recorded explicitly because the stabilizer propagation used in
+Definition 1 passes through `Finset.addStab`, whose coercion theorem requires
+a nonempty finite set. -/
+theorem fullLayerSumSpectrum_nonempty_of_nonemptySetPartition
+    [DecidableEq A] (L : List (Finset A))
+    (hL : IsNonemptySetPartition L) :
+    (fullLayerSumSpectrum L).Nonempty := by
+  unfold fullLayerSumSpectrum
+  exact layerSubsumSpectrum_nonempty L hL L.length le_rfl
+
+omit [Fintype A] in
+/-- Translation symmetries of the right summand remain symmetries after
+adding a nonempty left summand.  This is the finite-set form of the
+stabilizer nesting used for successive tails in dissertation Definition 1.
+-/
+theorem stabilizer_add_right_mono [DecidableEq A]
+    (B T : Finset A) (hB : B.Nonempty) (hT : T.Nonempty) :
+    AddAction.stabilizer A (T : Set A) ≤
+      AddAction.stabilizer A ((B + T : Finset A) : Set A) := by
+  intro a ha
+  have haFin : a ∈ T.addStab := by
+    rw [← Finset.mem_coe, Finset.coe_addStab hT]
+    exact ha
+  have haSum : a ∈ (B + T).addStab :=
+    Finset.subset_addStab_add_right hB haFin
+  rw [← Finset.mem_coe, Finset.coe_addStab (hB.add hT)] at haSum
+  exact haSum
+
+omit [Fintype A] in
+/-- Consequently, the stabilizer of a nonempty suffix full-layer sumset is
+contained in the stabilizer after adjoining a nonempty prefix. -/
+theorem stabilizer_fullLayer_append_right_mono [DecidableEq A]
+    (L R : List (Finset A))
+    (hL : IsNonemptySetPartition L)
+    (hR : IsNonemptySetPartition R) :
+    AddAction.stabilizer A
+        ((fullLayerSumSpectrum R : Finset A) : Set A) ≤
+      AddAction.stabilizer A
+        ((fullLayerSumSpectrum (L ++ R) : Finset A) : Set A) := by
+  rw [fullLayerSumSpectrum_append]
+  exact stabilizer_add_right_mono
+    (fullLayerSumSpectrum L) (fullLayerSumSpectrum R)
+    (fullLayerSumSpectrum_nonempty_of_nonemptySetPartition L hL)
+    (fullLayerSumSpectrum_nonempty_of_nonemptySetPartition R hR)
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Taking a prefix preserves the nonempty-layer condition. -/
+theorem IsNonemptySetPartition.take {X : Type*}
+    {L : List (Finset X)} (hL : IsNonemptySetPartition L) (r : ℕ) :
+    IsNonemptySetPartition (L.take r) := by
+  intro B hB
+  exact hL B (List.mem_of_mem_take hB)
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Taking a suffix preserves the nonempty-layer condition. -/
+theorem IsNonemptySetPartition.drop {X : Type*}
+    {L : List (Finset X)} (hL : IsNonemptySetPartition L) (r : ℕ) :
+    IsNonemptySetPartition (L.drop r) := by
+  intro B hB
+  exact hL B (List.mem_of_mem_drop hB)
+
+omit [Fintype A] in
+/-- Stabilizers of Definition 1 tails are nested in the source direction:
+discarding more initial cells can only decrease the stabilizer.  This is the
+precise ordinary specialization of the relation `H_k ≤ H_{k_j}` used in
+equation (3.1) of dissertation Lemma 1. -/
+theorem Theorem21SetPartition.stabilizer_tailSumset_antitone
+    {xs : List A} {n m j k : ℕ} (P : Theorem21SetPartition xs n m)
+    (hjk : j ≤ k) :
+    AddAction.stabilizer A (P.tailSumset k : Set A) ≤
+      AddAction.stabilizer A (P.tailSumset j : Set A) := by
+  classical
+  let pre := (P.valueCells.drop j).take (k - j)
+  have hdrop : (P.valueCells.drop j).drop (k - j) =
+      P.valueCells.drop k := by
+    rw [List.drop_drop, Nat.add_sub_of_le hjk]
+  have hsplit : pre ++ P.valueCells.drop k = P.valueCells.drop j := by
+    rw [← hdrop]
+    exact List.take_append_drop (k - j) (P.valueCells.drop j)
+  have hprefix : IsNonemptySetPartition pre :=
+    (P.valueCells_nonempty.drop j).take (k - j)
+  have hsuffix : IsNonemptySetPartition (P.valueCells.drop k) :=
+    P.valueCells_nonempty.drop k
+  unfold Theorem21SetPartition.tailSumset
+    Theorem21SetPartition.tailValueCells
+  rw [← hsplit]
+  exact stabilizer_fullLayer_append_right_mono pre
+    (P.valueCells.drop k) hprefix hsuffix
+
+omit [Fintype A] in
+/-- Concrete successor step for the Lemma 1 exchange.  If the moved value is
+duplicated modulo the later tail stabilizer `H_k`, then stabilizer nesting
+upgrades that duplication to the current `H_{k_j}`.  Hence the move preserves
+all quotient images required by Definition 1; only the two tail inclusions
+from equation (3.1) remain to be supplied. -/
+theorem Definition1ExtremalChain.MonotoneReplacement.next_of_moveOccurrence
+    {xs : List A} {seed : Selection xs} {n r k : ℕ}
+    {previous : Definition1ExtremalState xs seed n}
+    {prior : Definition1ExtremalChain xs seed n r previous}
+    {state : Definition1ExtremalState xs seed n}
+    {F P Q : Theorem21SetPartition xs n seed.card}
+    {step : Definition1Transition r previous state F}
+    {q d : Fin n} {i : Occurrence xs} {x : A}
+    (hprior : MonotoneReplacement P Q prior)
+    (hPnext : P ∈ state.upsilon)
+    (hrk : r ≤ k)
+    (hqd : q ≠ d) (hiq : i ∈ P.cells q)
+    (hix : occurrenceValue xs i = x)
+    (hdouble : P.IsHDoubledInCell
+      (AddAction.stabilizer A (P.tailSumset k : Set A)) q x)
+    (hQcells : ∀ c, Q.cells c = P.moveOccurrenceCells q d i c)
+    (hPtailSubsetQ : P.tailSumset r ⊆ Q.tailSumset r)
+    (hPnextTailSubsetQ : P.tailSumset (r + 1) ⊆
+      Q.tailSumset (r + 1)) :
+    MonotoneReplacement P Q
+      (Definition1ExtremalChain.next prior state F step) := by
+  have hPdata := (step.mem_next_upsilon_iff P).1 hPnext
+  have hPtail : P.tailSumset r = previous.chosen.tailSumset r :=
+    hPdata.2.1
+  have hHK : AddAction.stabilizer A (P.tailSumset k : Set A) ≤
+      AddAction.stabilizer A
+        (previous.chosen.tailSumset r : Set A) := by
+    rw [← hPtail]
+    exact P.stabilizer_tailSumset_antitone hrk
+  have hPimagesQ : P.quotientImagesIncluded Q
+      (AddAction.stabilizer A
+        (previous.chosen.tailSumset r : Set A)) :=
+    P.quotientImagesIncluded_moveOccurrence_of_mono hHK hqd hiq hix
+      hdouble hQcells
+  have hFimagesQ : F.quotientImagesIncluded Q
+      (AddAction.stabilizer A
+        (previous.chosen.tailSumset r : Set A)) :=
+    Theorem21SetPartition.quotientImagesIncluded_trans
+      (P := F) (Q := P) (R := Q) hPdata.2.2.2.1 hPimagesQ
+  exact MonotoneReplacement.next_of_tail_subsets hprior hPnext
+    hPtailSubsetQ hFimagesQ hPnextTailSubsetQ
+
+omit [Fintype A] in
+/-- Same successor step with equation (3.1) discharged from the two concrete
+periodic-removal equalities.  These equalities say that erasing the moved
+representative leaves the current and next old tails unchanged; the honest
+move then contains each intermediate erased tail layerwise. -/
+theorem Definition1ExtremalChain.MonotoneReplacement.next_of_moveOccurrence_of_erase_eq
+    {xs : List A} {seed : Selection xs} {n r k : ℕ}
+    {previous : Definition1ExtremalState xs seed n}
+    {prior : Definition1ExtremalChain xs seed n r previous}
+    {state : Definition1ExtremalState xs seed n}
+    {F P Q : Theorem21SetPartition xs n seed.card}
+    {step : Definition1Transition r previous state F}
+    {q d : Fin n} {i : Occurrence xs} {x : A}
+    (hprior : MonotoneReplacement P Q prior)
+    (hPnext : P ∈ state.upsilon)
+    (hrk : r ≤ k)
+    (hqd : q ≠ d) (hiq : i ∈ P.cells q)
+    (hix : occurrenceValue xs i = x)
+    (hdouble : P.IsHDoubledInCell
+      (AddAction.stabilizer A (P.tailSumset k : Set A)) q x)
+    (hQcells : ∀ c, Q.cells c = P.moveOccurrenceCells q d i c)
+    (heraseCurrent : P.tailSumset r = P.tailSumsetAfterErase q x r)
+    (heraseNext : P.tailSumset (r + 1) =
+      P.tailSumsetAfterErase q x (r + 1)) :
+    MonotoneReplacement P Q
+      (Definition1ExtremalChain.next prior state F step) := by
+  have hcurrent : P.tailSumset r ⊆ Q.tailSumset r :=
+    P.tailSumset_subset_moveOccurrence_of_erase_eq hqd hiq hQcells r
+      (by simpa [hix] using heraseCurrent)
+  have hnext : P.tailSumset (r + 1) ⊆ Q.tailSumset (r + 1) :=
+    P.tailSumset_subset_moveOccurrence_of_erase_eq hqd hiq hQcells (r + 1)
+      (by simpa [hix] using heraseNext)
+  exact MonotoneReplacement.next_of_moveOccurrence hprior hPnext hrk hqd
+    hiq hix hdouble hQcells hcurrent hnext
 
 omit [Fintype A] in
 /-- List-level periodic-removal lemma in the exact form used on every tail in
@@ -1733,6 +2141,49 @@ theorem fullLayerSumSpectrum_erase_middle_eq_of_periodic_of_quotient_eq
   apply add_erase_eq_of_periodic_of_quotient_eq
     H (fullLayerSumSpectrum L + fullLayerSumSpectrum R) C hy hxy hquot
   simpa only [herased] using hperiodic
+
+omit [Fintype A] in
+/-- Tail-level periodic-removal equality in the exact occurrence partition.
+When the source cell lies in the tail, a second representative of the same
+`H`-class and `H`-periodicity of the erased tail force the old and erased
+tail sumsets to coincide. -/
+theorem Theorem21SetPartition.tailSumset_eq_afterErase_of_periodic
+    {xs : List A} {n m r : ℕ} (P : Theorem21SetPartition xs n m)
+    (H : AddSubgroup A) (q : Fin n) {x y : A}
+    (hrq : r ≤ q.val) (hy : y ∈ P.valueCell q) (hyx : y ≠ x)
+    (hquot : QuotientAddGroup.mk' H y = QuotientAddGroup.mk' H x)
+    (hperiodic : H ≤ AddAction.stabilizer A
+      (P.tailSumsetAfterErase q x r : Set A)) :
+    P.tailSumset r = P.tailSumsetAfterErase q x r := by
+  classical
+  unfold Theorem21SetPartition.tailSumsetAfterErase at hperiodic
+  rw [P.tailValueCellsAfterErase_decompose q x hrq] at hperiodic
+  unfold eraseValue at hperiodic
+  unfold Theorem21SetPartition.tailSumset
+    Theorem21SetPartition.tailSumsetAfterErase
+  rw [P.tailValueCells_decompose q hrq,
+    P.tailValueCellsAfterErase_decompose q x hrq]
+  unfold eraseValue
+  exact fullLayerSumSpectrum_erase_middle_eq_of_periodic_of_quotient_eq
+    H ((P.valueCells.drop r).take (q.val - r))
+      (P.valueCells.drop (q.val + 1)) (P.valueCell q)
+      hy hyx hquot hperiodic
+
+omit [Fintype A] in
+/-- Contrapositive removal criterion from dissertation Lemma 1: if erasing
+the doubled representative really changes the tail sumset, then the erased
+tail cannot retain the proposed period. -/
+theorem Theorem21SetPartition.not_periodic_tailSumsetAfterErase_of_ne
+    {xs : List A} {n m r : ℕ} (P : Theorem21SetPartition xs n m)
+    (H : AddSubgroup A) (q : Fin n) {x y : A}
+    (hrq : r ≤ q.val) (hy : y ∈ P.valueCell q) (hyx : y ≠ x)
+    (hquot : QuotientAddGroup.mk' H y = QuotientAddGroup.mk' H x)
+    (hne : P.tailSumset r ≠ P.tailSumsetAfterErase q x r) :
+    ¬ H ≤ AddAction.stabilizer A
+      (P.tailSumsetAfterErase q x r : Set A) := by
+  intro hperiodic
+  exact hne (P.tailSumset_eq_afterErase_of_periodic H q hrq hy hyx
+    hquot hperiodic)
 
 omit [AddCommGroup A] [Fintype A] in
 /-- Natural-number closing step of dissertation Lemma 2.  Here `k = n-ρ`,
@@ -2126,6 +2577,31 @@ structure GMOTheoremEOutput
     1 ≤ partition.commonCosetCount H ∧
       ∀ i : Occurrence xs, i ∉ partition.support →
         occurrenceValue xs i ∈ partition.commonCore H
+
+/-- The now-proved numerical bridge packages an exact Theorem E output once
+the two remaining structural conclusions of the maximal-replacement argument
+are available: elimination of doubled exceptions, and (for nontrivial
+period) nonempty common core together with whole-source unused support in
+that core.  No theorem statement is assumed or renamed here. -/
+theorem nonempty_gmoTheoremEOutput_of_structural_conclusions
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    (P : Theorem21SetPartition xs n seed.card)
+    (hno : ∀ x : A, ¬ P.IsHDoubledException
+      (AddAction.stabilizer A (P.sumset : Set A)) x)
+    (hstruct : AddAction.stabilizer A (P.sumset : Set A) ≠ ⊥ →
+      1 ≤ P.commonCosetCount
+        (AddAction.stabilizer A (P.sumset : Set A)) ∧
+      ∀ i : Occurrence xs, i ∉ P.support →
+        occurrenceValue xs i ∈ P.commonCore
+          (AddAction.stabilizer A (P.sumset : Set A))) :
+    Nonempty (GMOTheoremEOutput xs seed n) := by
+  exact ⟨{
+    partition := P
+    H := AddAction.stabilizer A (P.sumset : Set A)
+    periodic := le_rfl
+    card_lower := P.theoremE_card_lower_of_no_doubled hno
+    nontrivial_data := hstruct
+  }⟩
 
 /-- Exact frozen ordinary Theorem E.  Singleton weight `1` automatically
 satisfies the source coprimality condition, so its only hypotheses are the

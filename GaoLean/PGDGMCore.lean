@@ -1481,6 +1481,101 @@ theorem dgmFinalCosetCoverContradiction [Fintype A]
   rw [hunion] at hstrict
   omega
 
+/-- Exact non-strict arithmetic remaining after equations (4)--(5).  The
+strictness in the source proof is retained by the positive extra subgroup
+term `l`; no unjustified conversion of four weak inequalities to a strict
+one is used. -/
+theorem dgmFourBounds_extra_le_two_mul
+    (Hc s₁ s₂ h₁ h₂ l m : ℕ)
+    (hh₁ : h₁ ≤ s₁) (hh₂ : h₂ ≤ s₂)
+    (h4₁ : s₁ + h₁ ≤ Hc) (h4₂ : s₂ + h₂ ≤ Hc)
+    (h5₁ : s₁ - h₁ + l + m ≤ Hc)
+    (h5₂ : s₂ - h₂ + l + m ≤ Hc) :
+    s₁ + s₂ + l + m ≤ 2 * Hc := by
+  omega
+
+/-- Correct final page-14 contradiction in the form actually delivered by
+the sum of (4)--(5): the four saturated slice sizes, the missing union, and
+one positive `|H₁₂|` fit under `2|H|`.  The two coset covers omit that positive
+term, producing the contradiction. -/
+theorem dgmFinalCosetCoverContradiction_of_extra_le
+    [Fintype A] (H L : AddSubgroup A) (hLH : L ≤ H)
+    (B C : Finset A) (b₁ b₂ : A)
+    (hne : (b₁ : A ⧸ H) ≠ (b₂ : A ⧸ H))
+    (hbound :
+      (dgmSingleSliceSaturation H L B b₁).card +
+        (dgmSingleSliceSaturation H L C b₁).card +
+        (dgmSingleSliceSaturation H L B b₂).card +
+        (dgmSingleSliceSaturation H L C b₂).card +
+        (dgmMissingPairCoset H L B C b₁ ∪
+          dgmMissingPairCoset H L B C b₂).card + Nat.card L ≤
+          2 * Nat.card H) :
+    False := by
+  have hcover₁ := card_cosetFiber_le_missing_add_singleSaturations
+    H L hLH B C b₁
+  have hcover₂ := card_cosetFiber_le_missing_add_singleSaturations
+    H L hLH B C b₂
+  have hunion :
+      (dgmMissingPairCoset H L B C b₁ ∪
+        dgmMissingPairCoset H L B C b₂).card =
+      (dgmMissingPairCoset H L B C b₁).card +
+        (dgmMissingPairCoset H L B C b₂).card :=
+    Finset.card_union_of_disjoint
+      (disjoint_dgmMissingPairCoset_of_ne H L B C b₁ b₂ hne)
+  have hLpos : 0 < Nat.card L := Nat.card_pos
+  rw [hunion] at hbound
+  omega
+
+/-- Concrete `(4)+(5)` endpoint for the crossed construction.  The first
+pair uses `B∩(b₁+H)` with `C∩(b₂+H)` and the second uses the crossed pair;
+their sum is exactly the four terms in the final two coset covers. -/
+theorem dgmCrossedFourBoundsContradiction
+    [Fintype A] (H L H₁ H₂ : AddSubgroup A) (hLH : L ≤ H)
+    (B C : Finset A) (b₁ b₂ : A)
+    (hne : (b₁ : A ⧸ H) ≠ (b₂ : A ⧸ H))
+    (hh₁ : Nat.card H₁ ≤
+      (dgmSingleSliceSaturation H L B b₁).card +
+        (dgmSingleSliceSaturation H L C b₂).card)
+    (hh₂ : Nat.card H₂ ≤
+      (dgmSingleSliceSaturation H L B b₂).card +
+        (dgmSingleSliceSaturation H L C b₁).card)
+    (h4₁ :
+      (dgmSingleSliceSaturation H L B b₁).card +
+          (dgmSingleSliceSaturation H L C b₂).card + Nat.card H₁ ≤
+        Nat.card H)
+    (h4₂ :
+      (dgmSingleSliceSaturation H L B b₂).card +
+          (dgmSingleSliceSaturation H L C b₁).card + Nat.card H₂ ≤
+        Nat.card H)
+    (h5₁ :
+      ((dgmSingleSliceSaturation H L B b₁).card +
+          (dgmSingleSliceSaturation H L C b₂).card) - Nat.card H₁ +
+          Nat.card L +
+          (dgmMissingPairCoset H L B C b₁ ∪
+            dgmMissingPairCoset H L B C b₂).card ≤ Nat.card H)
+    (h5₂ :
+      ((dgmSingleSliceSaturation H L B b₂).card +
+          (dgmSingleSliceSaturation H L C b₁).card) - Nat.card H₂ +
+          Nat.card L +
+          (dgmMissingPairCoset H L B C b₁ ∪
+            dgmMissingPairCoset H L B C b₂).card ≤ Nat.card H) :
+    False := by
+  let s₁ := (dgmSingleSliceSaturation H L B b₁).card +
+    (dgmSingleSliceSaturation H L C b₂).card
+  let s₂ := (dgmSingleSliceSaturation H L B b₂).card +
+    (dgmSingleSliceSaturation H L C b₁).card
+  let m := (dgmMissingPairCoset H L B C b₁ ∪
+    dgmMissingPairCoset H L B C b₂).card
+  have hbound' := dgmFourBounds_extra_le_two_mul
+    (Nat.card H) s₁ s₂ (Nat.card H₁) (Nat.card H₂) (Nat.card L) m
+    (by simpa [s₁] using hh₁) (by simpa [s₂] using hh₂)
+    (by simpa [s₁] using h4₁) (by simpa [s₂] using h4₂)
+    (by simpa [s₁, m] using h5₁) (by simpa [s₂, m] using h5₂)
+  apply dgmFinalCosetCoverContradiction_of_extra_le
+    H L hLH B C b₁ b₂ hne
+  dsimp only [s₁, s₂, m] at hbound'
+  omega
+
 /-- A translation outside the stabilizer of a nonempty finite set moves
 some member of the set outside it. -/
 theorem exists_mem_add_not_mem_of_not_mem_addStab
@@ -1959,6 +2054,105 @@ theorem quotientLayerMultiplicity_le_map_of_le
         · rw [quotientLayerMultiplicity_cons_of_not_mem H D P _ hmapD]
           exact ih
 
+/-- Elementary monotonicity of a capped two-step gain.  The extra incidence
+parameter is at most two because it comes from the intersection and union
+layers. -/
+theorem dgmNatTwoGain_mono
+    (k t₁ t₂ s₁ s₂ : ℕ) (ht : t₁ ≤ t₂) (hs : s₁ ≤ s₂)
+    (hs₂ : s₂ ≤ 2) :
+    min (k + 2) (s₁ + t₁) - min k t₁ ≤
+      min (k + 2) (s₂ + t₂) - min k t₂ := by
+  omega
+
+/-- Every fine quotient-coset contribution is bounded by the contribution
+of the coarse quotient coset containing it. -/
+theorem dgmXiLocalTwoGain_le_map_of_le
+    (L H : AddSubgroup A) (hLH : L ≤ H)
+    (B C : Finset A) (P : List (Finset A)) (k : ℕ) (q : A ⧸ L) :
+    dgmXiLocalTwoGain L B C P k q ≤
+      dgmXiLocalTwoGain H B C P k
+        (dgmQuotientRefinementMap L H hLH q) := by
+  classical
+  let r := dgmQuotientRefinementMap L H hLH q
+  have htail := quotientLayerMultiplicity_le_map_of_le L H hLH P q
+  change quotientLayerMultiplicity L P q ≤
+      quotientLayerMultiplicity H P r at htail
+  have hinterImp : q ∈ quotientLayer L (B ∩ C) →
+      r ∈ quotientLayer H (B ∩ C) := by
+    exact quotientLayer_mem_map_of_le L H hLH (B ∩ C)
+  have hunionImp : q ∈ quotientLayer L (B ∪ C) →
+      r ∈ quotientLayer H (B ∪ C) := by
+    exact quotientLayer_mem_map_of_le L H hLH (B ∪ C)
+  have hinterUnionL : q ∈ quotientLayer L (B ∩ C) →
+      q ∈ quotientLayer L (B ∪ C) := by
+    intro hq
+    obtain ⟨x, hx, rfl⟩ := (mem_quotientLayer_iff L (B ∩ C) q).1 hq
+    exact (mem_quotientLayer_iff L (B ∪ C) _).2
+      ⟨x, Finset.mem_union_left C (Finset.mem_inter.mp hx).1, rfl⟩
+  have hinterUnionH : r ∈ quotientLayer H (B ∩ C) →
+      r ∈ quotientLayer H (B ∪ C) := by
+    intro hr
+    obtain ⟨x, hx, hxr⟩ := (mem_quotientLayer_iff H (B ∩ C) r).1 hr
+    exact (mem_quotientLayer_iff H (B ∪ C) _).2
+      ⟨x, Finset.mem_union_left C (Finset.mem_inter.mp hx).1, hxr⟩
+  by_cases hiL : q ∈ quotientLayer L (B ∩ C)
+  · have hiH := hinterImp hiL
+    have huL := hinterUnionL hiL
+    have huH := hinterUnionH hiH
+    unfold dgmXiLocalTwoGain dgmInterUnionLayers
+    rw [quotientLayerMultiplicity_cons_of_mem L (B ∩ C) ((B ∪ C) :: P) q hiL,
+      quotientLayerMultiplicity_cons_of_mem L (B ∪ C) P q huL,
+      quotientLayerMultiplicity_cons_of_mem H (B ∩ C) ((B ∪ C) :: P) r hiH,
+      quotientLayerMultiplicity_cons_of_mem H (B ∪ C) P r huH]
+    rw [show 1 + (1 + quotientLayerMultiplicity L P q) =
+          2 + quotientLayerMultiplicity L P q by omega,
+      show 1 + (1 + quotientLayerMultiplicity H P r) =
+          2 + quotientLayerMultiplicity H P r by omega]
+    simpa [r] using
+      dgmNatTwoGain_mono k _ _ 2 2 htail (by omega) (by omega)
+  · have hiH_or := Classical.em (r ∈ quotientLayer H (B ∩ C))
+    rcases hiH_or with hiH | hiH
+    · have huH := hinterUnionH hiH
+      unfold dgmXiLocalTwoGain dgmInterUnionLayers
+      rw [quotientLayerMultiplicity_cons_of_not_mem L (B ∩ C) ((B ∪ C) :: P) q hiL,
+        quotientLayerMultiplicity_cons_of_mem H (B ∩ C) ((B ∪ C) :: P) r hiH,
+        quotientLayerMultiplicity_cons_of_mem H (B ∪ C) P r huH]
+      by_cases huL : q ∈ quotientLayer L (B ∪ C)
+      · rw [quotientLayerMultiplicity_cons_of_mem L (B ∪ C) P q huL]
+        rw [show 1 + (1 + quotientLayerMultiplicity H P r) =
+            2 + quotientLayerMultiplicity H P r by omega]
+        simpa [r] using
+          dgmNatTwoGain_mono k _ _ 1 2 htail (by omega) (by omega)
+      · rw [quotientLayerMultiplicity_cons_of_not_mem L (B ∪ C) P q huL]
+        rw [show 1 + (1 + quotientLayerMultiplicity H P r) =
+            2 + quotientLayerMultiplicity H P r by omega]
+        simpa [r] using
+          dgmNatTwoGain_mono k _ _ 0 2 htail (by omega) (by omega)
+    · by_cases huL : q ∈ quotientLayer L (B ∪ C)
+      · have huH := hunionImp huL
+        unfold dgmXiLocalTwoGain dgmInterUnionLayers
+        rw [quotientLayerMultiplicity_cons_of_not_mem L (B ∩ C) ((B ∪ C) :: P) q hiL,
+          quotientLayerMultiplicity_cons_of_mem L (B ∪ C) P q huL,
+          quotientLayerMultiplicity_cons_of_not_mem H (B ∩ C) ((B ∪ C) :: P) r hiH,
+          quotientLayerMultiplicity_cons_of_mem H (B ∪ C) P r huH]
+        simpa [r] using
+          dgmNatTwoGain_mono k _ _ 1 1 htail (by omega) (by omega)
+      · by_cases huH : r ∈ quotientLayer H (B ∪ C)
+        · unfold dgmXiLocalTwoGain dgmInterUnionLayers
+          rw [quotientLayerMultiplicity_cons_of_not_mem L (B ∩ C) ((B ∪ C) :: P) q hiL,
+            quotientLayerMultiplicity_cons_of_not_mem L (B ∪ C) P q huL,
+            quotientLayerMultiplicity_cons_of_not_mem H (B ∩ C) ((B ∪ C) :: P) r hiH,
+            quotientLayerMultiplicity_cons_of_mem H (B ∪ C) P r huH]
+          simpa [r] using
+            dgmNatTwoGain_mono k _ _ 0 1 htail (by omega) (by omega)
+        · unfold dgmXiLocalTwoGain dgmInterUnionLayers
+          rw [quotientLayerMultiplicity_cons_of_not_mem L (B ∩ C) ((B ∪ C) :: P) q hiL,
+            quotientLayerMultiplicity_cons_of_not_mem L (B ∪ C) P q huL,
+            quotientLayerMultiplicity_cons_of_not_mem H (B ∩ C) ((B ∪ C) :: P) r hiH,
+            quotientLayerMultiplicity_cons_of_not_mem H (B ∪ C) P r huH]
+          simpa [r] using
+            dgmNatTwoGain_mono k _ _ 0 0 htail (by omega) (by omega)
+
 /-- The exact local hypotheses isolated in the source proof for either
 exceptional `H`-coset: the intersection layer misses it, the tail contributes
 at most `k` incidences, and the union layer hits it.  These are later derived
@@ -2015,6 +2209,410 @@ theorem dgmXiLocalTwoGain_eq_indicator_of_refines_exceptional
   · rw [quotientLayerMultiplicity_cons_of_not_mem L (B ∪ C) P q hunionL,
       if_neg hunionL]
     omega
+
+/-- The fine quotient cosets lying over one coarse quotient coset. -/
+noncomputable def dgmQuotientRefinementFiber
+    (L H : AddSubgroup A) [Fintype (A ⧸ L)] (hLH : L ≤ H)
+    (r : A ⧸ H) : Finset (A ⧸ L) := by
+  classical
+  exact Finset.univ.filter fun q ↦ dgmQuotientRefinementMap L H hLH q = r
+
+@[simp]
+theorem mem_dgmQuotientRefinementFiber_iff
+    (L H : AddSubgroup A) [Fintype (A ⧸ L)] (hLH : L ≤ H)
+    (r : A ⧸ H) (q : A ⧸ L) :
+    q ∈ dgmQuotientRefinementFiber L H hLH r ↔
+      dgmQuotientRefinementMap L H hLH q = r := by
+  classical
+  simp [dgmQuotientRefinementFiber]
+
+/-- One `L`-fiber in an `L`-saturated finite set has exactly `|L|` points. -/
+theorem card_filter_add_dgmSubgroupFinset_eq
+    [Fintype A] (L : AddSubgroup A) [DecidableEq (A ⧸ L)]
+    (S : Finset A) (q : A ⧸ L) (hq : q ∈ quotientLayer L S) :
+    ((S + dgmSubgroupFinset L).filter fun (y : A) ↦ (y : A ⧸ L) = q).card =
+      Nat.card L := by
+  classical
+  obtain ⟨x, hxS, hxq⟩ := (mem_quotientLayer_iff L S q).1 hq
+  have heq :
+      (S + dgmSubgroupFinset L).filter (fun (y : A) ↦ (y : A ⧸ L) = q) =
+        dgmCosetFiber L x := by
+    ext y
+    constructor
+    · intro hy
+      have hyq : (y : A ⧸ L) = q := (Finset.mem_filter.mp hy).2
+      exact (mem_dgmCosetFiber_iff L x y).2 (hyq.trans hxq.symm)
+    · intro hy
+      have hyx := (mem_dgmCosetFiber_iff L x y).1 hy
+      have hsub : y - x ∈ L := QuotientAddGroup.eq_iff_sub_mem.mp hyx
+      have hadd : y ∈ S + dgmSubgroupFinset L := by
+        exact Finset.mem_add.mpr
+          ⟨x, hxS, y - x, (mem_dgmSubgroupFinset_iff L _).2 hsub, by abel⟩
+      exact Finset.mem_filter.mpr ⟨hadd, hyx.trans hxq⟩
+  rw [heq, card_dgmCosetFiber]
+
+/-- Saturating a finite set by `L` has one full `L`-coset for every quotient
+value met by the set. -/
+theorem card_add_dgmSubgroupFinset_eq
+    [Fintype A] (L : AddSubgroup A) [Fintype (A ⧸ L)]
+    [DecidableEq (A ⧸ L)] (S : Finset A) :
+    (S + dgmSubgroupFinset L).card =
+      Nat.card L * (quotientLayer L S).card := by
+  classical
+  have himage : ∀ y ∈ S + dgmSubgroupFinset L,
+      (y : A ⧸ L) ∈ quotientLayer L S := by
+    intro y hy
+    obtain ⟨x, hxS, l, hl, rfl⟩ := Finset.mem_add.mp hy
+    apply (mem_quotientLayer_iff L S _).2
+    refine ⟨x, hxS, ?_⟩
+    rw [show ((x + l : A) : A ⧸ L) = (x : A ⧸ L) + (l : A ⧸ L) by rfl,
+      (QuotientAddGroup.eq_zero_iff l).2
+        ((mem_dgmSubgroupFinset_iff L l).1 hl), add_zero]
+  have hmaps : Set.MapsTo (fun (y : A) ↦ (y : A ⧸ L))
+      (↑(S + dgmSubgroupFinset L) : Set A)
+      (↑(quotientLayer L S) : Set (A ⧸ L)) := by
+    intro y hy
+    exact himage y hy
+  have hfiber := Finset.card_eq_sum_card_fiberwise
+    (s := S + dgmSubgroupFinset L) (t := quotientLayer L S)
+    (f := fun (y : A) ↦ (y : A ⧸ L)) hmaps
+  calc
+    (S + dgmSubgroupFinset L).card =
+        ∑ q ∈ quotientLayer L S,
+          ((S + dgmSubgroupFinset L).filter
+            fun (y : A) ↦ (y : A ⧸ L) = q).card := hfiber
+    _ = ∑ _q ∈ quotientLayer L S, Nat.card L := by
+      apply Finset.sum_congr rfl
+      intro q hq
+      exact card_filter_add_dgmSubgroupFinset_eq L S q hq
+    _ = Nat.card L * (quotientLayer L S).card := by
+      simp [Nat.mul_comm]
+
+/-- Within a fixed coarse `H`-coset, the fine quotient values met by `B∪C`
+are exactly those met by the union of the two literal `H`-slices. -/
+theorem refinementFiber_inter_quotientLayer_union_eq
+    [Fintype A] (L H : AddSubgroup A) [Fintype (A ⧸ L)]
+    [DecidableEq (A ⧸ L)] (hLH : L ≤ H)
+    (B C : Finset A) (b : A) :
+    dgmQuotientRefinementFiber L H hLH (b : A ⧸ H) ∩
+        quotientLayer L (B ∪ C) =
+      quotientLayer L (dgmCosetSlice H B b ∪ dgmCosetSlice H C b) := by
+  classical
+  ext q
+  constructor
+  · intro hq
+    have hfiber := (mem_dgmQuotientRefinementFiber_iff
+      L H hLH (b : A ⧸ H) q).1 (Finset.mem_inter.mp hq).1
+    obtain ⟨x, hx, hxq⟩ := (mem_quotientLayer_iff L (B ∪ C) q).1
+      (Finset.mem_inter.mp hq).2
+    have hxH : (x : A ⧸ H) = (b : A ⧸ H) := by
+      rw [← hfiber, ← hxq]
+      rfl
+    apply (mem_quotientLayer_iff L _ q).2
+    refine ⟨x, ?_, hxq⟩
+    rcases Finset.mem_union.mp hx with hxB | hxC
+    · exact Finset.mem_union_left _
+        ((mem_dgmCosetSlice_iff H B b x).2 ⟨hxB, hxH⟩)
+    · exact Finset.mem_union_right _
+        ((mem_dgmCosetSlice_iff H C b x).2 ⟨hxC, hxH⟩)
+  · intro hq
+    obtain ⟨x, hx, hxq⟩ := (mem_quotientLayer_iff L _ q).1 hq
+    have hxUnion : x ∈ B ∪ C := by
+      rcases Finset.mem_union.mp hx with hxB | hxC
+      · exact Finset.mem_union_left _
+          ((mem_dgmCosetSlice_iff H B b x).1 hxB).1
+      · exact Finset.mem_union_right _
+          ((mem_dgmCosetSlice_iff H C b x).1 hxC).1
+    have hxH : (x : A ⧸ H) = (b : A ⧸ H) := by
+      rcases Finset.mem_union.mp hx with hxB | hxC
+      · exact ((mem_dgmCosetSlice_iff H B b x).1 hxB).2
+      · exact ((mem_dgmCosetSlice_iff H C b x).1 hxC).2
+    apply Finset.mem_inter.mpr
+    constructor
+    · apply (mem_dgmQuotientRefinementFiber_iff
+        L H hLH (b : A ⧸ H) q).2
+      rw [← hxq]
+      exact hxH
+    · exact (mem_quotientLayer_iff L (B ∪ C) q).2 ⟨x, hxUnion, hxq⟩
+
+/-- The weighted sum of fine local gains over an exceptional coarse coset is
+exactly the cardinality of the source proof's saturated pair of slices. -/
+theorem weighted_sum_localGain_refinementFiber_eq_pairSaturation
+    [Fintype A] (L H : AddSubgroup A) [Fintype (A ⧸ L)]
+    [DecidableEq (A ⧸ L)] (hLH : L ≤ H)
+    (B C : Finset A) (P : List (Finset A)) (k : ℕ) (b : A)
+    (hex : DGMXiExceptionalCoset H B C P k b) :
+    Nat.card L *
+        (∑ q ∈ dgmQuotientRefinementFiber L H hLH (b : A ⧸ H),
+          dgmXiLocalTwoGain L B C P k q) =
+      (dgmPairSliceSaturation H L B C b).card := by
+  classical
+  have hsum :
+      (∑ q ∈ dgmQuotientRefinementFiber L H hLH (b : A ⧸ H),
+          dgmXiLocalTwoGain L B C P k q) =
+        (dgmQuotientRefinementFiber L H hLH (b : A ⧸ H) ∩
+          quotientLayer L (B ∪ C)).card := by
+    calc
+      (∑ q ∈ dgmQuotientRefinementFiber L H hLH (b : A ⧸ H),
+          dgmXiLocalTwoGain L B C P k q) =
+          ∑ q ∈ dgmQuotientRefinementFiber L H hLH (b : A ⧸ H),
+            if q ∈ quotientLayer L (B ∪ C) then 1 else 0 := by
+              apply Finset.sum_congr rfl
+              intro q hq
+              exact dgmXiLocalTwoGain_eq_indicator_of_refines_exceptional
+                L H hLH B C P k b hex q
+                ((mem_dgmQuotientRefinementFiber_iff
+                  L H hLH (b : A ⧸ H) q).1 hq)
+      _ = _ := by
+        let F := dgmQuotientRefinementFiber L H hLH (b : A ⧸ H)
+        let U := quotientLayer L (B ∪ C)
+        have hbool : ∀ S : Finset (A ⧸ L),
+            (∑ q ∈ S, if q ∈ U then 1 else 0) = (S ∩ U).card := by
+          intro S
+          induction S using Finset.induction_on with
+          | empty => simp
+          | @insert a S ha ih =>
+              by_cases haU : a ∈ U
+              · simp [ha, haU, ih]
+              · simp [ha, haU, ih]
+        simpa [F, U] using hbool F
+  rw [hsum, refinementFiber_inter_quotientLayer_union_eq
+    L H hLH B C b]
+  rw [dgmPairSliceSaturation,
+    card_add_dgmSubgroupFinset_eq L
+      (dgmCosetSlice H B b ∪ dgmCosetSlice H C b)]
+
+/-- The refinement fiber over `b+H` is precisely the set of `L`-quotient
+values met by that literal `H`-coset. -/
+theorem dgmQuotientRefinementFiber_eq_quotientLayer_cosetFiber
+    [Fintype A] (L H : AddSubgroup A) [Fintype (A ⧸ L)]
+    [DecidableEq (A ⧸ L)] (hLH : L ≤ H) (b : A) :
+    dgmQuotientRefinementFiber L H hLH (b : A ⧸ H) =
+      quotientLayer L (dgmCosetFiber H b) := by
+  classical
+  ext q
+  constructor
+  · intro hq
+    induction q using QuotientAddGroup.induction_on with
+    | _ x =>
+      have hxH := (mem_dgmQuotientRefinementFiber_iff
+        L H hLH (b : A ⧸ H) (x : A ⧸ L)).1 hq
+      apply (mem_quotientLayer_iff L (dgmCosetFiber H b) _).2
+      exact ⟨x, (mem_dgmCosetFiber_iff H b x).2 hxH, rfl⟩
+  · intro hq
+    obtain ⟨x, hx, hxq⟩ :=
+      (mem_quotientLayer_iff L (dgmCosetFiber H b) q).1 hq
+    apply (mem_dgmQuotientRefinementFiber_iff
+      L H hLH (b : A ⧸ H) q).2
+    rw [← hxq]
+    exact (mem_dgmCosetFiber_iff H b x).1 hx
+
+/-- An `H`-coset is already saturated by every subgroup `L ≤ H`. -/
+theorem dgmCosetFiber_add_dgmSubgroupFinset_eq
+    [Fintype A] (L H : AddSubgroup A) (hLH : L ≤ H) (b : A) :
+    dgmCosetFiber H b + dgmSubgroupFinset L = dgmCosetFiber H b := by
+  classical
+  apply Finset.Subset.antisymm
+  · intro y hy
+    obtain ⟨x, hx, l, hl, rfl⟩ := Finset.mem_add.mp hy
+    have hxH := (mem_dgmCosetFiber_iff H b x).1 hx
+    have hlH : l ∈ H := hLH ((mem_dgmSubgroupFinset_iff L l).1 hl)
+    apply (mem_dgmCosetFiber_iff H b (x + l)).2
+    rw [show ((x + l : A) : A ⧸ H) = (x : A ⧸ H) + (l : A ⧸ H) by rfl,
+      (QuotientAddGroup.eq_zero_iff l).2 hlH, add_zero, hxH]
+  · intro y hy
+    exact Finset.mem_add.mpr
+      ⟨y, hy, 0, (mem_dgmSubgroupFinset_iff L 0).2 L.zero_mem, by simp⟩
+
+/-- Cardinality of one refinement fiber, in the weighted form used by the
+`Ξ` comparison. -/
+theorem natCard_mul_card_dgmQuotientRefinementFiber
+    [Fintype A] (L H : AddSubgroup A) [Fintype (A ⧸ L)]
+    [DecidableEq (A ⧸ L)] (hLH : L ≤ H) (b : A) :
+    Nat.card L *
+        (dgmQuotientRefinementFiber L H hLH (b : A ⧸ H)).card =
+      Nat.card H := by
+  have hcard := card_add_dgmSubgroupFinset_eq L (dgmCosetFiber H b)
+  rw [dgmCosetFiber_add_dgmSubgroupFinset_eq L H hLH b,
+    card_dgmCosetFiber,
+    ← dgmQuotientRefinementFiber_eq_quotientLayer_cosetFiber
+      L H hLH b] at hcard
+  exact hcard.symm
+
+/-- The ordinary (nonexceptional) refinement-fiber inequality: after
+weighting by subgroup cardinality, all fine local contributions fit under
+the single coarse contribution. -/
+theorem weighted_sum_localGain_refinementFiber_le
+    [Fintype A] (L H : AddSubgroup A) [Fintype (A ⧸ L)]
+    [DecidableEq (A ⧸ L)] (hLH : L ≤ H)
+    (B C : Finset A) (P : List (Finset A)) (k : ℕ) (b : A) :
+    Nat.card L *
+        (∑ q ∈ dgmQuotientRefinementFiber L H hLH (b : A ⧸ H),
+          dgmXiLocalTwoGain L B C P k q) ≤
+      Nat.card H * dgmXiLocalTwoGain H B C P k (b : A ⧸ H) := by
+  classical
+  let F := dgmQuotientRefinementFiber L H hLH (b : A ⧸ H)
+  let g := dgmXiLocalTwoGain H B C P k (b : A ⧸ H)
+  have hsum :
+      (∑ q ∈ F, dgmXiLocalTwoGain L B C P k q) ≤ F.card * g := by
+    calc
+      (∑ q ∈ F, dgmXiLocalTwoGain L B C P k q) ≤
+          ∑ _q ∈ F, g := by
+            apply Finset.sum_le_sum
+            intro q hq
+            have hle := dgmXiLocalTwoGain_le_map_of_le L H hLH B C P k q
+            have hmap := (mem_dgmQuotientRefinementFiber_iff
+              L H hLH (b : A ⧸ H) q).1 hq
+            rwa [hmap] at hle
+      _ = F.card * g := by simp
+  have hweighted := Nat.mul_le_mul_left (Nat.card L) hsum
+  have hfiber := natCard_mul_card_dgmQuotientRefinementFiber L H hLH b
+  dsimp only [F, g] at hweighted ⊢
+  rw [← Nat.mul_assoc, hfiber] at hweighted
+  exact hweighted
+
+/-- On an exceptional fiber the ordinary inequality has an exact deficit:
+the missing part of the coarse `H`-coset. -/
+theorem weighted_sum_localGain_add_missing_eq_of_exceptional
+    [Fintype A] (L H : AddSubgroup A) [Fintype (A ⧸ L)]
+    [DecidableEq (A ⧸ L)] (hLH : L ≤ H)
+    (B C : Finset A) (P : List (Finset A)) (k : ℕ) (b : A)
+    (hex : DGMXiExceptionalCoset H B C P k b) :
+    Nat.card L *
+        (∑ q ∈ dgmQuotientRefinementFiber L H hLH (b : A ⧸ H),
+          dgmXiLocalTwoGain L B C P k q) +
+        (dgmMissingPairCoset H L B C b).card =
+      Nat.card H * dgmXiLocalTwoGain H B C P k (b : A ⧸ H) := by
+  have hweighted := weighted_sum_localGain_refinementFiber_eq_pairSaturation
+    L H hLH B C P k b hex
+  have hpartition := card_missing_add_pairSaturation H L hLH B C b
+  have hcoarse := dgmXiLocalTwoGain_eq_one_of_exceptional H B C P k b hex
+  rw [hweighted, hcoarse, Nat.mul_one]
+  omega
+
+/-- The fine local-gain sum decomposes as the sum over refinement fibers. -/
+theorem sum_localGain_eq_sum_refinementFibers
+    (L H : AddSubgroup A) [Fintype (A ⧸ L)] [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ L)] [DecidableEq (A ⧸ H)] (hLH : L ≤ H)
+    (B C : Finset A) (P : List (Finset A)) (k : ℕ) :
+    (∑ q : A ⧸ L, dgmXiLocalTwoGain L B C P k q) =
+      ∑ r : A ⧸ H,
+        ∑ q ∈ dgmQuotientRefinementFiber L H hLH r,
+          dgmXiLocalTwoGain L B C P k q := by
+  classical
+  have h := Finset.sum_fiberwise
+    (Finset.univ : Finset (A ⧸ L))
+    (dgmQuotientRefinementMap L H hLH)
+    (fun q ↦ dgmXiLocalTwoGain L B C P k q)
+  convert h.symm using 1 <;>
+    simp [dgmQuotientRefinementFiber]
+  congr 1
+  ext r
+  congr 1
+  ext q
+  simp
+
+/-- The weighted two-layer `Ξ` gain is monotone under subgroup refinement. -/
+theorem weighted_dgmXiTwoGain_le_of_le
+    [Fintype A] (L H : AddSubgroup A)
+    [Fintype (A ⧸ L)] [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ L)] [DecidableEq (A ⧸ H)] (hLH : L ≤ H)
+    (B C : Finset A) (P : List (Finset A)) (k : ℕ) :
+    Nat.card L * dgmXiTwoGain L B C P k ≤
+      Nat.card H * dgmXiTwoGain H B C P k := by
+  rw [dgmXiTwoGain_eq_sum_localGain,
+    dgmXiTwoGain_eq_sum_localGain,
+    sum_localGain_eq_sum_refinementFibers L H hLH B C P k]
+  rw [Finset.mul_sum, Finset.mul_sum]
+  apply Finset.sum_le_sum
+  intro r _
+  induction r using QuotientAddGroup.induction_on with
+  | _ b =>
+    exact weighted_sum_localGain_refinementFiber_le
+      L H hLH B C P k b
+
+/-- The strict weighted `Ξ` claim on page 11 of the source proof.  The two
+exceptional coarse cosets contribute their literal missing sets, while every
+other refinement fiber uses ordinary weighted monotonicity. -/
+theorem weighted_dgmXiTwoGain_add_missingUnion_le
+    [Fintype A] (L H : AddSubgroup A)
+    [Fintype (A ⧸ L)] [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ L)] [DecidableEq (A ⧸ H)] (hLH : L ≤ H)
+    (B C : Finset A) (P : List (Finset A)) (k : ℕ) (b₁ b₂ : A)
+    (hne : (b₁ : A ⧸ H) ≠ (b₂ : A ⧸ H))
+    (hex₁ : DGMXiExceptionalCoset H B C P k b₁)
+    (hex₂ : DGMXiExceptionalCoset H B C P k b₂) :
+    Nat.card L * dgmXiTwoGain L B C P k +
+        (dgmMissingPairCoset H L B C b₁ ∪
+          dgmMissingPairCoset H L B C b₂).card ≤
+      Nat.card H * dgmXiTwoGain H B C P k := by
+  classical
+  let d₁ := (dgmMissingPairCoset H L B C b₁).card
+  let d₂ := (dgmMissingPairCoset H L B C b₂).card
+  let fine : A ⧸ H → ℕ := fun r ↦
+    Nat.card L *
+      (∑ q ∈ dgmQuotientRefinementFiber L H hLH r,
+        dgmXiLocalTwoGain L B C P k q)
+  let coarse : A ⧸ H → ℕ := fun r ↦
+    Nat.card H * dgmXiLocalTwoGain H B C P k r
+  let bonus : A ⧸ H → ℕ := fun r ↦
+    if r = (b₁ : A ⧸ H) then d₁
+    else if r = (b₂ : A ⧸ H) then d₂ else 0
+  have hpoint : ∀ r : A ⧸ H, fine r + bonus r ≤ coarse r := by
+    intro r
+    by_cases hr₁ : r = (b₁ : A ⧸ H)
+    · subst r
+      have hexact := weighted_sum_localGain_add_missing_eq_of_exceptional
+        L H hLH B C P k b₁ hex₁
+      simpa [fine, coarse, bonus, d₁] using hexact.le
+    · by_cases hr₂ : r = (b₂ : A ⧸ H)
+      · subst r
+        have hexact := weighted_sum_localGain_add_missing_eq_of_exceptional
+          L H hLH B C P k b₂ hex₂
+        simpa [fine, coarse, bonus, d₂, hne, hr₁] using hexact.le
+      · have hordinary : fine r ≤ coarse r := by
+          induction r using QuotientAddGroup.induction_on with
+          | _ b =>
+            exact weighted_sum_localGain_refinementFiber_le
+              L H hLH B C P k b
+        simpa [bonus, hr₁, hr₂] using hordinary
+  have hsum : (∑ r : A ⧸ H, (fine r + bonus r)) ≤
+      ∑ r : A ⧸ H, coarse r := by
+    exact Finset.sum_le_sum fun r _ ↦ hpoint r
+  have hbonus : (∑ r : A ⧸ H, bonus r) = d₁ + d₂ := by
+    have hpointBonus : ∀ r : A ⧸ H,
+        bonus r =
+          (if (b₁ : A ⧸ H) = r then d₁ else 0) +
+            (if (b₂ : A ⧸ H) = r then d₂ else 0) := by
+      intro r
+      by_cases hr₁ : r = (b₁ : A ⧸ H)
+      · subst r
+        simp [bonus, hne, Ne.symm hne]
+      · by_cases hr₂ : r = (b₂ : A ⧸ H)
+        · subst r
+          simp [bonus, hr₁, hne]
+        · simp [bonus, hr₁, hr₂, Ne.symm hr₁, Ne.symm hr₂]
+    calc
+      (∑ r : A ⧸ H, bonus r) =
+          ∑ r : A ⧸ H,
+            ((if (b₁ : A ⧸ H) = r then d₁ else 0) +
+              (if (b₂ : A ⧸ H) = r then d₂ else 0)) := by
+                apply Fintype.sum_congr
+                exact hpointBonus
+      _ = d₁ + d₂ := by
+        rw [Finset.sum_add_distrib, Fintype.sum_ite_eq,
+          Fintype.sum_ite_eq]
+  have hmissing :
+      (dgmMissingPairCoset H L B C b₁ ∪
+        dgmMissingPairCoset H L B C b₂).card = d₁ + d₂ := by
+    rw [Finset.card_union_of_disjoint
+      (disjoint_dgmMissingPairCoset_of_ne H L B C b₁ b₂ hne)]
+  rw [Finset.sum_add_distrib, hbonus] at hsum
+  rw [dgmXiTwoGain_eq_sum_localGain,
+    dgmXiTwoGain_eq_sum_localGain,
+    sum_localGain_eq_sum_refinementFibers L H hLH B C P k,
+    Finset.mul_sum, Finset.mul_sum, hmissing]
+  simpa [fine, coarse] using hsum
 
 /-- Source occurrences counted in one quotient coset. -/
 noncomputable def occurrenceQuotientMultiplicity
