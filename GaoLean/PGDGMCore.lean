@@ -177,6 +177,132 @@ inductive LayerSubsumChoice :
       b ∈ B → LayerSubsumChoice P n y →
       LayerSubsumChoice (B :: P) (n + 1) (b + y)
 
+namespace LayerSubsumChoice
+
+/-- The number of selected layers whose chosen value lies in a prescribed
+quotient coset.  This counts selected *layers*, as required by the pattern
+formalism in DeVos--Goddyn--Mohar, not raw element occurrences. -/
+def quotientMultiplicity (K : AddSubgroup A) [DecidableEq (A ⧸ K)] :
+    {P : List (Finset A)} → {n : ℕ} → {y : A} →
+      LayerSubsumChoice P n y → A ⧸ K → ℕ
+  | _, _, _, .zero _ => fun _ ↦ 0
+  | _, _, _, .skip h => quotientMultiplicity K h
+  | _, _, _, .take (b := b) _ h => fun q ↦
+      (if (b : A ⧸ K) = q then 1 else 0) +
+        quotientMultiplicity K h q
+
+/-- The quotient multiplicities of a proof-relevant choice sum to the exact
+number of selected layers. -/
+theorem sum_quotientMultiplicity [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    {P : List (Finset A)} {n : ℕ} {y : A}
+    (h : LayerSubsumChoice P n y) :
+    ∑ q : A ⧸ K, quotientMultiplicity K h q = n := by
+  classical
+  induction h with
+  | zero P => simp [quotientMultiplicity]
+  | skip h ih => simpa [quotientMultiplicity] using ih
+  | @take B P n b y hb h ih =>
+      simp only [quotientMultiplicity, Finset.sum_add_distrib, ih]
+      have hone : (∑ q : A ⧸ K,
+          if (b : A ⧸ K) = q then 1 else 0) = 1 := by
+        simpa [eq_comm]
+      rw [hone]
+      omega
+
+/-- Every proof-relevant choice contributes its indexed sum to the recursive
+exact-layer spectrum. -/
+theorem mem_layerSubsumSpectrum
+    {P : List (Finset A)} {n : ℕ} {y : A}
+    (h : LayerSubsumChoice P n y) : y ∈ layerSubsumSpectrum P n := by
+  induction h with
+  | zero P => simp
+  | @skip B P n y h ih =>
+      obtain rfl | n := n
+      · simpa using ih
+      · exact Finset.mem_union_left _ ih
+  | @take B P n b y hb h ih =>
+      exact Finset.mem_union_right _
+        (Finset.mem_add.mpr ⟨b, hb, y, ih, rfl⟩)
+
+/-- Transporting only the sum index of a choice does not alter its selected
+quotient-coset counts. -/
+theorem quotientMultiplicity_cast
+    {K : AddSubgroup A} [DecidableEq (A ⧸ K)]
+    {P : List (Finset A)} {n : ℕ} {y y' : A}
+    (e : y = y') (h : LayerSubsumChoice P n y) (q : A ⧸ K) :
+    quotientMultiplicity K (e ▸ h) q = quotientMultiplicity K h q := by
+  subst e
+  rfl
+
+end LayerSubsumChoice
+
+/-- A quotient-coset pattern of total weight `n`. -/
+structure QuotientPattern (K : AddSubgroup A) (n : ℕ)
+    [Fintype (A ⧸ K)] where
+  multiplicity : A ⧸ K → ℕ
+  weight_eq : ∑ q : A ⧸ K, multiplicity q = n
+
+instance (K : AddSubgroup A) (n : ℕ) [Fintype (A ⧸ K)] :
+    CoeFun (QuotientPattern K n) (fun _ ↦ A ⧸ K → ℕ) :=
+  ⟨QuotientPattern.multiplicity⟩
+
+/-- A choice realizes `μ` when its selected-layer count in every quotient
+coset is exactly prescribed by `μ`. -/
+def LayerSubsumChoice.RealizesPattern
+    {K : AddSubgroup A} {n : ℕ} [Fintype (A ⧸ K)]
+    [DecidableEq (A ⧸ K)]
+    {P : List (Finset A)} {y : A} (h : LayerSubsumChoice P n y)
+    (μ : QuotientPattern K n) : Prop :=
+  ∀ q : A ⧸ K, h.quotientMultiplicity K q = μ q
+
+/-- The sums of exact-layer choices which realize a fixed quotient pattern.
+This is the finite `Σ_μ(P)` of Theorem 3.1. -/
+noncomputable def patternSubsumSpectrum
+    {K : AddSubgroup A} {n : ℕ} [Fintype (A ⧸ K)]
+    [DecidableEq (A ⧸ K)]
+    (P : List (Finset A)) (μ : QuotientPattern K n) : Finset A := by
+  classical
+  exact (layerSubsumSpectrum P n).filter fun y ↦
+    Nonempty {h : LayerSubsumChoice P n y // h.RealizesPattern μ}
+
+@[simp]
+theorem mem_patternSubsumSpectrum_iff
+    {K : AddSubgroup A} {n : ℕ} [Fintype (A ⧸ K)]
+    [DecidableEq (A ⧸ K)]
+    (P : List (Finset A)) (μ : QuotientPattern K n) (y : A) :
+    y ∈ patternSubsumSpectrum P μ ↔
+      Nonempty {h : LayerSubsumChoice P n y // h.RealizesPattern μ} := by
+  classical
+  constructor
+  · intro hy
+    exact (Finset.mem_filter.mp hy).2
+  · intro hy
+    refine Finset.mem_filter.mpr ⟨?_, hy⟩
+    obtain ⟨⟨h, _⟩⟩ := hy
+    exact h.mem_layerSubsumSpectrum
+
+theorem patternSubsumSpectrum_subset_layerSubsumSpectrum
+    {K : AddSubgroup A} {n : ℕ} [Fintype (A ⧸ K)]
+    [DecidableEq (A ⧸ K)]
+    (P : List (Finset A)) (μ : QuotientPattern K n) :
+    patternSubsumSpectrum P μ ⊆ layerSubsumSpectrum P n := by
+  classical
+  intro y hy
+  exact (Finset.mem_filter.mp hy).1
+
+theorem patternSubsumSpectrum_nonempty_iff
+    {K : AddSubgroup A} {n : ℕ} [Fintype (A ⧸ K)]
+    [DecidableEq (A ⧸ K)]
+    (P : List (Finset A)) (μ : QuotientPattern K n) :
+    (patternSubsumSpectrum P μ).Nonempty ↔
+      ∃ y : A, Nonempty
+        {h : LayerSubsumChoice P n y // h.RealizesPattern μ} := by
+  constructor
+  · rintro ⟨y, hy⟩
+    exact ⟨y, (mem_patternSubsumSpectrum_iff P μ y).1 hy⟩
+  · rintro ⟨y, hy⟩
+    exact ⟨y, (mem_patternSubsumSpectrum_iff P μ y).2 hy⟩
+
 /-- The proof-relevant recursive choices represent exactly the elements of
 `layerSubsumSpectrum`. -/
 theorem nonempty_layerSubsumChoice_iff_mem
@@ -265,6 +391,245 @@ theorem layerSubsumSpectrum_inter_union_subset
           (Finset.mem_add.mpr ⟨x, hxB, z + t,
             Finset.mem_union_right _
               (Finset.mem_add.mpr ⟨z, hzC, t, ht, rfl⟩), rfl⟩)
+
+/-- Proof-relevant form of the intersection--union transform: a realizing
+choice for the transformed first two layers can be reassigned to the original
+two layers without changing its quotient-coset pattern. -/
+theorem exists_interUnionChoice_realizing_original
+    {K : AddSubgroup A} [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (B C : Finset A) (P : List (Finset A)) {n : ℕ} {y : A}
+    (μ : QuotientPattern K n)
+    (h : LayerSubsumChoice ((B ∩ C) :: (B ∪ C) :: P) n y)
+    (hμ : h.RealizesPattern μ) :
+    ∃ h' : LayerSubsumChoice (B :: C :: P) n y,
+      h'.RealizesPattern μ := by
+  classical
+  cases h with
+  | zero Q =>
+      exact ⟨LayerSubsumChoice.zero (B :: C :: P), by
+        simpa [LayerSubsumChoice.RealizesPattern,
+          LayerSubsumChoice.quotientMultiplicity] using hμ⟩
+  | @skip D Q k z htail =>
+      cases htail with
+      | zero Q =>
+          exact ⟨LayerSubsumChoice.zero (B :: C :: P), by
+            simpa [LayerSubsumChoice.RealizesPattern,
+              LayerSubsumChoice.quotientMultiplicity] using hμ⟩
+      | @skip E R k z ht =>
+          refine ⟨LayerSubsumChoice.skip (B := B)
+            (LayerSubsumChoice.skip (B := C) ht), ?_⟩
+          simpa [LayerSubsumChoice.RealizesPattern,
+            LayerSubsumChoice.quotientMultiplicity] using hμ
+      | @take E R k z t hz ht =>
+          rcases Finset.mem_union.mp hz with hzB | hzC
+          · refine ⟨LayerSubsumChoice.take (B := B) hzB
+              (LayerSubsumChoice.skip (B := C) ht), ?_⟩
+            simpa [LayerSubsumChoice.RealizesPattern,
+              LayerSubsumChoice.quotientMultiplicity] using hμ
+          · refine ⟨LayerSubsumChoice.skip (B := B)
+              (LayerSubsumChoice.take (B := C) hzC ht), ?_⟩
+            simpa [LayerSubsumChoice.RealizesPattern,
+              LayerSubsumChoice.quotientMultiplicity] using hμ
+  | @take D Q k x s hx htail =>
+      have hxB : x ∈ B := (Finset.mem_inter.mp hx).1
+      have hxC : x ∈ C := (Finset.mem_inter.mp hx).2
+      cases htail with
+      | zero Q =>
+          refine ⟨LayerSubsumChoice.take (B := B) hxB
+            (LayerSubsumChoice.skip (B := C)
+              (LayerSubsumChoice.zero P)), ?_⟩
+          simpa [LayerSubsumChoice.RealizesPattern,
+            LayerSubsumChoice.quotientMultiplicity] using hμ
+      | @skip E R k s ht =>
+          refine ⟨LayerSubsumChoice.take (B := B) hxB
+            (LayerSubsumChoice.skip (B := C) ht), ?_⟩
+          simpa [LayerSubsumChoice.RealizesPattern,
+            LayerSubsumChoice.quotientMultiplicity] using hμ
+      | @take E R k z t hz ht =>
+          rcases Finset.mem_union.mp hz with hzB | hzC
+          · let hout := LayerSubsumChoice.take (B := B) hzB
+                (LayerSubsumChoice.take (B := C) hxC ht)
+            have houtMult (q : A ⧸ K) :
+                LayerSubsumChoice.quotientMultiplicity K hout q =
+                  (if (z : A ⧸ K) = q then 1 else 0) +
+                    ((if (x : A ⧸ K) = q then 1 else 0) +
+                      LayerSubsumChoice.quotientMultiplicity K ht q) := by
+              rfl
+            have hsum : z + (x + t) = x + (z + t) := by ac_rfl
+            refine ⟨hsum ▸ hout, ?_⟩
+            intro q
+            rw [LayerSubsumChoice.quotientMultiplicity_cast]
+            rw [houtMult]
+            have hq := hμ q
+            simp only [LayerSubsumChoice.quotientMultiplicity] at hq ⊢
+            omega
+          · refine ⟨LayerSubsumChoice.take (B := B) hxB
+              (LayerSubsumChoice.take (B := C) hzC ht), ?_⟩
+            simpa [LayerSubsumChoice.RealizesPattern,
+              LayerSubsumChoice.quotientMultiplicity] using hμ
+
+/-- Therefore the intersection--union transform also preserves inclusion for
+every fixed quotient pattern, not only for the unrestricted exact spectrum. -/
+theorem patternSubsumSpectrum_inter_union_subset
+    {K : AddSubgroup A} [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (B C : Finset A) (P : List (Finset A)) {n : ℕ}
+    (μ : QuotientPattern K n) :
+    patternSubsumSpectrum ((B ∩ C) :: (B ∪ C) :: P) μ ⊆
+      patternSubsumSpectrum (B :: C :: P) μ := by
+  intro y hy
+  obtain ⟨⟨h, hμ⟩⟩ := (mem_patternSubsumSpectrum_iff _ μ y).1 hy
+  obtain ⟨h', hμ'⟩ :=
+    exists_interUnionChoice_realizing_original B C P μ h hμ
+  exact (mem_patternSubsumSpectrum_iff _ μ y).2 ⟨⟨h', hμ'⟩⟩
+
+/-- The canonical two-layer intersection--union transform used in the
+minimal-counterexample proof. -/
+def dgmInterUnionLayers (B C : Finset A) (P : List (Finset A)) :
+    List (Finset A) := (B ∩ C) :: (B ∪ C) :: P
+
+/-- Total cardinality and square-cardinality are the second and third
+coordinates of the faithful inner well-founded measure. -/
+def dgmTotalLayerCard (P : List (Finset A)) : ℕ :=
+  (P.map Finset.card).sum
+
+def dgmLayerSquareSum (P : List (Finset A)) : ℕ :=
+  (P.map fun B ↦ B.card ^ 2).sum
+
+def dgmLayerSquareDefect [Fintype A] (P : List (Finset A)) : ℕ :=
+  P.length * (Fintype.card A) ^ 2 - dgmLayerSquareSum P
+
+@[simp]
+theorem length_dgmInterUnionLayers (B C : Finset A) (P : List (Finset A)) :
+    (dgmInterUnionLayers B C P).length = (B :: C :: P).length := by
+  simp [dgmInterUnionLayers]
+
+theorem dgmInterUnionLayers_nonempty
+    (B C : Finset A) (P : List (Finset A))
+    (hInter : (B ∩ C).Nonempty) (hP : IsNonemptySetPartition P) :
+    IsNonemptySetPartition (dgmInterUnionLayers B C P) := by
+  intro D hD
+  simp only [dgmInterUnionLayers, List.mem_cons] at hD
+  rcases hD with rfl | rfl | hDP
+  · exact hInter
+  · exact hInter.mono Finset.inter_subset_union
+  · exact hP D hDP
+
+theorem dgmTotalLayerCard_inter_union
+    (B C : Finset A) (P : List (Finset A)) :
+    dgmTotalLayerCard (dgmInterUnionLayers B C P) =
+      dgmTotalLayerCard (B :: C :: P) := by
+  have hcard := Finset.card_inter_add_card_union B C
+  simp only [dgmTotalLayerCard, dgmInterUnionLayers, List.map_cons,
+    List.sum_cons]
+  omega
+
+/-- If the two layers are incomparable, intersection--union strictly
+increases the sum of squared layer cardinalities. -/
+theorem dgmLayerSquareSum_lt_inter_union
+    (B C : Finset A) (P : List (Finset A))
+    (hBC : ¬ B ⊆ C) (hCB : ¬ C ⊆ B) :
+    dgmLayerSquareSum (B :: C :: P) <
+      dgmLayerSquareSum (dgmInterUnionLayers B C P) := by
+  have hInterB : (B ∩ C).card < B.card := by
+    apply Finset.card_lt_card
+    refine ⟨Finset.inter_subset_left, ?_⟩
+    intro hBInter
+    exact hBC (hBInter.trans Finset.inter_subset_right)
+  have hInterC : (B ∩ C).card < C.card := by
+    apply Finset.card_lt_card
+    refine ⟨Finset.inter_subset_right, ?_⟩
+    intro hCInter
+    exact hCB (hCInter.trans Finset.inter_subset_left)
+  have hcard := Finset.card_inter_add_card_union B C
+  simp only [dgmLayerSquareSum, dgmInterUnionLayers, List.map_cons,
+    List.sum_cons]
+  nlinarith
+
+theorem dgmLayerSquareSum_le_bound [Fintype A]
+    (P : List (Finset A)) :
+    dgmLayerSquareSum P ≤ P.length * (Fintype.card A) ^ 2 := by
+  induction P with
+  | nil => simp [dgmLayerSquareSum]
+  | cons B P ih =>
+      have hcard : B.card ≤ Fintype.card A := by
+        simpa using Finset.card_le_univ B
+      have hsquare : B.card ^ 2 ≤ (Fintype.card A) ^ 2 := by
+        exact Nat.pow_le_pow_left hcard 2
+      simp only [dgmLayerSquareSum, List.map_cons, List.sum_cons,
+        List.length_cons]
+      calc
+        B.card ^ 2 + (List.map (fun B ↦ B.card ^ 2) P).sum ≤
+            (Fintype.card A) ^ 2 + P.length * (Fintype.card A) ^ 2 :=
+          Nat.add_le_add hsquare ih
+        _ = (P.length + 1) * (Fintype.card A) ^ 2 := by ring
+
+/-- Thus the bounded square defect, the third lexicographic coordinate,
+strictly decreases under an incomparable intersection--union transform. -/
+theorem dgmLayerSquareDefect_inter_union_lt [Fintype A]
+    (B C : Finset A) (P : List (Finset A))
+    (hBC : ¬ B ⊆ C) (hCB : ¬ C ⊆ B) :
+    dgmLayerSquareDefect (dgmInterUnionLayers B C P) <
+      dgmLayerSquareDefect (B :: C :: P) := by
+  have hsquare := dgmLayerSquareSum_lt_inter_union B C P hBC hCB
+  have hbound := dgmLayerSquareSum_le_bound
+    (A := A) (dgmInterUnionLayers B C P)
+  have hlen := length_dgmInterUnionLayers B C P
+  unfold dgmLayerSquareDefect
+  rw [hlen] at hbound ⊢
+  omega
+
+/-- Nested products give a literal four-coordinate lexicographic measure:
+pattern-spectrum size, total layer cardinality, bounded square defect, and
+number of layers. -/
+abbrev DGMPatternInnerMeasure := ℕ × (ℕ × (ℕ × ℕ))
+
+abbrev DGMPatternInnerLt :
+    DGMPatternInnerMeasure → DGMPatternInnerMeasure → Prop :=
+  Prod.Lex (fun a b : ℕ ↦ a < b)
+    (Prod.Lex (fun a b : ℕ ↦ a < b)
+      (Prod.Lex (fun a b : ℕ ↦ a < b) (fun a b : ℕ ↦ a < b)))
+
+theorem dgmPatternInnerLt_wellFounded : WellFounded DGMPatternInnerLt :=
+  WellFounded.prod_lex wellFounded_lt
+    (WellFounded.prod_lex wellFounded_lt
+      (WellFounded.prod_lex wellFounded_lt wellFounded_lt))
+
+noncomputable def dgmPatternInnerMeasure
+    [Fintype A] {K : AddSubgroup A} {n : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (P : List (Finset A)) (μ : QuotientPattern K n) :
+    DGMPatternInnerMeasure :=
+  ((patternSubsumSpectrum P μ).card,
+    (dgmTotalLayerCard P, (dgmLayerSquareDefect P, P.length)))
+
+theorem dgmPatternInnerMeasure_inter_union_lt_of_card_lt
+    [Fintype A] {K : AddSubgroup A} {n : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (B C : Finset A) (P : List (Finset A)) (μ : QuotientPattern K n)
+    (hcard :
+      (patternSubsumSpectrum (dgmInterUnionLayers B C P) μ).card <
+        (patternSubsumSpectrum (B :: C :: P) μ).card) :
+    DGMPatternInnerLt
+      (dgmPatternInnerMeasure (dgmInterUnionLayers B C P) μ)
+      (dgmPatternInnerMeasure (B :: C :: P) μ) := by
+  exact Prod.Lex.left _ _ hcard
+
+theorem dgmPatternInnerMeasure_inter_union_lt_of_spectrum_eq
+    [Fintype A] {K : AddSubgroup A} {n : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (B C : Finset A) (P : List (Finset A)) (μ : QuotientPattern K n)
+    (hBC : ¬ B ⊆ C) (hCB : ¬ C ⊆ B)
+    (hspectrum :
+      patternSubsumSpectrum (dgmInterUnionLayers B C P) μ =
+        patternSubsumSpectrum (B :: C :: P) μ) :
+    DGMPatternInnerLt
+      (dgmPatternInnerMeasure (dgmInterUnionLayers B C P) μ)
+      (dgmPatternInnerMeasure (B :: C :: P) μ) := by
+  have htotal := dgmTotalLayerCard_inter_union B C P
+  have hdefect := dgmLayerSquareDefect_inter_union_lt B C P hBC hCB
+  unfold dgmPatternInnerMeasure
+  rw [hspectrum, htotal]
+  exact Prod.Lex.right _ (Prod.Lex.right _ (Prod.Lex.left _ _ hdefect))
 
 /-- A translation outside the stabilizer of a nonempty finite set moves
 some member of the set outside it. -/
@@ -685,6 +1050,17 @@ theorem rawLayerMultiplicity_pos_iff_mem_layerUnion
       · rw [rawLayerMultiplicity_cons_of_not_mem B P x hx, ih]
         simp [layerUnion, hx]
 
+/-- The intersection--union transform preserves, pointwise, the number of
+layers containing each group element.  This is the incidence half of the
+general DGM transform. -/
+theorem rawLayerMultiplicity_inter_union
+    (B C : Finset A) (P : List (Finset A)) (x : A) :
+    rawLayerMultiplicity ((B ∩ C) :: (B ∪ C) :: P) x =
+      rawLayerMultiplicity (B :: C :: P) x := by
+  classical
+  by_cases hxB : x ∈ B <;> by_cases hxC : x ∈ C <;>
+    simp [rawLayerMultiplicity, hxB, hxC, Nat.add_comm]
+
 /-- If `x` occurs in more than `n` layers, it can be appended to every
 exact-`n` layer sum: among the more than `n` layers containing `x`, at least
 one was not used by the given sum.  This is the augmentation step behind the
@@ -805,6 +1181,18 @@ theorem min_rawLayerMultiplicity_cons_succ
 noncomputable def rawDgmCappedMultiplicitySum
     [Fintype A] (P : List (Finset A)) (n : ℕ) : ℕ :=
   ∑ x : A, min n (rawLayerMultiplicity P x)
+
+/-- Consequently, the intersection--union transform preserves every capped
+incidence sum. -/
+theorem rawDgmCappedMultiplicitySum_inter_union
+    [Fintype A] (B C : Finset A) (P : List (Finset A)) (n : ℕ) :
+    rawDgmCappedMultiplicitySum ((B ∩ C) :: (B ∪ C) :: P) n =
+      rawDgmCappedMultiplicitySum (B :: C :: P) n := by
+  classical
+  unfold rawDgmCappedMultiplicitySum
+  apply Finset.sum_congr rfl
+  intro x _
+  rw [rawLayerMultiplicity_inter_union]
 
 /-- Total capped-multiplicity recurrence corresponding to
 `min_rawLayerMultiplicity_cons_succ`. -/

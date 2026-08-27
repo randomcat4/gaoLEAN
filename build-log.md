@@ -885,3 +885,25 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
 - This is an honest conditional checkpoint.  The general DGM
   intersection--union extension, ordinary Theorem E/2.5 induction, and signed
   Theorem 1.1 Steps 5--6 remain unproved.
+
+## 2026-08-27: Faithful DGM patterns and finite GMO maximization (M61)
+
+- Replaced the insufficient head/tail view of the DGM source argument by
+  proof-relevant quotient patterns with exact selected-layer multiplicities.
+  Intersection--union transport preserves realization counts and raw/capped
+  incidence, while the source-shaped four-coordinate inner measure has the
+  required strict-decrease lemmas.
+- Constructed occurrence-labelled setpartitions from arbitrary admissible
+  seeds and proved the finite replacement search space.  Three genuine finite
+  argmax layers now select sumset size, stabilizer quotient incidence, and
+  captured outside-core occurrences; the `N=1` periodic terminal branch is
+  complete.
+- Proved the literal signed DGM occurrence bound, quotient aperiodicity, and
+  the odd-order bridge from whole `{x,-x}` cosets to a repetition-preserving
+  labelled list in the subgroup.
+- Joint target build: 8707 jobs, exit 0.  Full `GaoLean` server build: 8753
+  jobs, exit 0.  Forbidden declarations remain absent and printed
+  dependencies use only `propext`, `Classical.choice`, and `Quot.sound`.
+- The manuscript theorem remains conditional.  The generalized DGM pattern
+  theorem, the full Theorem E iteration/Theorem 2.4--2.5 induction, and the
+  signed Davenport convolution/cardinality induction are still open.

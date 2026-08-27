@@ -2,8 +2,11 @@ import GaoLean.PGGMOPlusMinusSource
 import GaoLean.PGGMOTheorem21
 import GaoLean.PGDGMStructuralGap
 import GaoLean.PGDavenportBridge
+import GaoLean.PGDavenportConvolution
 import GaoLean.PGInduction
 import GaoLean.GAOARDihedralBlocks
+import GaoLean.PGFrontend
+import GaoLean.PGMiddleNonfull
 
 /-!
 # Theorem 1.1 induction boundary for the `{+1,-1}` GMO specialization
@@ -32,6 +35,70 @@ namespace GaoLean
 open scoped BigOperators Pointwise
 
 variable {A : Type*} [AddCommGroup A] [Fintype A]
+
+/-! ## Signed Davenport threshold mechanics -/
+
+/-- Exact occurrence-sensitive definition of the plus-minus Davenport
+constant, mirroring the ordinary exact-constant interface. -/
+def IsPlusMinusDavenportConstant
+    (A : Type*) [AddCommGroup A] (D : ℕ) : Prop :=
+  PlusMinusDavenportAtMost A D ∧
+    ∀ n : ℕ, n < D →
+      ∃ s : List A, s.length = n ∧ ¬HasNonemptyPlusMinusZeroSum s
+
+/-- A signed zero sum in a prefix remains a signed zero sum in the original
+labelled source. -/
+theorem hasNonemptyPlusMinusZeroSum_of_take
+    (s : List A) (N : ℕ) (hN : N ≤ s.length)
+    (hzero : HasNonemptyPlusMinusZeroSum (s.take N)) :
+    HasNonemptyPlusMinusZeroSum s := by
+  classical
+  rcases hzero with ⟨I, hIne, sign, hsum⟩
+  let emb : Occurrence (s.take N) ↪ Occurrence s :=
+    { toFun := fun i =>
+        ⟨i.1, lt_of_lt_of_le i.2
+          ((List.length_take_le N s).trans hN)⟩
+      inj' := by
+        intro i j hij
+        apply Fin.ext
+        exact congrArg (fun x : Occurrence s => x.val) hij }
+  let J : Selection s := I.map emb
+  let sign' : Occurrence s → PlusMinusSign := fun j =>
+    if hj : j.1 < (s.take N).length then sign ⟨j.1, hj⟩
+    else .positive
+  have hsign (i : Occurrence (s.take N)) : sign' (emb i) = sign i := by
+    have hlt : (emb i).1 < (s.take N).length := by
+      simpa [emb] using i.2
+    rw [show sign' (emb i) =
+        if hj : (emb i).1 < (s.take N).length then
+          sign ⟨(emb i).1, hj⟩ else .positive by rfl,
+      dif_pos hlt]
+    congr 1
+  have hvalue (i : Occurrence (s.take N)) :
+      occurrenceValue s (emb i) = occurrenceValue (s.take N) i := by
+    simp [occurrenceValue, emb, List.get_eq_getElem]
+  refine ⟨J, ?_, sign', ?_⟩
+  · simpa [J] using hIne
+  · simpa [J, Finset.sum_map, hsign, hvalue] using hsum
+
+/-- A plus-minus Davenport upper bound at length `D` applies to every longer
+source by taking its first `D` labelled occurrences. -/
+theorem plusMinusDavenportAtLeast_of_atMost
+    {D : ℕ} (hD : PlusMinusDavenportAtMost A D) :
+    ∀ s : List A, D ≤ s.length → HasNonemptyPlusMinusZeroSum s := by
+  intro s hs
+  apply hasNonemptyPlusMinusZeroSum_of_take s D hs
+  apply hD (s.take D)
+  simp [List.length_take, Nat.min_eq_left hs]
+
+/-- Every exact plus-minus Davenport value is positive. -/
+theorem plusMinusDavenportConstant_pos
+    (D : ℕ) (hD : IsPlusMinusDavenportConstant A D) : 0 < D := by
+  by_contra hnot
+  have hDzero : D = 0 := Nat.eq_zero_of_not_pos hnot
+  have hempty := hD.1 ([] : List A) (by simp [hDzero])
+  rcases hempty with ⟨I, ⟨i, _hi⟩, _sign, _hsum⟩
+  exact Fin.elim0 i
 
 /-- Canonical finite instances for subgroup carrier types used throughout the
 strict-subgroup scheduler. -/
@@ -168,6 +235,79 @@ theorem PlusMinusPairedCosetCertificate.negativeWeightCoset
     -occurrenceValue xs i - h.beta ∈ h.K := by
   apply h.signedBlockCoset i hi
   simp [plusMinusOccurrenceBlock, plusMinusValueBlock]
+
+/-- In the odd-order specialization used by the 13-page manuscript, putting
+both `x` and `-x` in the same `K`-coset forces the labelled source value `x`
+itself into `K`.  This is the exact place where the odd-order hypothesis
+removes the two-torsion obstruction present for general even groups. -/
+theorem PlusMinusPairedCosetCertificate.selectedValue_mem_of_odd
+    {xs : List A} (h : PlusMinusPairedCosetCertificate xs)
+    (hodd : Odd (Nat.card A))
+    (i : Occurrence xs) (hi : i ∈ h.selected) :
+    occurrenceValue xs i ∈ h.K := by
+  have hquotNat : Odd (Nat.card (A ⧸ h.K)) :=
+    odd_natCard_quotient_of_odd_natCard h.K hodd
+  have hquot : Odd (Fintype.card (A ⧸ h.K)) := by
+    simpa [Nat.card_eq_fintype_card] using hquotNat
+  exact mem_of_pos_neg_mem_same_coset_of_quotient_card_odd h.K hquot
+    (h.positiveWeightCoset i hi) (h.negativeWeightCoset i hi)
+
+/-- The same odd-order argument also shows that the common coset center is
+in `K`: the certificate's cardinality bound makes the selected occurrence
+set nonempty, and `x ∈ K` together with `x - beta ∈ K` gives `beta ∈ K`.
+Consequently the apparent affine/over-group seam collapses to a genuinely
+`K`-valued selected list in the odd specialization, without silently
+discarding either sign condition. -/
+theorem PlusMinusPairedCosetCertificate.center_mem_and_selectedValues_mem_of_odd
+    {xs : List A} (h : PlusMinusPairedCosetCertificate xs)
+    (hodd : Odd (Nat.card A)) :
+    h.beta ∈ h.K ∧
+      ∀ i ∈ h.selected, occurrenceValue xs i ∈ h.K := by
+  have hselpos : 0 < h.selected.card := by
+    have hlowerPos : 0 < xs.length - Nat.card (A ⧸ h.K) + 2 := by omega
+    exact hlowerPos.trans_le h.card_lower
+  obtain ⟨i, hi⟩ := h.selected.card_pos.mp hselpos
+  have hxi : occurrenceValue xs i ∈ h.K :=
+    h.selectedValue_mem_of_odd hodd i hi
+  have hxsub : occurrenceValue xs i - h.beta ∈ h.K :=
+    h.positiveWeightCoset i hi
+  constructor
+  · have hdiff := h.K.sub_mem hxi hxsub
+    have heq : occurrenceValue xs i -
+        (occurrenceValue xs i - h.beta) = h.beta := by abel
+    rwa [heq] at hdiff
+  · intro j hj
+    exact h.selectedValue_mem_of_odd hodd j hj
+
+/-- Reindex the selected labelled occurrences as a genuine list in the
+subgroup.  No source value is coerced into `K` without the preceding odd-order
+proof; repetitions remain distinct because the list is built from attached
+occurrences, not from a finset of values. -/
+noncomputable def PlusMinusPairedCosetCertificate.selectedSubtypeListOfOdd
+    {xs : List A} (h : PlusMinusPairedCosetCertificate xs)
+    (hodd : Odd (Nat.card A)) : List h.K := by
+  classical
+  exact h.selected.attach.toList.map fun j ↦
+    ⟨occurrenceValue xs j.1,
+      h.selectedValue_mem_of_odd hodd j.1 j.2⟩
+
+@[simp]
+theorem PlusMinusPairedCosetCertificate.length_selectedSubtypeListOfOdd
+    {xs : List A} (h : PlusMinusPairedCosetCertificate xs)
+    (hodd : Odd (Nat.card A)) :
+    (h.selectedSubtypeListOfOdd hodd).length = h.selected.card := by
+  classical
+  simp [PlusMinusPairedCosetCertificate.selectedSubtypeListOfOdd]
+
+/-- Forgetting the subgroup proof recovers, in the same attached-occurrence
+order, the original labelled source values. -/
+theorem PlusMinusPairedCosetCertificate.map_coe_selectedSubtypeListOfOdd
+    {xs : List A} (h : PlusMinusPairedCosetCertificate xs)
+    (hodd : Odd (Nat.card A)) :
+    (h.selectedSubtypeListOfOdd hodd).map (fun x : h.K ↦ (x : A)) =
+      h.selected.attach.toList.map fun j ↦ occurrenceValue xs j.1 := by
+  classical
+  simp [PlusMinusPairedCosetCertificate.selectedSubtypeListOfOdd]
 
 /-- Convert paired-layer structural evidence to the exact occurrence-labelled
 concentration record used by the manuscript. -/
@@ -331,6 +471,74 @@ theorem image_plusMinusExactSpectrum_quotient
       plusMinusExactSpectrum (xs.map (QuotientAddGroup.mk' K)) n :=
   image_plusMinusExactSpectrum_addMonoidHom
     (QuotientAddGroup.mk' K) xs n
+
+/-- The DGM inequality for the literal signed occurrence setpartition, with
+the canonical classical equality decision hidden in a proposition wrapper. -/
+noncomputable def PlusMinusOccurrenceDGMSetpartitionBound
+    (xs : List A) (n : ℕ) : Prop := by
+  classical
+  exact DGMSetpartitionBound (plusMinusOccurrenceSetpartition xs) n
+
+/-- Applying the frozen General DGM statement to the literal signed
+occurrence setpartition.  This is only a connector: it does not assert that
+General DGM has already been proved. -/
+theorem dgmSetpartitionBound_plusMinusOccurrenceSetpartition
+    (hDGM : FiniteDGMSetpartitionInput A)
+    (xs : List A) (n : ℕ) (hnpos : 1 ≤ n) (hn : n ≤ xs.length) :
+    PlusMinusOccurrenceDGMSetpartitionBound xs n := by
+  classical
+  exact hDGM (plusMinusOccurrenceSetpartition xs) n
+    (plusMinusOccurrenceSetpartition_nonempty xs) hnpos (by simpa using hn)
+
+/-- The numerical part of Step 6 after the signed exact spectrum is
+aperiodic.  This deliberately stops at DGM's capped-multiplicity expression;
+the remaining manuscript work is the signed Davenport/counting estimate that
+makes the left side reach the ambient group cardinality. -/
+noncomputable def PlusMinusTrivialStabilizerDGMCount
+    (xs : List A) (n : ℕ) : Prop := by
+  classical
+  let P := plusMinusOccurrenceSetpartition xs
+  let T := layerSubsumSpectrum P n
+  exact T.addStab = {0} →
+    stabilizerDgmCappedMultiplicitySum T P n - n + 1 ≤ T.card
+
+/-- General DGM gives the Step 6 capped count as soon as the exact signed
+spectrum has trivial stabilizer.  General DGM remains an explicit input. -/
+theorem plusMinusTrivialStabilizerDGMCount_of_generalDGM
+    (hDGM : FiniteDGMSetpartitionInput A)
+    (xs : List A) (n : ℕ) (hnpos : 1 ≤ n) (hn : n ≤ xs.length) :
+    PlusMinusTrivialStabilizerDGMCount xs n := by
+  classical
+  have hbound := dgmSetpartitionBound_plusMinusOccurrenceSetpartition
+    hDGM xs n hnpos hn
+  unfold PlusMinusOccurrenceDGMSetpartitionBound at hbound
+  unfold PlusMinusTrivialStabilizerDGMCount
+  dsimp only
+  intro hstab
+  unfold DGMSetpartitionBound at hbound
+  dsimp only at hbound
+  rw [hstab] at hbound
+  simpa using hbound
+
+/-- Step 5's exact quotient fact in DGM's finite-setpartition vocabulary.
+The partition is the literal list of labelled `{x,-x}` occurrence blocks;
+thus this statement retains exact `n` and repeated source occurrences without
+an expensive definitional conversion of the projected list spectrum.  The
+conversion before quotienting is
+`plusMinusExactSpectrum_eq_layerSubsumSpectrum`, and homomorphic transport is
+`image_plusMinusExactSpectrum_quotient`. -/
+theorem addStab_quotient_plusMinusOccurrenceSpectrum_eq_singleton
+    [DecidableEq A]
+    (xs : List A) (n : ℕ) (hn : n ≤ xs.length) :
+    let P := plusMinusOccurrenceSetpartition xs
+    let T := layerSubsumSpectrum P n
+    let H := AddAction.stabilizer A (T : Set A)
+    let q : A →+ A ⧸ H := QuotientAddGroup.mk' H
+    (layerSubsumSpectrum (P.map fun B ↦ B.image q) n).addStab = {0} := by
+  classical
+  exact addStab_layerSubsumSpectrum_stabilizerQuotient_eq_singleton
+    (plusMinusOccurrenceSetpartition xs)
+    (plusMinusOccurrenceSetpartition_nonempty xs) n (by simpa using hn)
 
 /-- The obligations remaining strictly after Step 4's full-stabilizer branch.
 Unlike the earlier residual wrapper, this interface mentions no ordinary
@@ -581,6 +789,12 @@ theorem plusMinusGMOProviders_of_theorem11Induction
 end GaoLean
 
 #print axioms GaoLean.theorem11_singleLayer_membership_is_not_paired_containment
+#print axioms GaoLean.hasNonemptyPlusMinusZeroSum_of_take
+#print axioms GaoLean.plusMinusDavenportAtLeast_of_atMost
+#print axioms GaoLean.PlusMinusPairedCosetCertificate.center_mem_and_selectedValues_mem_of_odd
+#print axioms GaoLean.dgmSetpartitionBound_plusMinusOccurrenceSetpartition
+#print axioms GaoLean.plusMinusTrivialStabilizerDGMCount_of_generalDGM
+#print axioms GaoLean.addStab_quotient_plusMinusOccurrenceSpectrum_eq_singleton
 #print axioms GaoLean.theorem21SetPartition_sumset_subset_plusMinusExactSpectrum
 #print axioms GaoLean.PlusMinusTheorem21FullCertificate.fullSpectrum
 #print axioms GaoLean.plusMinusTheorem11StepEndpoints_of_residual

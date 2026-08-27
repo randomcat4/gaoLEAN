@@ -55,6 +55,143 @@ noncomputable def SelectionMultiplicityAtMost
     exact ∀ a : A,
       (I.filter fun i ↦ occurrenceValue xs i = a).card ≤ n
 
+/-- A coloring of a finite family is proper on the fibers of its value map. -/
+def FiberColoringProper {X V : Type*} (value : X → V) (n : ℕ)
+    (color : X → Fin n) : Prop :=
+  ∀ x y, value x = value y → color x = color y → x = y
+
+/-- Fiberwise multiplicity at most `n`, together with at least `n` labelled
+objects, gives a surjective proper `Fin n` coloring.  This is the finite
+combinatorial core of the setpartition criterion, stated independently of
+list positions so that it applies verbatim to a selected subsequence. -/
+theorem exists_surjective_fiberColoring
+    {X V : Type*} [Fintype X] [DecidableEq V]
+    (value : X → V) (n : ℕ)
+    (hcap : ∀ a : V,
+      ((Finset.univ : Finset X).filter fun x ↦ value x = a).card ≤ n)
+    (hlen : n ≤ Fintype.card X) :
+    ∃ color : X → Fin n,
+      Function.Surjective color ∧ FiberColoringProper value n color := by
+  classical
+  let orderEquiv : X ≃ Fin (Fintype.card X) := Fintype.equivFin X
+  letI : LinearOrder X := LinearOrder.lift' orderEquiv orderEquiv.injective
+  let before (x : X) : Finset X :=
+    Finset.univ.filter fun y ↦ value y = value x ∧ y < x
+  have hbefore_lt (x : X) :
+      (before x).card <
+        ((Finset.univ : Finset X).filter fun y ↦ value y = value x).card := by
+    apply Finset.card_lt_card
+    rw [Finset.ssubset_iff_subset_ne]
+    constructor
+    · intro y hy
+      exact Finset.mem_filter.mpr
+        ⟨Finset.mem_univ _, (Finset.mem_filter.mp hy).2.1⟩
+    · intro heq
+      have hxFiber : x ∈
+          (Finset.univ : Finset X).filter fun y ↦ value y = value x := by simp
+      have hxBefore : x ∉ before x := by simp [before]
+      exact hxBefore (heq ▸ hxFiber)
+  let color₀ : X → Fin n := fun x ↦
+    ⟨(before x).card, (hbefore_lt x).trans_le (hcap (value x))⟩
+  have hcolor₀ : FiberColoringProper value n color₀ := by
+    intro x y hvalue hxy
+    have hcard : (before x).card = (before y).card := congrArg Fin.val hxy
+    by_contra hne
+    rcases lt_or_gt_of_ne hne with hxylt | hyxlt
+    · have hstrict : before x ⊂ before y := by
+        rw [Finset.ssubset_iff_subset_ne]
+        constructor
+        · intro z hz
+          have hz' := (Finset.mem_filter.mp hz).2
+          exact Finset.mem_filter.mpr
+            ⟨Finset.mem_univ _, hz'.1.trans hvalue, hz'.2.trans hxylt⟩
+        · intro heq
+          have hxyMem : x ∈ before y := by
+            simp [before, hvalue, hxylt]
+          have hxx : x ∉ before x := by simp [before]
+          exact hxx (heq ▸ hxyMem)
+      exact (ne_of_lt (Finset.card_lt_card hstrict)) hcard
+    · have hstrict : before y ⊂ before x := by
+        rw [Finset.ssubset_iff_subset_ne]
+        constructor
+        · intro z hz
+          have hz' := (Finset.mem_filter.mp hz).2
+          exact Finset.mem_filter.mpr
+            ⟨Finset.mem_univ _, hz'.1.trans hvalue.symm, hz'.2.trans hyxlt⟩
+        · intro heq
+          have hyxMem : y ∈ before x := by
+            simp [before, hvalue, hyxlt]
+          have hyy : y ∉ before y := by simp [before]
+          exact hyy (heq ▸ hyxMem)
+      exact (ne_of_gt (Finset.card_lt_card hstrict)) hcard
+  let good : Finset (X → Fin n) :=
+    Finset.univ.filter fun color ↦ FiberColoringProper value n color
+  have hcolor₀good : color₀ ∈ good := by
+    simp only [good, Finset.mem_filter, Finset.mem_univ, true_and]
+    exact hcolor₀
+  obtain ⟨color, hcolorGood, hmax⟩ := Finset.exists_max_image good
+    (fun color ↦ (Finset.univ.image color).card) ⟨color₀, hcolor₀good⟩
+  have hproper : FiberColoringProper value n color :=
+    (Finset.mem_filter.mp hcolorGood).2
+  refine ⟨color, ?_, hproper⟩
+  by_contra hnotSurj
+  obtain ⟨missing, hmissing⟩ :
+      ∃ missing : Fin n, ∀ x : X, color x ≠ missing := by
+    simpa only [Function.Surjective, not_forall, not_exists] using hnotSurj
+  have hnotInj : ¬ Function.Injective color := by
+    intro hinj
+    have hlt := Fintype.card_lt_of_injective_not_surjective color hinj hnotSurj
+    simp only [Fintype.card_fin] at hlt
+    omega
+  obtain ⟨x, y, hcolorxy, hxy⟩ := Function.not_injective_iff.mp hnotInj
+  let recolor : X → Fin n := Function.update color x missing
+  have hrecolorProper : FiberColoringProper value n recolor := by
+    intro a b habValue habColor
+    by_cases hax : a = x
+    · subst a
+      by_cases hbx : b = x
+      · exact hbx.symm
+      · exfalso
+        have hmissingb : missing = color b := by
+          simpa [recolor, hbx] using habColor
+        exact hmissing b hmissingb.symm
+    · by_cases hbx : b = x
+      · subst b
+        exfalso
+        have hamissing : color a = missing := by
+          simpa [recolor, hax] using habColor
+        exact hmissing a hamissing
+      · apply hproper a b habValue
+        simpa [recolor, hax, hbx] using habColor
+  have hrecolorGood : recolor ∈ good := by
+    simp only [good, Finset.mem_filter, Finset.mem_univ, true_and]
+    exact hrecolorProper
+  have hrangeSubset :
+      Finset.univ.image color ⊆ Finset.univ.image recolor := by
+    intro c hc
+    rcases Finset.mem_image.mp hc with ⟨z, -, rfl⟩
+    by_cases hzx : z = x
+    · subst z
+      refine Finset.mem_image.mpr ⟨y, Finset.mem_univ _, ?_⟩
+      simp [recolor, hxy.symm, hcolorxy]
+    · exact Finset.mem_image.mpr
+        ⟨z, Finset.mem_univ _, by simp [recolor, hzx]⟩
+  have hmissingRecolor : missing ∈ Finset.univ.image recolor := by
+    exact Finset.mem_image.mpr ⟨x, Finset.mem_univ _, by simp [recolor]⟩
+  have hmissingColor : missing ∉ Finset.univ.image color := by
+    intro hmem
+    rcases Finset.mem_image.mp hmem with ⟨z, -, hz⟩
+    exact hmissing z hz
+  have hrangeStrict : Finset.univ.image color ⊂
+      Finset.univ.image recolor := by
+    rw [Finset.ssubset_iff_subset_ne]
+    refine ⟨hrangeSubset, ?_⟩
+    intro heq
+    exact hmissingColor (heq ▸ hmissingRecolor)
+  have hcardLt := Finset.card_lt_card hrangeStrict
+  have hcardMax := hmax recolor hrecolorGood
+  omega
+
 /-- An `n`-setpartition of a replacement subsequence `S'' | S` of prescribed
 length `m`.  Cells are indexed, nonempty, pairwise occurrence-disjoint and
 contain no repeated value.  Their union is the labelled replacement
@@ -66,6 +203,114 @@ structure Theorem21SetPartition (xs : List A) (n m : ℕ) where
   value_injective : ∀ c,
     Set.InjOn (occurrenceValue xs) (cells c : Set (Occurrence xs))
   card_support : (Finset.univ.biUnion cells).card = m
+
+/-- A color cell inside a labelled selected subsequence.  The existential
+membership proof makes the definition independent of proof terms. -/
+noncomputable def selectedColorCell
+    {xs : List A} (seed : Selection xs) {n : ℕ}
+    (color : (↥seed) → Fin n) (c : Fin n) : Selection xs := by
+  classical
+  exact seed.filter fun i ↦ ∃ hi : i ∈ seed, color ⟨i, hi⟩ = c
+
+omit [AddCommGroup A] [Fintype A] in
+@[simp]
+theorem mem_selectedColorCell_iff
+    {xs : List A} (seed : Selection xs) {n : ℕ}
+    (color : (↥seed) → Fin n) (c : Fin n) (i : Occurrence xs) :
+    i ∈ selectedColorCell seed color c ↔
+      ∃ hi : i ∈ seed, color ⟨i, hi⟩ = c := by
+  classical
+  simp [selectedColorCell]
+
+omit [AddCommGroup A] [Fintype A] in
+/-- The literal selected-subsequence form of the setpartition criterion.
+Unlike the earlier full-source constructor, its support has exactly
+`seed.card` occurrences and may be a proper subsequence of `xs`. -/
+theorem exists_selected_theorem21SetPartition
+    (xs : List A) (seed : Selection xs) (n : ℕ)
+    (hcap : SelectionMultiplicityAtMost xs seed n)
+    (hlen : n ≤ seed.card) :
+    Nonempty (Theorem21SetPartition xs n seed.card) := by
+  classical
+  let value : (↥seed) → A := fun i ↦ occurrenceValue xs i.1
+  have hcap' (a : A) :
+      ((Finset.univ : Finset (↥seed)).filter fun i ↦ value i = a).card ≤ n := by
+    change (seed.attach.filter fun i : ↥seed ↦
+      occurrenceValue xs i.1 = a).card ≤ n
+    have heq := Finset.filter_attach
+      (fun i : Occurrence xs ↦ occurrenceValue xs i = a) seed
+    have hcards := congrArg Finset.card heq
+    simp only [Finset.card_map, Finset.card_attach] at hcards
+    rw [hcards]
+    exact hcap a
+  have hcard : Fintype.card (↥seed) = seed.card := Fintype.card_coe seed
+  obtain ⟨color, hsurj, hproper⟩ :=
+    exists_surjective_fiberColoring value n hcap' (hcard ▸ hlen)
+  let cells : Fin n → Selection xs := selectedColorCell seed color
+  refine ⟨{
+    cells := cells
+    cells_nonempty := ?_
+    cells_pairwise_disjoint := ?_
+    value_injective := ?_
+    card_support := ?_
+  }⟩
+  · intro c
+    obtain ⟨i, hi⟩ := hsurj c
+    exact ⟨i.1, (mem_selectedColorCell_iff seed color c i.1).2
+      ⟨i.2, hi⟩⟩
+  · intro c d hcd
+    rw [Finset.disjoint_left]
+    intro i hic hid
+    obtain ⟨hiSeed, hicColor⟩ :=
+      (mem_selectedColorCell_iff seed color c i).1 hic
+    obtain ⟨hiSeed', hidColor⟩ :=
+      (mem_selectedColorCell_iff seed color d i).1 hid
+    apply hcd
+    rw [← hicColor, ← hidColor]
+  · intro c i hi j hj hij
+    obtain ⟨hiSeed, hiColor⟩ :=
+      (mem_selectedColorCell_iff seed color c i).1 hi
+    obtain ⟨hjSeed, hjColor⟩ :=
+      (mem_selectedColorCell_iff seed color c j).1 hj
+    have hsub : (⟨i, hiSeed⟩ : ↥seed) = ⟨j, hjSeed⟩ := by
+      apply hproper
+      · exact hij
+      · exact hiColor.trans hjColor.symm
+    exact congrArg Subtype.val hsub
+  · have hunion : Finset.univ.biUnion cells = seed := by
+      ext i
+      constructor
+      · intro hi
+        obtain ⟨c, -, hic⟩ := Finset.mem_biUnion.mp hi
+        exact ((mem_selectedColorCell_iff seed color c i).1 hic).1
+      · intro hi
+        apply Finset.mem_biUnion.mpr
+        refine ⟨color ⟨i, hi⟩, Finset.mem_univ _, ?_⟩
+        exact (mem_selectedColorCell_iff seed color (color ⟨i, hi⟩) i).2
+          ⟨hi, rfl⟩
+    rw [hunion]
+
+omit [AddCommGroup A] [Fintype A] in
+@[ext]
+theorem Theorem21SetPartition.ext_cells
+    {xs : List A} {n m : ℕ}
+    {P Q : Theorem21SetPartition xs n m}
+    (h : ∀ c, P.cells c = Q.cells c) : P = Q := by
+  cases P
+  cases Q
+  congr
+  funext c
+  exact h c
+
+omit [AddCommGroup A] [Fintype A] in
+noncomputable instance theorem21SetPartitionFinite
+    {xs : List A} {n m : ℕ} :
+    Finite (Theorem21SetPartition xs n m) := by
+  apply Finite.of_injective
+    (fun P : Theorem21SetPartition xs n m ↦ P.cells)
+  intro P Q hcells
+  apply Theorem21SetPartition.ext_cells
+  exact congrFun hcells
 
 /-- The labelled occurrence support of the replacement subsequence `S''`. -/
 def Theorem21SetPartition.support
@@ -366,6 +611,102 @@ noncomputable def Theorem21SetPartition.exceptionDefect
     (H : AddSubgroup A) : ℕ := by
   classical
   exact ∑ c : Fin n, P.cellExceptionDefect H c
+
+/-- The quotient-incidence quantity maximized in the first nontrivial stage
+of the Partition Theorem's iterated extremal construction. -/
+noncomputable def Theorem21SetPartition.stabilizerQuotientIncidence
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m) : ℕ := by
+  classical
+  exact ∑ c : Fin n,
+    (stabilizerQuotientLayer P.sumset (P.valueCell c)).card
+
+/-- Number of replacement occurrences already captured outside the common
+core for the stabilizer of the replacement sumset. -/
+noncomputable def Theorem21SetPartition.capturedOutsideCommonCore
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m) : ℕ := by
+  classical
+  let H : AddSubgroup A := AddAction.stabilizer A (P.sumset : Set A)
+  exact (P.support.filter fun i ↦
+    occurrenceValue xs i ∉ P.commonCore H).card
+
+/-- The first three finite lexicographic stages of Definition 1 in the
+source Partition Theorem, specialized to ordinary weights and with no fixed
+distinguished elements: maximize the full sumset, then quotient incidence
+at its stabilizer while keeping that sumset fixed, then the number of
+outside-core source occurrences captured by the replacement. -/
+structure TheoremEMaximalReplacement
+    (xs : List A) (seed : Selection xs) (n : ℕ) where
+  partition : Theorem21SetPartition xs n seed.card
+  sumset_maximal : ∀ Q : Theorem21SetPartition xs n seed.card,
+    Q.sumset.card ≤ partition.sumset.card
+  quotientIncidence_maximal :
+    ∀ Q : Theorem21SetPartition xs n seed.card,
+      Q.sumset = partition.sumset →
+      Q.stabilizerQuotientIncidence ≤
+        partition.stabilizerQuotientIncidence
+  capturedOutside_maximal :
+    ∀ Q : Theorem21SetPartition xs n seed.card,
+      Q.sumset = partition.sumset →
+      Q.stabilizerQuotientIncidence =
+        partition.stabilizerQuotientIncidence →
+      Q.capturedOutsideCommonCore ≤
+        partition.capturedOutsideCommonCore
+
+/-- The ordinary finite maximal-replacement object exists as soon as the
+selected subsequence satisfies the literal setpartition criterion. -/
+theorem exists_theoremEMaximalReplacement
+    (xs : List A) (seed : Selection xs) (n : ℕ)
+    (hcap : SelectionMultiplicityAtMost xs seed n)
+    (hlen : n ≤ seed.card) :
+    Nonempty (TheoremEMaximalReplacement xs seed n) := by
+  classical
+  letI : Fintype (Theorem21SetPartition xs n seed.card) := Fintype.ofFinite _
+  obtain ⟨initial⟩ :=
+    exists_selected_theorem21SetPartition xs seed n hcap hlen
+  let all : Finset (Theorem21SetPartition xs n seed.card) := Finset.univ
+  obtain ⟨P, _hPall, hPmax⟩ := Finset.exists_max_image all
+    (fun Q ↦ Q.sumset.card) ⟨initial, Finset.mem_univ _⟩
+  let sameSumset := all.filter fun Q ↦ Q.sumset = P.sumset
+  have hPsame : P ∈ sameSumset := by simp [sameSumset, all]
+  obtain ⟨Q, hQsame, hQmax⟩ := Finset.exists_max_image sameSumset
+    Theorem21SetPartition.stabilizerQuotientIncidence ⟨P, hPsame⟩
+  have hQsumset : Q.sumset = P.sumset :=
+    (Finset.mem_filter.mp hQsame).2
+  let sameIncidence := sameSumset.filter fun R ↦
+    R.stabilizerQuotientIncidence = Q.stabilizerQuotientIncidence
+  have hQincidence : Q ∈ sameIncidence := by
+    simp [sameIncidence, hQsame]
+  obtain ⟨R, hRsame, hRmax⟩ := Finset.exists_max_image sameIncidence
+    Theorem21SetPartition.capturedOutsideCommonCore ⟨Q, hQincidence⟩
+  have hRincidence :
+      R.stabilizerQuotientIncidence = Q.stabilizerQuotientIncidence :=
+    (Finset.mem_filter.mp hRsame).2
+  have hRsameSumset : R ∈ sameSumset :=
+    (Finset.mem_filter.mp hRsame).1
+  have hRsumsetP : R.sumset = P.sumset :=
+    (Finset.mem_filter.mp hRsameSumset).2
+  refine ⟨{
+    partition := R
+    sumset_maximal := ?_
+    quotientIncidence_maximal := ?_
+    capturedOutside_maximal := ?_
+  }⟩
+  · intro Z
+    rw [hRsumsetP]
+    exact hPmax Z (Finset.mem_univ Z)
+  · intro Z hZsumset
+    rw [hRincidence]
+    apply hQmax Z
+    apply Finset.mem_filter.mpr
+    refine ⟨Finset.mem_univ Z, ?_⟩
+    exact hZsumset.trans hRsumsetP
+  · intro Z hZsumset hZincidence
+    apply hRmax Z
+    apply Finset.mem_filter.mpr
+    constructor
+    · apply Finset.mem_filter.mpr
+      exact ⟨Finset.mem_univ Z, hZsumset.trans hRsumsetP⟩
+    · exact hZincidence.trans hRincidence
 
 /-- Exact ordinary specialization of the stronger replacement theorem called
 Theorem E in the source of Theorems 2.4 and 2.5. -/
@@ -709,6 +1050,62 @@ theorem GMOTheoremEOutput.nonempty_periodicAlternative_of_terminal
         mem_occurrencesInAddCoset_iff, hcore,
         mem_addCosetFinset_iff]
     rwa [hoccurrences] at houtside
+
+/-- If Theorem E has reached `N = 1`, failure of the large alternative forces
+the source-sharp exception bound `e ≤ |A/H| - 2`.  This is the exact
+arithmetic closing step in the terminal case of Theorems 2.4/2.5. -/
+theorem GMOTheoremEOutput.exceptionDefect_le_quotient_sub_two_of_count_eq_one
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    (h : GMOTheoremEOutput xs seed n)
+    (hproper : h.H < ⊤)
+    (hN : h.partition.commonCosetCount h.H = 1)
+    (hnotLarge : ¬ min (Nat.card A) (seed.card - n + 1) ≤
+      h.partition.sumset.card) :
+    h.partition.exceptionDefect h.H ≤ Nat.card (A ⧸ h.H) - 2 := by
+  have hsumLt : h.partition.sumset.card < Nat.card A := by
+    apply Nat.lt_of_not_ge
+    intro hambient
+    exact hnotLarge ((min_le_left _ _).trans hambient)
+  have hbound := h.card_lower
+  rw [hN] at hbound
+  have hone : (1 : ℕ) - 1 = 0 := by omega
+  rw [hone, zero_mul, zero_add] at hbound
+  have hcard := AddSubgroup.card_eq_card_quotient_mul_card_addSubgroup h.H
+  have hprodLt :
+      (h.partition.exceptionDefect h.H + 1) * Nat.card h.H <
+        Nat.card (A ⧸ h.H) * Nat.card h.H := by
+    rw [← hcard]
+    exact hbound.trans_lt hsumLt
+  have hHpos : 0 < Nat.card h.H := Nat.card_pos
+  have heSuccLt :
+      h.partition.exceptionDefect h.H + 1 < Nat.card (A ⧸ h.H) :=
+    (Nat.mul_lt_mul_right hHpos).mp hprodLt
+  have hquotient : 2 ≤ Nat.card (A ⧸ h.H) :=
+    two_le_natCard_quotient_of_lt_top h.H hproper
+  omega
+
+/-- The `N = 1` proper-nontrivial Theorem E output already gives a complete
+Theorem 2.1 output; no replacement is needed in this terminal case. -/
+theorem GMOTheoremEOutput.nonempty_theorem21Output_of_count_eq_one
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    (h : GMOTheoremEOutput xs seed n)
+    (hnontrivial : h.H ≠ ⊥) (hproper : h.H < ⊤)
+    (hN : h.partition.commonCosetCount h.H = 1) :
+    Nonempty (GMOTheorem21Output xs seed n) := by
+  by_cases hlarge : min (Nat.card A) (seed.card - n + 1) ≤
+      h.partition.sumset.card
+  · exact ⟨{
+      partition := h.partition
+      alternative := Or.inl ⟨hlarge⟩
+    }⟩
+  · have he :=
+      h.exceptionDefect_le_quotient_sub_two_of_count_eq_one hproper hN hlarge
+    exact ⟨{
+      partition := h.partition
+      alternative := Or.inr
+        (h.nonempty_periodicAlternative_of_terminal
+          hnontrivial hproper hN he)
+    }⟩
 
 omit [AddCommGroup A] [Fintype A] in
 /-- Summing pointwise natural-number differences is exact once the removed
