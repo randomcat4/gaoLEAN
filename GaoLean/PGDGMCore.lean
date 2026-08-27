@@ -7584,6 +7584,66 @@ theorem dgmPatternBound_of_preparedCrossed_strongIH
     M ih B C P hP hInter μ E hE hmin hmeasure base hbase hb₁ hb₂
       νtail hext htail hD12 hpair1 hescape
 
+/-- Nonemptiness of every labelled cell is invariant under reordering. -/
+theorem isNonemptySetPartition_of_perm
+    {P Q : List (Finset A)} (hPQ : P.Perm Q)
+    (hP : IsNonemptySetPartition P) : IsNonemptySetPartition Q := by
+  intro B hB
+  exact hP B (hPQ.mem_iff.mpr hB)
+
+/-- Two distinct labelled cells can be moved to the leading positions.  The
+tail erases exactly one occurrence of each value; this is sufficient for the
+source use because incomparable cells are necessarily distinct. -/
+theorem exists_two_head_perm
+    (P : List (Finset A)) {B C : Finset A}
+    (hB : B ∈ P) (hC : C ∈ P) (hBC : B ≠ C) :
+    ∃ R : List (Finset A), P.Perm (B :: C :: R) := by
+  classical
+  have hCerase : C ∈ P.erase B := by
+    exact (List.mem_erase_of_ne (Ne.symm hBC)).2 hC
+  refine ⟨(P.erase B).erase C, ?_⟩
+  exact (List.perm_cons_erase hB).trans
+    (List.Perm.cons B (List.perm_cons_erase hCerase))
+
+/-- Prepared-crossed is independent of where the eligible pair occurs in
+the labelled layer list.  This wrapper contains no classification premise:
+the transformed-spectrum nonemptiness is exactly the already isolated
+prepared endpoint, now stated for the actual reordered tail. -/
+theorem dgmPatternBound_of_perm_preparedCrossed_strongIH
+    [Fintype A] (M : DGMPatternInnerMeasure)
+    (ih : ∀ M', DGMPatternInnerLt M' M → DGMPatternAtMeasure (A := A) M')
+    {K : AddSubgroup A} {k : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (Q : List (Finset A)) (B C : Finset A) (P : List (Finset A))
+    (hperm : Q.Perm (B :: C :: P))
+    (hQ : IsNonemptySetPartition Q) (hInter : (B ∩ C).Nonempty)
+    (hBC : ¬B ⊆ C) (hCB : ¬C ⊆ B)
+    (μ : QuotientPattern K (k + 2))
+    (hmeasure : dgmPatternInnerMeasure Q μ = M)
+    (hTarget : (patternSubsumSpectrum Q μ).Nonempty)
+    (hTargetStab : (patternSubsumSpectrum Q μ).addStab = {0})
+    (hTransformed :
+      (patternSubsumSpectrum (dgmInterUnionLayers B C P) μ).Nonempty) :
+    DGMPatternBound Q μ := by
+  have hspec := patternSubsumSpectrum_eq_of_perm hperm μ
+  have hP : IsNonemptySetPartition P := by
+    have hhead := isNonemptySetPartition_of_perm hperm hQ
+    intro D hD
+    exact hhead D (by simp [hD])
+  have hmeasureHead :
+      dgmPatternInnerMeasure (B :: C :: P) μ = M :=
+    (dgmPatternInnerMeasure_eq_of_perm hperm μ).symm.trans hmeasure
+  have hTargetHead :
+      (patternSubsumSpectrum (B :: C :: P) μ).Nonempty := by
+    rwa [← hspec]
+  have hTargetStabHead :
+      (patternSubsumSpectrum (B :: C :: P) μ).addStab = {0} := by
+    rwa [← hspec]
+  have hboundHead := dgmPatternBound_of_preparedCrossed_strongIH
+    M ih B C P hP hInter hBC hCB μ hmeasureHead hTargetHead
+      hTargetStabHead hTransformed
+  exact (dgmPatternBound_iff_of_perm hperm μ).2 hboundHead
+
 /-- Double counting raw layer-value incidences. -/
 theorem sum_rawLayerMultiplicity
     [Fintype A] (P : List (Finset A)) :

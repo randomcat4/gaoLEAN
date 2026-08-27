@@ -1226,6 +1226,35 @@ theorem Theorem21SetPartition.sum_card_tailValueCells_eq_tailIndices
   · intro j _
     rfl
 
+omit [Fintype A] in
+/-- Quotient-incidence version of the preceding tail reindexing identity. -/
+theorem Theorem21SetPartition.sum_card_quotientLayer_tailValueCells_eq_tailIndices
+    {xs : List A} {n m rho : ℕ} (P : Theorem21SetPartition xs n m)
+    (H : AddSubgroup A) :
+    (P.tailValueCells rho |>.map fun B ↦ (quotientLayer H B).card).sum =
+      ∑ c ∈ tailIndices n rho,
+        (quotientLayer H (P.valueCell c)).card := by
+  classical
+  rw [P.tailValueCells_eq_ofFn_tailIndex]
+  simp only [List.map_ofFn, List.sum_ofFn]
+  refine Finset.sum_bij (fun j _ ↦ tailIndex n rho j) ?_ ?_ ?_ ?_
+  · intro j _
+    exact mem_tailIndices (tailIndex n rho j) |>.2 (by simp)
+  · intro i _ j _ hij
+    apply Fin.ext
+    have hv := congrArg Fin.val hij
+    simp only [tailIndex_val] at hv
+    omega
+  · intro c hc
+    have hrc : rho ≤ c.val := (mem_tailIndices c).1 hc
+    let j : Fin (n - rho) := ⟨c.val - rho, by omega⟩
+    refine ⟨j, Finset.mem_univ j, ?_⟩
+    apply Fin.ext
+    simp [j, tailIndex]
+    omega
+  · intro j _
+    rfl
+
 omit [AddCommGroup A] [Fintype A] in
 /-- There are exactly `n-rho` cells in the zero-based tail. -/
 theorem card_tailIndices {n rho : ℕ} (hrho : rho ≤ n) :
@@ -6119,6 +6148,132 @@ theorem Theorem21SetPartition.theoremE_card_lower_of_no_doubled
   simpa [H] using
     (Nat.mul_le_mul_right (Nat.card H) hcoeff).trans hdgm'
 
+/-- Factor-form version of the Theorem E numerical bound.  The tail is
+quotiented by its *actual* stabilizer, so full-layer DGM gives the aperiodic
+tail estimate.  Condition (II) then attaches the leading quotient layers.
+Only after this Kneser/DGM step is the no-doubled hypothesis used, to replace
+quotient incidence by the faithful `N*n+e` coefficient. -/
+theorem FactorForm.theoremE_card_lower_of_no_doubled
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n} (F : FactorForm I rho)
+    (hno : ∀ x : A, ¬ F.partition.IsHDoubledException
+      (F.partition.tailPeriod rho) x) :
+    ((F.partition.commonCosetCount (F.partition.tailPeriod rho) * n +
+          F.partition.exceptionDefect (F.partition.tailPeriod rho) + 1) -
+          n) * Nat.card (F.partition.tailPeriod rho) ≤
+      F.partition.sumset.card := by
+  classical
+  let H : AddSubgroup A := F.partition.tailPeriod rho
+  let qTail : ℕ :=
+    (quotientLayer H (F.partition.tailSumset rho)).card
+  let qLead : ℕ :=
+    ∑ c ∈ leadingIndices n rho,
+      (quotientLayer H (F.partition.valueCell c)).card
+  let qTailInc : ℕ :=
+    ∑ c ∈ tailIndices n rho,
+      (quotientLayer H (F.partition.valueCell c)).card
+  let qFull : ℕ := (quotientLayer H F.partition.sumset).card
+  have htailNonempty : IsNonemptySetPartition
+      (F.partition.tailValueCells rho) := by
+    simpa [Theorem21SetPartition.tailValueCells] using
+      F.partition.valueCells_nonempty.drop rho
+  have hdgm := fullLayer_dgm_lower_bound
+    (F.partition.tailValueCells rho) htailNonempty
+  change
+    (((F.partition.tailValueCells rho).map fun B ↦
+          (stabilizerQuotientLayer (F.partition.tailSumset rho) B).card).sum -
+        (F.partition.tailValueCells rho).length + 1) *
+        (F.partition.tailSumset rho).addStab.card ≤
+      (F.partition.tailSumset rho).card at hdgm
+  simp_rw [← quotientLayer_eq_stabilizerQuotientLayer
+    (F.partition.tailSumset rho)] at hdgm
+  have hstabCard : (F.partition.tailSumset rho).addStab.card =
+      Nat.card H := by
+    have h := card_addStab_eq_natCard_stabilizer
+      (F.partition.tailSumset rho)
+      (F.partition.tailSumset_nonempty rho)
+    simpa [H, Theorem21SetPartition.tailPeriod] using h
+  have htailCard : (F.partition.tailSumset rho).card =
+      Nat.card H * qTail := by
+    apply card_eq_natCard_mul_card_quotientLayer_of_le_stabilizer
+    simp [H, Theorem21SetPartition.tailPeriod]
+  have htailLength : (F.partition.tailValueCells rho).length = n - rho := by
+    simp [Theorem21SetPartition.tailValueCells,
+      F.partition.length_valueCells]
+  have htailIncidence :
+      ((F.partition.tailValueCells rho).map fun B ↦
+        (quotientLayer H B).card).sum = qTailInc := by
+    simpa [qTailInc] using
+      F.partition.sum_card_quotientLayer_tailValueCells_eq_tailIndices
+        (rho := rho) H
+  have hHactual : AddAction.stabilizer A
+      (F.partition.tailSumset rho : Set A) = H := by
+    simp [H, Theorem21SetPartition.tailPeriod]
+  rw [hHactual] at hdgm
+  rw [hstabCard, htailCard, htailLength, htailIncidence] at hdgm
+  have hHpos : 0 < Nat.card H := Nat.card_pos
+  have htailBound : qTailInc - (n - rho) + 1 ≤ qTail := by
+    have hdgm' : Nat.card H * (qTailInc - (n - rho) + 1) ≤
+        Nat.card H * qTail := by
+      simpa [Nat.mul_comm] using hdgm
+    exact Nat.le_of_mul_le_mul_left hdgm' hHpos
+  have hrange : rho ≤ n := by
+    have := F.range
+    omega
+  have htailGuard : n - rho ≤ qTailInc := by
+    have hlen := length_le_sum_quotientLayer_card H
+      (F.partition.tailValueCells rho) htailNonempty
+    rw [htailLength, htailIncidence] at hlen
+    exact hlen
+  have hbase : rho + 1 ≤ qTail + qLead := by
+    simpa [H, qTail, qLead] using
+      F.toWeakFactorForm.quotient_growth_base_le
+  have hII : qTail + qLead - (rho + 1) + 1 ≤ qFull := by
+    simpa [H, qTail, qLead, qFull] using F.quotient_growth
+  have hsplit : qLead + qTailInc =
+      F.partition.quotientIncidenceAt H := by
+    have hs := Finset.sum_filter_add_sum_filter_not
+      (Finset.univ : Finset (Fin n)) (fun c : Fin n ↦ c.val < rho)
+      (fun c : Fin n ↦ (quotientLayer H
+        (F.partition.valueCell c)).card)
+    simpa [qLead, qTailInc, leadingIndices, tailIndices, not_lt,
+      Theorem21SetPartition.quotientIncidenceAt] using hs
+  have hincGuard : n ≤ F.partition.quotientIncidenceAt H := by
+    have hleadGuard : rho ≤ qLead := by
+      rw [← card_leadingIndices hrange]
+      calc
+        (leadingIndices n rho).card =
+            ∑ c ∈ leadingIndices n rho, 1 := by simp
+        _ ≤ qLead := by
+          apply Finset.sum_le_sum
+          intro c _
+          exact Finset.card_pos.mpr
+            (quotientLayer_nonempty H _
+              (F.partition.valueCells_nonempty
+                (F.partition.valueCell c) (by
+                  simp [Theorem21SetPartition.valueCells])))
+    omega
+  have hquotientFull :
+      F.partition.quotientIncidenceAt H - n + 1 ≤ qFull := by
+    omega
+  have hincLower :
+      F.partition.commonCosetCount H * n +
+          F.partition.exceptionDefect H ≤
+        F.partition.quotientIncidenceAt H :=
+    F.partition.commonCosetCount_mul_add_exceptionDefect_le_incidence H hno
+  have hcoeff :
+      (F.partition.commonCosetCount H * n +
+          F.partition.exceptionDefect H + 1) - n ≤ qFull := by
+    omega
+  have hfullPeriodic : H ≤ AddAction.stabilizer A
+      (F.partition.sumset : Set A) := by
+    simpa [H] using F.toWeakFactorForm.tailPeriod_le_sumset_stabilizer
+  have hfullCard : F.partition.sumset.card = Nat.card H * qFull := by
+    exact card_eq_natCard_mul_card_quotientLayer_of_le_stabilizer
+      H F.partition.sumset hfullPeriodic
+  simpa [H, hfullCard, Nat.mul_comm] using
+    Nat.mul_le_mul_right (Nat.card H) hcoeff
+
 /-- Regression for the placement of natural subtraction in Theorem E.
 
 The source coefficient is `(N * n + e + 1) - n`.  Subtracting one from `N`
@@ -6323,6 +6478,25 @@ theorem FactorForm.false_of_card_lower_of_no_sourceOutput
         (F.partition.tailPeriod rho) hqd' hyq hduplicate hmissing hQcells
     exact F.toWeakFactorForm.not_incidence_add_one_of_sourceMonotone
       Q hmono htailRho hinc
+
+/-- No-doubled branch of dissertation Lemma 5.  Under failure of the full
+source Theorem E conclusion, every factor form must contain a doubled
+exception modulo its final tail period.  The proof combines the exact
+factor-form `N/e` bound with the honest unused-occurrence replacement
+contradiction above. -/
+theorem FactorForm.exists_doubledException_of_no_sourceOutput
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (F : FactorForm I rho)
+    (hfail : ¬ Nonempty (GMOTheoremESourceOutput I)) :
+    ∃ x : A, F.partition.IsHDoubledException
+      (F.partition.tailPeriod rho) x := by
+  by_contra hnone
+  have hno : ∀ x : A, ¬ F.partition.IsHDoubledException
+      (F.partition.tailPeriod rho) x := by
+    simpa only [not_exists] using hnone
+  exact F.false_of_card_lower_of_no_sourceOutput hfail
+    (F.theoremE_card_lower_of_no_doubled hno)
 
 /-- Enlarging a period enlarges every thickened cell and hence the common
 core. -/
