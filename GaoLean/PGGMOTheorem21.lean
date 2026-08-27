@@ -1073,6 +1073,35 @@ inductive Definition1SourceChain
       Definition1SourceChain I (r + 1) state
 
 omit [Fintype A] in
+/-- A member of the final source-chain family belongs to the literal
+`Lambda_{j+1}` at every earlier stage `j`.  The returned transition retains
+its independently chosen `F_{j+1}`; no exact-`F` normalization is assumed.
+-/
+theorem Definition1SourceChain.exists_transition_at
+    {xs : List A} {seed : Selection xs} {n r : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    {state : Definition1ExtremalState xs seed n}
+    (chain : Definition1SourceChain I r state)
+    (P : Theorem21SetPartition xs n seed.card)
+    (hP : P ∈ state.upsilon) {j : ℕ} (hj : j < r) :
+    ∃ (previous next : Definition1ExtremalState xs seed n)
+      (F : Theorem21SetPartition xs n seed.card),
+      ∃ (_prior : Definition1SourceChain I j previous)
+        (step : Definition1Transition j previous next F),
+        step.InLambda P := by
+  induction chain with
+  | initial state valid => omega
+  | @next r previous prior next F step ih =>
+      by_cases hjr : j = r
+      · subst j
+        exact ⟨previous, next, F, prior, step,
+          step.inLambda_of_mem_next hP⟩
+      · have hjlt : j < r := by omega
+        have hPprevious : P ∈ previous.upsilon :=
+          ((step.mem_next_upsilon_iff P).1 hP).1
+        exact ih hPprevious hjlt
+
+omit [Fintype A] in
 /-- The literal source chain exists to every finite depth. -/
 theorem exists_definition1SourceChain
     {xs : List A} {seed : Selection xs} {n : ℕ}
@@ -1247,6 +1276,40 @@ theorem WeakFactorForm.inLambda
     (W : WeakFactorForm I rho) :
     W.transition.InLambda W.partition := by
   exact W.partition_inLambda
+
+omit [Fintype A] in
+/-- Restricting a weak `rho`-factor form to any earlier stage produces an
+honest weak `j`-factor form for the same partition.  The stage data are
+extracted from the recursive source chain rather than fabricated by reusing
+the final transition. -/
+theorem WeakFactorForm.exists_prefix
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (W : WeakFactorForm I rho) {j : ℕ} (hj : j < rho) :
+    Nonempty (WeakFactorForm I j) := by
+  have hPfinal : W.partition ∈ W.previous.upsilon :=
+    W.partition_inLambda.1
+  obtain ⟨previous, next, F, prior, step, hPinLambda⟩ :=
+    W.chain.exists_transition_at W.partition hPfinal hj
+  refine ⟨{
+    range := by
+      have := W.range
+      omega
+    partition := W.partition
+    admissible := W.admissible
+    previous := previous
+    chain := prior
+    next := next
+    F := F
+    transition := step
+    partition_inLambda := hPinLambda
+    tail_actual := ?_
+    leading_exception := ?_
+  }⟩
+  · intro s hs
+    exact W.tail_actual s (hs.trans (Nat.le_of_lt hj))
+  · intro c hc
+    exact W.leading_exception c (hc.trans hj)
 
 omit [Fintype A] in
 /-- Elementary removal engine used in dissertation Lemma 1.  If `x` has a
@@ -3718,6 +3781,182 @@ theorem WeakFactorForm.quotient_growth_base_le
   omega
 
 omit [Fintype A] in
+/-- Exceptions descend along subgroup inclusion: if a quotient class is
+missing modulo the larger subgroup, it was already missing modulo the
+smaller subgroup. -/
+theorem Theorem21SetPartition.isHException_of_le
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    {H K : AddSubgroup A} (hHK : H ≤ K) {x : A}
+    (hx : P.IsHException K x) : P.IsHException H x := by
+  classical
+  rcases hx with ⟨c, hc⟩
+  refine ⟨c, ?_⟩
+  intro hxH
+  obtain ⟨y, hy, hyx⟩ :=
+    (mem_quotientLayer_iff H (P.valueCell c) _).1 hxH
+  apply hc
+  exact (mem_quotientLayer_iff K (P.valueCell c) _).2
+    ⟨y, hy, quotient_eq_of_subgroup_le hHK hyx⟩
+
+omit [Fintype A] in
+/-- Every leading cell in a weak factor form contains a representative whose
+class modulo the final tail period occurs exactly once in that cell.  This
+is the precise consequence of condition (IV) and dissertation Lemma 1 used
+in the holes count of Lemma 3. -/
+theorem WeakFactorForm.exists_unique_tailPeriod_representative_of_leading
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (W : WeakFactorForm I rho) (c : Fin n) (hc : c.val < rho) :
+    ∃ x ∈ W.partition.valueCell c,
+      ∀ y ∈ W.partition.valueCell c,
+        QuotientAddGroup.mk' (W.partition.tailPeriod rho) y =
+          QuotientAddGroup.mk' (W.partition.tailPeriod rho) x →
+        y = x := by
+  obtain ⟨x, hx, hxException⟩ := W.leading_exception c hc
+  have hperiodLe : W.partition.tailPeriod rho ≤
+      W.partition.tailPeriod c.val :=
+    W.partition.stabilizer_tailSumset_antitone (Nat.le_of_lt hc)
+  have hxFinal : W.partition.IsHException
+      (W.partition.tailPeriod rho) x :=
+    W.partition.isHException_of_le hperiodLe hxException
+  refine ⟨x, hx, ?_⟩
+  intro y hy hyquot
+  by_contra hyx
+  have hdouble : W.partition.IsHDoubledInCell
+      (W.partition.tailPeriod rho) c x :=
+    ⟨hx, y, hy, hyx, hyquot⟩
+  obtain ⟨_z, _hzquot, _hzException, _hzDouble, _hzAnchor,
+      hrhoc, _hzNotPeriodic⟩ :=
+    W.exists_lemma1_representative c x hxFinal hdouble
+  omega
+
+omit [Fintype A] in
+/-- Erasing the unique representative of one quotient class erases exactly
+that class from the quotient image. -/
+theorem quotientLayer_erase_eq_erase_of_unique
+    [DecidableEq A] (H : AddSubgroup A) [DecidableEq (A ⧸ H)]
+    (C : Finset A) {x : A}
+    (hunique : ∀ y ∈ C,
+      QuotientAddGroup.mk' H y = QuotientAddGroup.mk' H x → y = x) :
+    quotientLayer H (C.erase x) =
+      (quotientLayer H C).erase (QuotientAddGroup.mk' H x) := by
+  classical
+  ext q
+  constructor
+  · intro hq
+    obtain ⟨y, hy, hyq⟩ :=
+      (mem_quotientLayer_iff H (C.erase x) q).1 hq
+    have hyData := Finset.mem_erase.mp hy
+    apply Finset.mem_erase.mpr
+    refine ⟨?_, (mem_quotientLayer_iff H C q).2 ⟨y, hyData.2, hyq⟩⟩
+    intro hqx
+    have hyx : QuotientAddGroup.mk' H y =
+        QuotientAddGroup.mk' H x := hyq.trans hqx
+    exact hyData.1 (hunique y hyData.2 hyx)
+  · intro hq
+    have hqData := Finset.mem_erase.mp hq
+    obtain ⟨y, hy, hyq⟩ :=
+      (mem_quotientLayer_iff H C q).1 hqData.2
+    apply (mem_quotientLayer_iff H (C.erase x) q).2
+    refine ⟨y, Finset.mem_erase.mpr ⟨?_, hy⟩, hyq⟩
+    intro hyx
+    subst y
+    exact hqData.1 hyq.symm
+
+/-- An `H`-periodic finite set is the disjoint union of the full `H`-cosets
+met by it, so its cardinality is exactly `|H|` times its quotient image. -/
+theorem card_eq_natCard_mul_card_quotientLayer_of_le_stabilizer
+    (H : AddSubgroup A) (B : Finset A)
+    (hperiodic : H ≤ AddAction.stabilizer A (B : Set A)) :
+    B.card = Nat.card H * (quotientLayer H B).card := by
+  classical
+  have hsaturate : B + dgmSubgroupFinset H = B := by
+    apply Finset.Subset.antisymm
+    · intro z hz
+      obtain ⟨b, hb, h, hh, rfl⟩ := Finset.mem_add.mp hz
+      have hstab := hperiodic ((mem_dgmSubgroupFinset_iff H h).1 hh)
+      rw [AddAction.mem_stabilizer_set] at hstab
+      have := (hstab b).2 hb
+      simpa [add_comm] using this
+    · intro b hb
+      exact Finset.mem_add.mpr
+        ⟨b, hb, 0, (mem_dgmSubgroupFinset_iff H 0).2 H.zero_mem,
+          add_zero b⟩
+  calc
+    B.card = (B + dgmSubgroupFinset H).card := by rw [hsaturate]
+    _ = Nat.card H * (quotientLayer H B).card :=
+      card_add_dgmSubgroupFinset_eq H B
+
+omit [Fintype A] in
+/-- The final tail period also stabilizes the full factor-form sumset. -/
+theorem WeakFactorForm.tailPeriod_le_sumset_stabilizer
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (W : WeakFactorForm I rho) :
+    W.partition.tailPeriod rho ≤
+      AddAction.stabilizer A (W.partition.sumset : Set A) := by
+  have hmono := W.partition.stabilizer_tailSumset_antitone
+    (show 0 ≤ rho from Nat.zero_le rho)
+  simpa [Theorem21SetPartition.tailPeriod,
+    Theorem21SetPartition.tailSumset,
+    Theorem21SetPartition.tailValueCells,
+    Theorem21SetPartition.sumset] using hmono
+
+omit [Fintype A] in
+/-- Quotient projection commutes exactly with finite sumsets. -/
+theorem quotientLayer_add [DecidableEq A]
+    (H : AddSubgroup A) [DecidableEq (A ⧸ H)] (B C : Finset A) :
+    quotientLayer H (B + C) = quotientLayer H B + quotientLayer H C := by
+  ext q
+  constructor
+  · intro hq
+    obtain ⟨z, hz, hzq⟩ := (mem_quotientLayer_iff H (B + C) q).1 hq
+    obtain ⟨b, hb, c, hc, rfl⟩ := Finset.mem_add.mp hz
+    apply Finset.mem_add.mpr
+    refine ⟨QuotientAddGroup.mk' H b,
+      (mem_quotientLayer_iff H B _).2 ⟨b, hb, rfl⟩,
+      QuotientAddGroup.mk' H c,
+      (mem_quotientLayer_iff H C _).2 ⟨c, hc, rfl⟩, ?_⟩
+    exact hzq
+  · intro hq
+    obtain ⟨qb, hqb, qc, hqc, rfl⟩ := Finset.mem_add.mp hq
+    obtain ⟨b, hb, hbq⟩ := (mem_quotientLayer_iff H B qb).1 hqb
+    obtain ⟨c, hc, hcq⟩ := (mem_quotientLayer_iff H C qc).1 hqc
+    apply (mem_quotientLayer_iff H (B + C) (qb + qc)).2
+    refine ⟨b + c, Finset.mem_add.mpr ⟨b, hb, c, hc, rfl⟩, ?_⟩
+    change QuotientAddGroup.mk' H b + QuotientAddGroup.mk' H c = qb + qc
+    simpa only [QuotientAddGroup.mk'_apply] using
+      congrArg₂ (fun u v : A ⧸ H ↦ u + v) hbq hcq
+
+omit [Fintype A] in
+/-- A tail sumset splits into its first cell and the following tail. -/
+theorem Theorem21SetPartition.tailSumset_eq_valueCell_add_succ
+    [DecidableEq A] {xs : List A} {n m : ℕ}
+    (P : Theorem21SetPartition xs n m) (j : Fin n) :
+    P.tailSumset j.val = P.valueCell j + P.tailSumset (j.val + 1) := by
+  have hdecomp := P.tailValueCells_decompose j (r := j.val) le_rfl
+  unfold Theorem21SetPartition.tailSumset
+    Theorem21SetPartition.tailValueCells at hdecomp ⊢
+  rw [hdecomp]
+  simp only [Nat.sub_self, List.take_zero, List.nil_append,
+    fullLayerSumSpectrum_cons]
+  apply Finset.ext
+  intro x
+  simp only [Finset.mem_add]
+
+omit [Fintype A] in
+/-- The preceding tail recursion after projection to an arbitrary quotient.
+-/
+theorem Theorem21SetPartition.quotientLayer_tailSumset_eq_add_succ
+    [DecidableEq A] {xs : List A} {n m : ℕ}
+    (P : Theorem21SetPartition xs n m) (H : AddSubgroup A)
+    [DecidableEq (A ⧸ H)] (j : Fin n) :
+    quotientLayer H (P.tailSumset j.val) =
+      quotientLayer H (P.valueCell j) +
+        quotientLayer H (P.tailSumset (j.val + 1)) := by
+  rw [P.tailSumset_eq_valueCell_add_succ j, quotientLayer_add]
+
+omit [Fintype A] in
 /-- Equation-(3.2) contradiction at one completed Definition 1 stage: two
 members of the same next maximal family have the same incidence objective,
 so one cannot exceed the other by one. -/
@@ -3867,6 +4106,66 @@ theorem card_le_natCard_mul_card_quotientLayer
     simpa [subgroupFinset, Nat.card_eq_fintype_card] using
       (Fintype.card_subtype (fun x : A ↦ x ∈ H)).symm
   simpa [hHcard] using hfiber
+
+/-- A cell with a singleton quotient fiber has at least `|H|-1` holes in
+its `H`-saturation.  The proof erases the singleton fiber and applies the
+general fiber-cardinality bound to the remaining quotient classes. -/
+theorem card_add_natCard_sub_one_le_mul_quotientLayer_of_unique
+    (H : AddSubgroup A) (C : Finset A) {x : A}
+    (hx : x ∈ C)
+    (hunique : ∀ y ∈ C,
+      QuotientAddGroup.mk' H y = QuotientAddGroup.mk' H x → y = x) :
+    C.card + (Nat.card H - 1) ≤
+      Nat.card H * (quotientLayer H C).card := by
+  classical
+  have hqmem : QuotientAddGroup.mk' H x ∈ quotientLayer H C :=
+    (mem_quotientLayer_iff H C _).2 ⟨x, hx, rfl⟩
+  have hqerase := quotientLayer_erase_eq_erase_of_unique H C hunique
+  have hcardC : (C.erase x).card + 1 = C.card :=
+    Finset.card_erase_add_one hx
+  have hcardQ : (quotientLayer H (C.erase x)).card + 1 =
+      (quotientLayer H C).card := by
+    rw [hqerase]
+    exact Finset.card_erase_add_one hqmem
+  have herase := card_le_natCard_mul_card_quotientLayer H (C.erase x)
+  have hplus : C.card + Nat.card H ≤
+      Nat.card H * (quotientLayer H C).card + 1 := by
+    calc
+      C.card + Nat.card H =
+          (C.erase x).card + Nat.card H + 1 := by omega
+      _ ≤ Nat.card H * (quotientLayer H (C.erase x)).card +
+          Nat.card H + 1 := by omega
+      _ = Nat.card H * (quotientLayer H C).card + 1 := by
+        rw [← hcardQ]
+        simp [Nat.mul_add]
+  have hHpos : 1 ≤ Nat.card H := Nat.card_pos
+  omega
+
+/-- Summed leading-cell holes estimate in dissertation Lemma 3. -/
+theorem WeakFactorForm.leading_holes_le
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (W : WeakFactorForm I rho) :
+    (∑ c ∈ leadingIndices n rho, (W.partition.valueCell c).card) +
+        rho * (Nat.card (W.partition.tailPeriod rho) - 1) ≤
+      Nat.card (W.partition.tailPeriod rho) *
+        ∑ c ∈ leadingIndices n rho,
+          (quotientLayer (W.partition.tailPeriod rho)
+            (W.partition.valueCell c)).card := by
+  classical
+  have hrhon : rho ≤ n := by
+    have := W.range
+    omega
+  have hsum := Finset.sum_le_sum fun c
+      (hc : c ∈ leadingIndices n rho) ↦ by
+    have hc' : c.val < rho := by
+      simpa [leadingIndices] using hc
+    obtain ⟨x, hx, hunique⟩ :=
+      W.exists_unique_tailPeriod_representative_of_leading c hc'
+    exact card_add_natCard_sub_one_le_mul_quotientLayer_of_unique
+      (W.partition.tailPeriod rho) (W.partition.valueCell c) hx hunique
+  simpa [Finset.sum_add_distrib, card_leadingIndices hrhon,
+    Finset.mul_sum] using hsum
 
 /-- The source number `N = |commonCore| / |H|` is bounded by the number of
 quotient classes represented by the common core. -/
@@ -4281,6 +4580,218 @@ theorem Theorem21SetPartition.sum_card_valueCell
     _ = (Finset.univ.biUnion P.cells).card := by
       rw [Finset.card_biUnion hdisjoint]
     _ = m := P.card_support
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Leading and tail cells partition all cell indices, hence their incidence
+totals add to the exact replacement length. -/
+theorem Theorem21SetPartition.sum_leading_add_sum_tail
+    {xs : List A} {n m rho : ℕ} (P : Theorem21SetPartition xs n m) :
+    (∑ c ∈ leadingIndices n rho, (P.valueCell c).card) +
+        ∑ c ∈ tailIndices n rho, (P.valueCell c).card = m := by
+  classical
+  have hsplit := Finset.sum_filter_add_sum_filter_not
+    (Finset.univ : Finset (Fin n)) (fun c : Fin n ↦ c.val < rho)
+      (fun c : Fin n ↦ (P.valueCell c).card)
+  rw [P.sum_card_valueCell] at hsplit
+  simpa [leadingIndices, tailIndices, not_lt] using hsplit
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Natural-number closing step for dissertation Lemma 3.  The hypotheses
+are the quotient growth (II), the leading singleton-fiber holes count,
+failure of the tail deficit (III), and the two periodic quotient-cardinality
+identities.  Keeping this arithmetic separate makes every subtraction guard
+auditable. -/
+theorem lemma3_nat_closing
+    {m n rho h qTail qLead qFull tailCard fullCard
+      leadIncidence tailIncidence : ℕ}
+    (hrange : rho ≤ n) (hh : 1 ≤ h)
+    (hbase : rho + 1 ≤ qTail + qLead)
+    (hII : qTail + qLead - (rho + 1) + 1 ≤ qFull)
+    (htail : tailCard = h * qTail)
+    (hfull : fullCard = h * qFull)
+    (hholes : leadIncidence + rho * (h - 1) ≤ h * qLead)
+    (hlead : rho ≤ leadIncidence)
+    (htailGuard : n - rho ≤ tailIncidence)
+    (hnotIII : tailIncidence - (n - rho) + 1 ≤ tailCard)
+    (hsplit : leadIncidence + tailIncidence = m) :
+    m - n + 1 ≤ fullCard := by
+  have hrhoq : rho ≤ qTail + qLead := by omega
+  have hquot : qTail + qLead - rho ≤ qFull := by omega
+  have hmul := Nat.mul_le_mul_left h hquot
+  have hmul' : h * qTail + h * qLead - h * rho ≤ h * qFull := by
+    simpa [Nat.mul_sub_left_distrib, Nat.mul_add] using hmul
+  have hrhoLe : rho ≤ rho * h := by
+    simpa using Nat.mul_le_mul_left rho hh
+  have hrhoMul : rho * (h - 1) + rho = h * rho := by
+    calc
+      rho * (h - 1) + rho = rho * h - rho + rho := by
+        simp only [Nat.mul_sub_left_distrib, Nat.mul_one]
+      _ = rho * h := Nat.sub_add_cancel hrhoLe
+      _ = h * rho := Nat.mul_comm _ _
+  have hmiddle : h * qTail + leadIncidence - rho ≤
+      h * qTail + h * qLead - h * rho := by
+    omega
+  have hperiodicLower : tailCard + leadIncidence - rho ≤ fullCard := by
+    rw [htail, hfull]
+    exact hmiddle.trans hmul'
+  have hcdt : m - n + 1 ≤ tailCard + leadIncidence - rho := by
+    omega
+  exact hcdt.trans hperiodicLower
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Finite telescoping form used in dissertation Lemma 4.  Each one-step
+Scherk/Kneser estimate loses at most one, so adjoining `rho` leading cells
+loses at most `rho` in total. -/
+theorem nat_card_telescope_sub
+    (tail cell : ℕ → ℕ) (rho : ℕ)
+    (hstep : ∀ j < rho,
+      tail (j + 1) + cell j - 1 ≤ tail j)
+    (hcell : ∀ j < rho, 1 ≤ cell j) :
+    tail rho + (∑ j ∈ Finset.range rho, cell j) - rho ≤ tail 0 := by
+  induction rho with
+  | zero => simp
+  | succ rho ih =>
+      have hstepLast := hstep rho (Nat.lt_succ_self rho)
+      have hcellLast := hcell rho (Nat.lt_succ_self rho)
+      have ih' := ih
+        (fun j hj ↦ hstep j (hj.trans (Nat.lt_succ_self rho)))
+        (fun j hj ↦ hcell j (hj.trans (Nat.lt_succ_self rho)))
+      have hsumGuard : rho ≤ ∑ j ∈ Finset.range rho, cell j := by
+        calc
+          rho = (Finset.range rho).card := (Finset.card_range rho).symm
+          _ = ∑ _j ∈ Finset.range rho, 1 := by simp
+          _ ≤ ∑ j ∈ Finset.range rho, cell j := by
+            exact Finset.sum_le_sum fun j hj ↦
+              hcell j (Finset.mem_range.mp hj |>.trans
+                (Nat.lt_succ_self rho))
+      rw [Finset.sum_range_succ]
+      omega
+
+/-- Dissertation Lemma 3 in its source-faithful disjunctive form.  Condition
+(II) forces either the missing condition (III), or an admissible replacement
+already satisfying the ordinary Cauchy--Davenport bound.  The second branch
+is intentionally the scalar trivial-period conclusion, not a false claim
+that the trivial subgroup is the actual stabilizer. -/
+theorem WeakFactorForm.lemma3_dichotomy
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (W : WeakFactorForm I rho)
+    (hII :
+      ((quotientLayer (W.partition.tailPeriod rho)
+            (W.partition.tailSumset rho)).card +
+          (∑ c ∈ leadingIndices n rho,
+            (quotientLayer (W.partition.tailPeriod rho)
+              (W.partition.valueCell c)).card) - (rho + 1) + 1) ≤
+        (quotientLayer (W.partition.tailPeriod rho)
+          W.partition.sumset).card) :
+    (W.partition.tailSumset rho).card <
+        (∑ c ∈ tailIndices n rho,
+          (W.partition.valueCell c).card) - (n - rho) + 1 ∨
+      Nonempty (GMOTheoremETrivialConclusion I) := by
+  classical
+  by_cases hIII :
+      (W.partition.tailSumset rho).card <
+        (∑ c ∈ tailIndices n rho,
+          (W.partition.valueCell c).card) - (n - rho) + 1
+  · exact Or.inl hIII
+  · right
+    let H : AddSubgroup A := W.partition.tailPeriod rho
+    let qTail := (quotientLayer H (W.partition.tailSumset rho)).card
+    let qLead := ∑ c ∈ leadingIndices n rho,
+      (quotientLayer H (W.partition.valueCell c)).card
+    let qFull := (quotientLayer H W.partition.sumset).card
+    let leadIncidence := ∑ c ∈ leadingIndices n rho,
+      (W.partition.valueCell c).card
+    let tailIncidence := ∑ c ∈ tailIndices n rho,
+      (W.partition.valueCell c).card
+    have hrange : rho ≤ n := by
+      have := W.range
+      omega
+    have hbase : rho + 1 ≤ qTail + qLead := by
+      simpa [H, qTail, qLead] using W.quotient_growth_base_le
+    have hII' : qTail + qLead - (rho + 1) + 1 ≤ qFull := by
+      simpa [H, qTail, qLead, qFull] using hII
+    have htail : (W.partition.tailSumset rho).card =
+        Nat.card H * qTail := by
+      apply card_eq_natCard_mul_card_quotientLayer_of_le_stabilizer
+      exact le_rfl
+    have hfull : W.partition.sumset.card = Nat.card H * qFull := by
+      apply card_eq_natCard_mul_card_quotientLayer_of_le_stabilizer
+      exact W.tailPeriod_le_sumset_stabilizer
+    have hholes : leadIncidence + rho * (Nat.card H - 1) ≤
+        Nat.card H * qLead := by
+      simpa [H, leadIncidence, qLead] using W.leading_holes_le
+    have hlead : rho ≤ leadIncidence := by
+      calc
+        rho = (leadingIndices n rho).card :=
+          (card_leadingIndices hrange).symm
+        _ = ∑ c ∈ leadingIndices n rho, 1 := by simp
+        _ ≤ ∑ c ∈ leadingIndices n rho,
+            (W.partition.valueCell c).card := by
+          exact Finset.sum_le_sum fun c _ ↦
+            Finset.card_pos.mpr (W.partition.valueCells_nonempty
+              (W.partition.valueCell c) (by
+                simp [Theorem21SetPartition.valueCells]))
+        _ = leadIncidence := rfl
+    have htailGuard : n - rho ≤ tailIncidence := by
+      simpa [tailIncidence] using
+        W.partition.card_tailIndices_le_sum_card_valueCell hrange
+    have hnotIII : tailIncidence - (n - rho) + 1 ≤
+        (W.partition.tailSumset rho).card := by
+      simpa [tailIncidence] using Nat.le_of_not_gt hIII
+    have hsplit : leadIncidence + tailIncidence = seed.card := by
+      simpa [leadIncidence, tailIncidence] using
+        W.partition.sum_leading_add_sum_tail (rho := rho)
+    have hcdt : seed.card - n + 1 ≤ W.partition.sumset.card :=
+      lemma3_nat_closing hrange Nat.card_pos hbase hII' htail hfull
+        hholes hlead htailGuard hnotIII hsplit
+    exact ⟨{
+      partition := W.partition
+      admissible := W.admissible
+      card_lower := hcdt
+    }⟩
+
+/-- Under the global contradiction hypothesis that no trivial/CDT
+conclusion exists, Lemma 3 supplies condition (III). -/
+theorem WeakFactorForm.tail_deficit_of_quotient_growth
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (W : WeakFactorForm I rho)
+    (hII :
+      ((quotientLayer (W.partition.tailPeriod rho)
+            (W.partition.tailSumset rho)).card +
+          (∑ c ∈ leadingIndices n rho,
+            (quotientLayer (W.partition.tailPeriod rho)
+              (W.partition.valueCell c)).card) - (rho + 1) + 1) ≤
+        (quotientLayer (W.partition.tailPeriod rho)
+          W.partition.sumset).card)
+    (hfail : ¬ Nonempty (GMOTheoremETrivialConclusion I)) :
+    (W.partition.tailSumset rho).card <
+      (∑ c ∈ tailIndices n rho,
+        (W.partition.valueCell c).card) - (n - rho) + 1 := by
+  rcases W.lemma3_dichotomy hII with hIII | htrivial
+  · exact hIII
+  · exact (hfail htrivial).elim
+
+/-- The usual factor-form packaging of Lemma 3 after excluding the scalar
+trivial/CDT branch. -/
+noncomputable def WeakFactorForm.toFactorForm_of_quotient_growth
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (W : WeakFactorForm I rho)
+    (hII :
+      ((quotientLayer (W.partition.tailPeriod rho)
+            (W.partition.tailSumset rho)).card +
+          (∑ c ∈ leadingIndices n rho,
+            (quotientLayer (W.partition.tailPeriod rho)
+              (W.partition.valueCell c)).card) - (rho + 1) + 1) ≤
+        (quotientLayer (W.partition.tailPeriod rho)
+          W.partition.sumset).card)
+    (hfail : ¬ Nonempty (GMOTheoremETrivialConclusion I)) :
+    FactorForm I rho where
+  toWeakFactorForm := W
+  quotient_growth := hII
+  tail_deficit := W.tail_deficit_of_quotient_growth hII hfail
 
 /-- Within one cell, value injectivity identifies the occurrence defect with
 the corresponding value-set defect used in Theorem E. -/
