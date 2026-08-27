@@ -299,3 +299,13 @@ M60--M62 继续把 GMO 文献边界拆成原文忠实的 DGM pattern、普通 De
 源商像不变，目标商像基数恰增一。当前状态仍是 `LEAN_CONDITIONAL`；DGM 最后的
 `Xi`/方程 (1)--(5)、普通 Lemmas 1--5 到 Theorem E/2.4/2.5，以及 signed
 Steps 1/6 都尚未宣称完成。见 `milestone-60.md` 至 `milestone-63.md`。
+
+M64 已把 DGM 的 `X'/Y'` 陪集覆盖、非截断 `Xi` 两层增益和最终严格覆盖矛盾
+端点机械化；同时公开确认，论文排版后的四个非严格自然数不等式本身不足以产生
+严格矛盾，后续必须保留 (3)/nonconvergent 的严格性，不能用 `omega` 偷补。
+普通 GMO 已证明 doubled-exception move 使总商 incidence 恰加一，并完成贯穿
+Definition 1 全链的抽象单调替换归纳；signed 结构 Corollary 1.3 的 Steps 4/5
+也已由跨类型基数强归纳闭合，奇阶 Step 6 的 signed-cell capped-incidence 估计
+亦已完成。DGM 的 top-pattern 到冻结 General DGM 接口运输、inner-measure 严格下降
+及 `Xi_K(A')≤Xi_K(A)` 也已核验。状态仍为 `LEAN_CONDITIONAL`，精确剩余见
+`milestone-64.md`。

@@ -944,3 +944,29 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
 - This remains an honest conditional checkpoint.  DGM equations (1)--(5),
   the Definition 1 maximality contradiction and Lemmas 2--5, and signed
   Steps 1/6 remain unproved.
+
+## 2026-08-27: DGM Xi cover, Definition 1 monotonicity, odd signed induction (M64)
+
+- Formalized the DGM `X'/Y'` coset covers, their cardinality/disjointness
+  facts, the honest nontruncated Xi two-layer gain, and the final strict-cover
+  contradiction endpoint.
+- Rejected an invalid arithmetic shortcut: the four displayed non-strict
+  Nat inequalities do not by themselves preserve the strict information
+  needed at the end.  The missing Xi/(1)--(3) derivation remains explicit.
+- Proved the ordinary doubled-exception move raises total quotient incidence
+  exactly by one, contradicts a fixed transition maximum, and can be carried
+  abstractly through the full Definition 1 extremal chain by a recursive
+  monotone-replacement certificate.
+- Closed signed structural Steps 4/5 using cross-type cardinal induction and
+  proved odd Step 6's elementary signed-cell capped-incidence estimate.
+- Completed the top-pattern-to-General-DGM transport, unconditional
+  intersection--union inner-measure descent, and `Xi_K(A') <= Xi_K(A)`.
+  Added arbitrary-tail erase preservation and the honest Nat closing
+  arithmetic for ordinary Lemma 2.
+- An initial full build caught a namespace collision with an older
+  `zeroOccurrences`; the new definition was renamed throughout to
+  `plusMinusZeroOccurrences`.  After the fix, joint target build: 8707 jobs,
+  exit 0; full project build: 8753 jobs, exit 0; final scans clean.
+- The manuscript remains conditional: General DGM's strict weighted Xi core, the
+  concrete ordinary equation (3.1) propagation and Lemmas 2--5, the odd
+  signed Corollary 1.2 Step 1, and final provider assembly remain.

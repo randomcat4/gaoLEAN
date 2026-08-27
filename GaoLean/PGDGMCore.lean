@@ -631,6 +631,29 @@ theorem dgmPatternInnerMeasure_inter_union_lt_of_spectrum_eq
   rw [hspectrum, htotal]
   exact Prod.Lex.right _ (Prod.Lex.right _ (Prod.Lex.left _ _ hdefect))
 
+/-- The two descent cases combine without any excluded middle hidden in the
+minimal-counterexample argument: inclusion gives either a smaller spectrum,
+or equality and hence a smaller square defect. -/
+theorem dgmPatternInnerMeasure_inter_union_lt
+    [Fintype A] {K : AddSubgroup A} {n : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (B C : Finset A) (P : List (Finset A)) (μ : QuotientPattern K n)
+    (hBC : ¬ B ⊆ C) (hCB : ¬ C ⊆ B) :
+    DGMPatternInnerLt
+      (dgmPatternInnerMeasure (dgmInterUnionLayers B C P) μ)
+      (dgmPatternInnerMeasure (B :: C :: P) μ) := by
+  have hsubset := patternSubsumSpectrum_inter_union_subset B C P μ
+  have hcard := Finset.card_le_card hsubset
+  rcases lt_or_eq_of_le hcard with hlt | heq
+  · exact dgmPatternInnerMeasure_inter_union_lt_of_card_lt
+      B C P μ hlt
+  · have hspectrum :
+        patternSubsumSpectrum (dgmInterUnionLayers B C P) μ =
+          patternSubsumSpectrum (B :: C :: P) μ :=
+      Finset.eq_of_subset_of_card_le hsubset heq.ge
+    exact dgmPatternInnerMeasure_inter_union_lt_of_spectrum_eq
+      B C P μ hBC hCB hspectrum
+
 /-! ## The crossed two-layer objects in the general pattern proof -/
 
 /-- The part of a layer lying in the additive `H`-coset represented by `b`.
@@ -1224,6 +1247,240 @@ theorem dgmCrossedH2_lt_of_escape
     exact hyD12 (dgmCrossedD2_subset_D12
       B C P b₁ b₂ νtail hD12 hyD2)
 
+/-! ## The finite sets in the Ξ-difference claim -/
+
+/-- The literal finite carrier of a subgroup of the ambient finite group. -/
+noncomputable def dgmSubgroupFinset [Fintype A]
+    (L : AddSubgroup A) : Finset A := by
+  classical
+  letI : Fintype L := Fintype.ofFinite L
+  exact (Finset.univ : Finset L).map
+    ⟨fun x : L ↦ (x : A), Subtype.val_injective⟩
+
+@[simp]
+theorem mem_dgmSubgroupFinset_iff [Fintype A]
+    (L : AddSubgroup A) (x : A) :
+    x ∈ dgmSubgroupFinset L ↔ x ∈ L := by
+  classical
+  simp [dgmSubgroupFinset]
+
+@[simp]
+theorem card_dgmSubgroupFinset [Fintype A]
+    (L : AddSubgroup A) :
+    (dgmSubgroupFinset L).card = Nat.card L := by
+  classical
+  letI : Fintype L := Fintype.ofFinite L
+  simp [dgmSubgroupFinset, Nat.card_eq_fintype_card]
+
+/-- A literal `H`-coset, represented as one quotient fiber. -/
+noncomputable def dgmCosetFiber [Fintype A]
+    (H : AddSubgroup A) (b : A) : Finset A := by
+  classical
+  exact Finset.univ.filter fun x ↦ (x : A ⧸ H) = (b : A ⧸ H)
+
+@[simp]
+theorem mem_dgmCosetFiber_iff [Fintype A]
+    (H : AddSubgroup A) (b x : A) :
+    x ∈ dgmCosetFiber H b ↔
+      (x : A ⧸ H) = (b : A ⧸ H) := by
+  classical
+  simp [dgmCosetFiber]
+
+noncomputable def dgmSubgroupEquivCosetFiber [Fintype A]
+    (H : AddSubgroup A) (b : A) :
+    H ≃ {x : A // x ∈ dgmCosetFiber H b} where
+  toFun h := ⟨b + (h : A), by
+    apply (mem_dgmCosetFiber_iff H b _).2
+    rw [show ((b + (h : A) : A) : A ⧸ H) =
+        (b : A ⧸ H) + ((h : A) : A ⧸ H) by rfl,
+      (QuotientAddGroup.eq_zero_iff (h : A)).2 h.2, add_zero]⟩
+  invFun x := ⟨(x : A) - b, by
+    exact QuotientAddGroup.eq_iff_sub_mem.mp
+      ((mem_dgmCosetFiber_iff H b (x : A)).1 x.2)⟩
+  left_inv h := by
+    apply Subtype.ext
+    simp
+  right_inv x := by
+    apply Subtype.ext
+    simp
+
+@[simp]
+theorem card_dgmCosetFiber [Fintype A]
+    (H : AddSubgroup A) (b : A) :
+    (dgmCosetFiber H b).card = Nat.card H := by
+  classical
+  letI : Fintype H := Fintype.ofFinite H
+  calc
+    (dgmCosetFiber H b).card =
+        Fintype.card {x : A // x ∈ dgmCosetFiber H b} :=
+      (Fintype.card_coe (dgmCosetFiber H b)).symm
+    _ = Fintype.card H :=
+      Fintype.card_congr (dgmSubgroupEquivCosetFiber H b).symm
+    _ = Nat.card H := Nat.card_eq_fintype_card.symm
+
+/-- Saturation of one sliced leading layer by `L`. -/
+noncomputable def dgmSingleSliceSaturation [Fintype A]
+    (H L : AddSubgroup A) (B : Finset A) (b : A) : Finset A :=
+  dgmCosetSlice H B b + dgmSubgroupFinset L
+
+/-- The `H'`-saturation of the portions of both leading layers in one
+fixed `H`-coset. -/
+noncomputable def dgmPairSliceSaturation [Fintype A]
+    (H L : AddSubgroup A) (B C : Finset A) (b : A) : Finset A :=
+  (dgmCosetSlice H B b ∪ dgmCosetSlice H C b) +
+    dgmSubgroupFinset L
+
+theorem dgmPairSliceSaturation_eq_union [Fintype A]
+    (H L : AddSubgroup A) (B C : Finset A) (b : A) :
+    dgmPairSliceSaturation H L B C b =
+      dgmSingleSliceSaturation H L B b ∪
+        dgmSingleSliceSaturation H L C b := by
+  ext y
+  constructor
+  · intro hy
+    obtain ⟨x, hx, l, hl, rfl⟩ := Finset.mem_add.mp hy
+    rcases Finset.mem_union.mp hx with hx | hx
+    · exact Finset.mem_union_left _ (Finset.mem_add.mpr ⟨x, hx, l, hl, rfl⟩)
+    · exact Finset.mem_union_right _ (Finset.mem_add.mpr ⟨x, hx, l, hl, rfl⟩)
+  · intro hy
+    rcases Finset.mem_union.mp hy with hy | hy
+    · obtain ⟨x, hx, l, hl, rfl⟩ := Finset.mem_add.mp hy
+      exact Finset.mem_add.mpr
+        ⟨x, Finset.mem_union_left _ hx, l, hl, rfl⟩
+    · obtain ⟨x, hx, l, hl, rfl⟩ := Finset.mem_add.mp hy
+      exact Finset.mem_add.mpr
+        ⟨x, Finset.mem_union_right _ hx, l, hl, rfl⟩
+
+/-- The source proof's missing sets `X'` and `Y'`. -/
+noncomputable def dgmMissingPairCoset [Fintype A]
+    (H L : AddSubgroup A) (B C : Finset A) (b : A) : Finset A :=
+  dgmCosetFiber H b \ dgmPairSliceSaturation H L B C b
+
+theorem dgmPairSliceSaturation_subset_cosetFiber [Fintype A]
+    (H L : AddSubgroup A) (hLH : L ≤ H)
+    (B C : Finset A) (b : A) :
+    dgmPairSliceSaturation H L B C b ⊆ dgmCosetFiber H b := by
+  intro y hy
+  obtain ⟨x, hx, l, hl, rfl⟩ := Finset.mem_add.mp hy
+  have hxq : (x : A ⧸ H) = (b : A ⧸ H) := by
+    rcases Finset.mem_union.mp hx with hx | hx
+    · exact (mem_dgmCosetSlice_iff H B b x).1 hx |>.2
+    · exact (mem_dgmCosetSlice_iff H C b x).1 hx |>.2
+  have hlH : l ∈ H := hLH ((mem_dgmSubgroupFinset_iff L l).1 hl)
+  apply (mem_dgmCosetFiber_iff H b (x + l)).2
+  rw [show ((x + l : A) : A ⧸ H) = (x : A ⧸ H) + (l : A ⧸ H) by rfl,
+    (QuotientAddGroup.eq_zero_iff l).2 hlH, add_zero, hxq]
+
+theorem dgmCosetFiber_eq_missing_union_saturation [Fintype A]
+    (H L : AddSubgroup A) (hLH : L ≤ H)
+    (B C : Finset A) (b : A) :
+    dgmCosetFiber H b =
+      dgmMissingPairCoset H L B C b ∪
+        dgmPairSliceSaturation H L B C b := by
+  unfold dgmMissingPairCoset
+  exact (Finset.sdiff_union_of_subset
+    (dgmPairSliceSaturation_subset_cosetFiber H L hLH B C b)).symm
+
+theorem card_missing_add_pairSaturation [Fintype A]
+    (H L : AddSubgroup A) (hLH : L ≤ H)
+    (B C : Finset A) (b : A) :
+    (dgmMissingPairCoset H L B C b).card +
+        (dgmPairSliceSaturation H L B C b).card = Nat.card H := by
+  unfold dgmMissingPairCoset
+  rw [Finset.card_sdiff_add_card_eq_card
+    (dgmPairSliceSaturation_subset_cosetFiber H L hLH B C b),
+    card_dgmCosetFiber]
+
+/-- Cardinal form of the two coset-cover equalities used in the final
+contradiction: one full `H`-coset is covered by its missing set and the two
+individual `L`-saturated slices. -/
+theorem card_cosetFiber_le_missing_add_singleSaturations [Fintype A]
+    (H L : AddSubgroup A) (hLH : L ≤ H)
+    (B C : Finset A) (b : A) :
+    Nat.card H ≤ (dgmMissingPairCoset H L B C b).card +
+      (dgmSingleSliceSaturation H L B b).card +
+      (dgmSingleSliceSaturation H L C b).card := by
+  rw [← card_dgmCosetFiber H b,
+    dgmCosetFiber_eq_missing_union_saturation H L hLH B C b,
+    dgmPairSliceSaturation_eq_union]
+  calc
+    (dgmMissingPairCoset H L B C b ∪
+        (dgmSingleSliceSaturation H L B b ∪
+          dgmSingleSliceSaturation H L C b)).card ≤
+        (dgmMissingPairCoset H L B C b).card +
+          (dgmSingleSliceSaturation H L B b ∪
+            dgmSingleSliceSaturation H L C b).card :=
+      Finset.card_union_le _ _
+    _ ≤ (dgmMissingPairCoset H L B C b).card +
+          ((dgmSingleSliceSaturation H L B b).card +
+            (dgmSingleSliceSaturation H L C b).card) :=
+      Nat.add_le_add_left (Finset.card_union_le _ _) _
+    _ = _ := by omega
+
+theorem dgmMissingPairCoset_subset_cosetFiber [Fintype A]
+    (H L : AddSubgroup A) (B C : Finset A) (b : A) :
+    dgmMissingPairCoset H L B C b ⊆ dgmCosetFiber H b := by
+  exact Finset.sdiff_subset
+
+theorem disjoint_dgmMissingPairCoset_of_ne [Fintype A]
+    (H L : AddSubgroup A) (B C : Finset A) (b₁ b₂ : A)
+    (hne : (b₁ : A ⧸ H) ≠ (b₂ : A ⧸ H)) :
+    Disjoint (dgmMissingPairCoset H L B C b₁)
+      (dgmMissingPairCoset H L B C b₂) := by
+  rw [Finset.disjoint_left]
+  intro x hx₁ hx₂
+  have hq₁ := (mem_dgmCosetFiber_iff H b₁ x).1
+    (dgmMissingPairCoset_subset_cosetFiber H L B C b₁ hx₁)
+  have hq₂ := (mem_dgmCosetFiber_iff H b₂ x).1
+    (dgmMissingPairCoset_subset_cosetFiber H L B C b₂ hx₂)
+  exact hne (hq₁.symm.trans hq₂)
+
+theorem card_missingUnion_add_pairSaturations [Fintype A]
+    (H L : AddSubgroup A) (hLH : L ≤ H)
+    (B C : Finset A) (b₁ b₂ : A)
+    (hne : (b₁ : A ⧸ H) ≠ (b₂ : A ⧸ H)) :
+    (dgmMissingPairCoset H L B C b₁ ∪
+        dgmMissingPairCoset H L B C b₂).card +
+      (dgmPairSliceSaturation H L B C b₁).card +
+      (dgmPairSliceSaturation H L B C b₂).card =
+        2 * Nat.card H := by
+  have h₁ := card_missing_add_pairSaturation H L hLH B C b₁
+  have h₂ := card_missing_add_pairSaturation H L hLH B C b₂
+  rw [Finset.card_union_of_disjoint
+    (disjoint_dgmMissingPairCoset_of_ne H L B C b₁ b₂ hne)]
+  omega
+
+/-- The final set-theoretic contradiction on page 14 of the source proof.
+Once equations (4)--(5) yield the displayed strict upper bound, the two
+coset-cover inequalities force its negation. -/
+theorem dgmFinalCosetCoverContradiction [Fintype A]
+    (H L : AddSubgroup A) (hLH : L ≤ H)
+    (B C : Finset A) (b₁ b₂ : A)
+    (hne : (b₁ : A ⧸ H) ≠ (b₂ : A ⧸ H))
+    (hstrict :
+      2 * Nat.card H >
+        (dgmSingleSliceSaturation H L B b₁).card +
+        (dgmSingleSliceSaturation H L C b₁).card +
+        (dgmSingleSliceSaturation H L B b₂).card +
+        (dgmSingleSliceSaturation H L C b₂).card +
+        (dgmMissingPairCoset H L B C b₁ ∪
+          dgmMissingPairCoset H L B C b₂).card + Nat.card L) :
+    False := by
+  have hcover₁ := card_cosetFiber_le_missing_add_singleSaturations
+    H L hLH B C b₁
+  have hcover₂ := card_cosetFiber_le_missing_add_singleSaturations
+    H L hLH B C b₂
+  have hdisjoint := disjoint_dgmMissingPairCoset_of_ne
+    H L B C b₁ b₂ hne
+  have hunion :
+      (dgmMissingPairCoset H L B C b₁ ∪
+        dgmMissingPairCoset H L B C b₂).card =
+      (dgmMissingPairCoset H L B C b₁).card +
+        (dgmMissingPairCoset H L B C b₂).card :=
+    Finset.card_union_of_disjoint hdisjoint
+  rw [hunion] at hstrict
+  omega
+
 /-- A translation outside the stabilizer of a nonempty finite set moves
 some member of the set outside it. -/
 theorem exists_mem_add_not_mem_of_not_mem_addStab
@@ -1260,6 +1517,39 @@ theorem quotientLayer_nonempty (K : AddSubgroup A) (B : Finset A)
   obtain ⟨x, hx⟩ := hB
   exact ⟨(x : A ⧸ K), (mem_quotientLayer_iff K B _).2 ⟨x, hx, rfl⟩⟩
 
+theorem quotientLayer_union (K : AddSubgroup A)
+    [DecidableEq (A ⧸ K)]
+    (B C : Finset A) :
+    quotientLayer K (B ∪ C) =
+      (quotientLayer K B) ∪ (quotientLayer K C) := by
+  classical
+  ext q
+  simp only [mem_quotientLayer_iff, Finset.mem_union]
+  constructor
+  · rintro ⟨x, hx, hxq⟩
+    rcases hx with hx | hx
+    · exact Or.inl ⟨x, hx, hxq⟩
+    · exact Or.inr ⟨x, hx, hxq⟩
+  · rintro (⟨x, hx, hxq⟩ | ⟨x, hx, hxq⟩)
+    · exact ⟨x, Or.inl hx, hxq⟩
+    · exact ⟨x, Or.inr hx, hxq⟩
+
+theorem quotientLayer_inter_subset_left (K : AddSubgroup A)
+    (B C : Finset A) :
+    quotientLayer K (B ∩ C) ⊆ quotientLayer K B := by
+  intro q hq
+  obtain ⟨x, hx, rfl⟩ := (mem_quotientLayer_iff K (B ∩ C) q).1 hq
+  exact (mem_quotientLayer_iff K B _).2
+    ⟨x, (Finset.mem_inter.mp hx).1, rfl⟩
+
+theorem quotientLayer_inter_subset_right (K : AddSubgroup A)
+    (B C : Finset A) :
+    quotientLayer K (B ∩ C) ⊆ quotientLayer K C := by
+  intro q hq
+  obtain ⟨x, hx, rfl⟩ := (mem_quotientLayer_iff K (B ∩ C) q).1 hq
+  exact (mem_quotientLayer_iff K C _).2
+    ⟨x, (Finset.mem_inter.mp hx).2, rfl⟩
+
 /-- The DGM multiplicity of a quotient value: the number of projected layers
 which contain that value.  A layer contributes at most once even if several
 of its original elements collapse modulo `K`. -/
@@ -1289,6 +1579,61 @@ theorem quotientLayerMultiplicity_cons_of_not_mem
   have hq' : ¬∃ x ∈ B, (x : A ⧸ K) = q := by
     simpa only [mem_quotientLayer_iff] using hq
   simp [quotientLayerMultiplicity, hq']
+
+/-- Intersection--union can merge two quotient incidences, but never creates
+more of them.  This is the exact `Ξ_K(A') ≤ Ξ_K(A)` direction in the source
+minimal-counterexample proof. -/
+theorem quotientLayerMultiplicity_inter_union_le
+    (K : AddSubgroup A) (B C : Finset A)
+    (P : List (Finset A)) (q : A ⧸ K) :
+    quotientLayerMultiplicity K (dgmInterUnionLayers B C P) q ≤
+      quotientLayerMultiplicity K (B :: C :: P) q := by
+  classical
+  change quotientLayerMultiplicity K ((B ∩ C) :: (B ∪ C) :: P) q ≤ _
+  have hU : q ∈ quotientLayer K (B ∪ C) ↔
+      q ∈ quotientLayer K B ∨ q ∈ quotientLayer K C := by
+    rw [quotientLayer_union, Finset.mem_union]
+  have hIB := quotientLayer_inter_subset_left K B C
+  have hIC := quotientLayer_inter_subset_right K B C
+  by_cases hB : q ∈ quotientLayer K B
+  · by_cases hC : q ∈ quotientLayer K C
+    · by_cases hI : q ∈ quotientLayer K (B ∩ C)
+      · rw [quotientLayerMultiplicity_cons_of_mem K (B ∩ C)
+            ((B ∪ C) :: P) q hI,
+          quotientLayerMultiplicity_cons_of_mem K (B ∪ C) P q
+            (hU.mpr (Or.inl hB)),
+          quotientLayerMultiplicity_cons_of_mem K B (C :: P) q hB,
+          quotientLayerMultiplicity_cons_of_mem K C P q hC]
+      · rw [quotientLayerMultiplicity_cons_of_not_mem K (B ∩ C)
+            ((B ∪ C) :: P) q hI,
+          quotientLayerMultiplicity_cons_of_mem K (B ∪ C) P q
+            (hU.mpr (Or.inl hB)),
+          quotientLayerMultiplicity_cons_of_mem K B (C :: P) q hB,
+          quotientLayerMultiplicity_cons_of_mem K C P q hC]
+        omega
+    · have hI : q ∉ quotientLayer K (B ∩ C) := fun h ↦ hC (hIC h)
+      rw [quotientLayerMultiplicity_cons_of_not_mem K (B ∩ C)
+            ((B ∪ C) :: P) q hI,
+          quotientLayerMultiplicity_cons_of_mem K (B ∪ C) P q
+            (hU.mpr (Or.inl hB)),
+          quotientLayerMultiplicity_cons_of_mem K B (C :: P) q hB,
+          quotientLayerMultiplicity_cons_of_not_mem K C P q hC]
+  · by_cases hC : q ∈ quotientLayer K C
+    · have hI : q ∉ quotientLayer K (B ∩ C) := fun h ↦ hB (hIB h)
+      rw [quotientLayerMultiplicity_cons_of_not_mem K (B ∩ C)
+            ((B ∪ C) :: P) q hI,
+          quotientLayerMultiplicity_cons_of_mem K (B ∪ C) P q
+            (hU.mpr (Or.inr hC)),
+          quotientLayerMultiplicity_cons_of_not_mem K B (C :: P) q hB,
+          quotientLayerMultiplicity_cons_of_mem K C P q hC]
+    · have hI : q ∉ quotientLayer K (B ∩ C) := fun h ↦ hB (hIB h)
+      have hnotU : q ∉ quotientLayer K (B ∪ C) := by
+        exact fun h ↦ (hU.mp h).elim hB hC
+      rw [quotientLayerMultiplicity_cons_of_not_mem K (B ∩ C)
+            ((B ∪ C) :: P) q hI,
+          quotientLayerMultiplicity_cons_of_not_mem K (B ∪ C) P q hnotU,
+          quotientLayerMultiplicity_cons_of_not_mem K B (C :: P) q hB,
+          quotientLayerMultiplicity_cons_of_not_mem K C P q hC]
 
 /-- Every quotient value occurs in at most one copy per layer. -/
 theorem quotientLayerMultiplicity_le_length
@@ -1376,6 +1721,19 @@ theorem dgmCappedMultiplicitySum_length
   simp_rw [min_eq_right (quotientLayerMultiplicity_le_length K P _)]
   exact sum_quotientLayerMultiplicity K P
 
+theorem dgmCappedMultiplicitySum_inter_union_le
+    [Fintype A] (K : AddSubgroup A)
+    (B C : Finset A) (P : List (Finset A)) (n : ℕ) :
+    dgmCappedMultiplicitySum K (dgmInterUnionLayers B C P) n ≤
+      dgmCappedMultiplicitySum K (B :: C :: P) n := by
+  classical
+  letI : Fintype (A ⧸ K) := Fintype.ofFinite (A ⧸ K)
+  rw [dgmCappedMultiplicitySum, dgmCappedMultiplicitySum]
+  apply Finset.sum_le_sum
+  intro q _
+  exact min_le_min (Nat.le_refl n)
+    (quotientLayerMultiplicity_inter_union_le K B C P q)
+
 /-- The capped DGM incidence term is at least the requested number of layers
 for every nonempty setpartition with enough layers. -/
 theorem le_dgmCappedMultiplicitySum
@@ -1402,6 +1760,59 @@ theorem le_dgmCappedMultiplicitySum
     rw [dgmCappedMultiplicitySum]
     simp_rw [min_eq_right (Nat.le_of_lt (hbig _))]
     exact htotal
+
+/-- Adding the two leading layers can only increase every quotient-layer
+multiplicity. -/
+theorem quotientLayerMultiplicity_le_cons
+    (K : AddSubgroup A) (B : Finset A)
+    (P : List (Finset A)) (q : A ⧸ K) :
+    quotientLayerMultiplicity K P q ≤
+      quotientLayerMultiplicity K (B :: P) q := by
+  classical
+  by_cases hqB : q ∈ quotientLayer K B
+  · rw [quotientLayerMultiplicity_cons_of_mem K B P q hqB]
+    omega
+  · rw [quotientLayerMultiplicity_cons_of_not_mem K B P q hqB]
+
+theorem quotientLayerMultiplicity_le_cons_cons
+    (K : AddSubgroup A) (B C : Finset A)
+    (P : List (Finset A)) (q : A ⧸ K) :
+    quotientLayerMultiplicity K P q ≤
+      quotientLayerMultiplicity K (B :: C :: P) q := by
+  exact (quotientLayerMultiplicity_le_cons K C P q).trans
+    (quotientLayerMultiplicity_le_cons K B (C :: P) q)
+
+/-- Consequently the capped Ξ-term for the tail at weight `k` is at most
+the transformed full term at weight `k+2`; the subtraction defining the
+two-layer gain is therefore honest (nontruncated). -/
+theorem dgmCappedMultiplicitySum_tail_le_inter_union
+    [Fintype A] (K : AddSubgroup A)
+    (B C : Finset A) (P : List (Finset A)) (k : ℕ) :
+    dgmCappedMultiplicitySum K P k ≤
+      dgmCappedMultiplicitySum K (dgmInterUnionLayers B C P) (k + 2) := by
+  classical
+  letI : Fintype (A ⧸ K) := Fintype.ofFinite (A ⧸ K)
+  rw [dgmCappedMultiplicitySum, dgmCappedMultiplicitySum]
+  apply Finset.sum_le_sum
+  intro q _
+  exact min_le_min (by omega) (by
+    simpa [dgmInterUnionLayers] using
+      quotientLayerMultiplicity_le_cons_cons K (B ∩ C) (B ∪ C) P q)
+
+noncomputable def dgmXiTwoGain [Fintype A]
+    (K : AddSubgroup A) (B C : Finset A)
+    (P : List (Finset A)) (k : ℕ) : ℕ :=
+  dgmCappedMultiplicitySum K (dgmInterUnionLayers B C P) (k + 2) -
+    dgmCappedMultiplicitySum K P k
+
+theorem dgmXiTwoGain_add_tail [Fintype A]
+    (K : AddSubgroup A) (B C : Finset A)
+    (P : List (Finset A)) (k : ℕ) :
+    dgmXiTwoGain K B C P k + dgmCappedMultiplicitySum K P k =
+      dgmCappedMultiplicitySum K (dgmInterUnionLayers B C P) (k + 2) := by
+  unfold dgmXiTwoGain
+  exact Nat.sub_add_cancel
+    (dgmCappedMultiplicitySum_tail_le_inter_union K B C P k)
 
 /-- Source occurrences counted in one quotient coset. -/
 noncomputable def occurrenceQuotientMultiplicity
@@ -1614,6 +2025,156 @@ def GeneralDGMSetpartitionTheorem
     IsNonemptySetPartition P →
     1 ≤ n → n ≤ P.length →
     DGMSetpartitionBound P n
+
+/-- Faithful additive form of Theorem 3.1.  Moving the `K` correction term
+to the right avoids integer-valued subtraction while preserving the exact
+statement whenever the pattern spectrum is nonempty. -/
+def DGMPatternBound [Fintype A]
+    {K : AddSubgroup A} {n : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (P : List (Finset A)) (μ : QuotientPattern K n) : Prop :=
+  let T := patternSubsumSpectrum P μ
+  let J := AddAction.stabilizer A (T : Set A)
+  Nat.card J * (stabilizerDgmCappedMultiplicitySum T P n - n + 1) ≤
+    T.card + Nat.card K * (dgmCappedMultiplicitySum K P n - n)
+
+/-- Fully quantified generalized pattern theorem used by the faithful
+minimal-counterexample proof. -/
+def GeneralDGMPatternTheorem
+    (A : Type*) [AddCommGroup A] [Fintype A] [DecidableEq A] : Prop :=
+  ∀ (K : AddSubgroup A) (n : ℕ)
+    (_ : Fintype (A ⧸ K)) (_ : DecidableEq (A ⧸ K))
+    (P : List (Finset A)) (μ : QuotientPattern K n),
+    (patternSubsumSpectrum P μ).Nonempty → DGMPatternBound P μ
+
+/-- The unique pattern modulo the top subgroup. -/
+theorem quotientTop_subsingleton :
+    Subsingleton (A ⧸ (⊤ : AddSubgroup A)) := by
+  constructor
+  intro x y
+  induction x using QuotientAddGroup.induction_on with
+  | _ x =>
+    induction y using QuotientAddGroup.induction_on with
+    | _ y =>
+      exact QuotientAddGroup.eq_iff_sub_mem.mpr (by simp)
+
+noncomputable def topQuotientPattern
+    [Fintype (A ⧸ (⊤ : AddSubgroup A))]
+    (n : ℕ) : QuotientPattern (⊤ : AddSubgroup A) n where
+  multiplicity := fun _ ↦ n
+  weight_eq := by
+    classical
+    letI : Subsingleton (A ⧸ (⊤ : AddSubgroup A)) :=
+      quotientTop_subsingleton (A := A)
+    letI : Unique (A ⧸ (⊤ : AddSubgroup A)) := uniqueOfSubsingleton 0
+    simp
+
+@[simp]
+theorem topQuotientPattern_apply
+    [Fintype (A ⧸ (⊤ : AddSubgroup A))]
+    (n : ℕ) (q : A ⧸ (⊤ : AddSubgroup A)) :
+    topQuotientPattern (A := A) n q = n := rfl
+
+theorem LayerSubsumChoice.realizes_topQuotientPattern
+    [Fintype (A ⧸ (⊤ : AddSubgroup A))]
+    [DecidableEq (A ⧸ (⊤ : AddSubgroup A))]
+    {P : List (Finset A)} {n : ℕ} {y : A}
+    (h : LayerSubsumChoice P n y) :
+    h.RealizesPattern (topQuotientPattern (A := A) n) := by
+  letI : Subsingleton (A ⧸ (⊤ : AddSubgroup A)) :=
+    quotientTop_subsingleton (A := A)
+  letI : Unique (A ⧸ (⊤ : AddSubgroup A)) := uniqueOfSubsingleton 0
+  intro q
+  have hsum := h.sum_quotientMultiplicity (K := (⊤ : AddSubgroup A))
+  have hq : h.quotientMultiplicity (⊤ : AddSubgroup A) q = n := by
+    calc
+      h.quotientMultiplicity (⊤ : AddSubgroup A) q =
+          h.quotientMultiplicity (⊤ : AddSubgroup A) default := by
+        congr 1
+        exact Subsingleton.elim _ _
+      _ =
+          ∑ z, h.quotientMultiplicity (⊤ : AddSubgroup A) z :=
+        (Fintype.sum_unique
+          (fun z ↦ h.quotientMultiplicity (⊤ : AddSubgroup A) z)).symm
+      _ = n := hsum
+  simpa using hq
+
+theorem patternSubsumSpectrum_top_eq_layerSubsumSpectrum
+    [Fintype (A ⧸ (⊤ : AddSubgroup A))]
+    [DecidableEq (A ⧸ (⊤ : AddSubgroup A))]
+    (P : List (Finset A)) (n : ℕ) :
+    patternSubsumSpectrum P (topQuotientPattern (A := A) n) =
+      layerSubsumSpectrum P n := by
+  apply Finset.Subset.antisymm
+  · exact patternSubsumSpectrum_subset_layerSubsumSpectrum _ _
+  · intro y hy
+    obtain ⟨h⟩ := (nonempty_layerSubsumChoice_iff_mem P n y).2 hy
+    exact (mem_patternSubsumSpectrum_iff _ _ y).2
+      ⟨⟨h, h.realizes_topQuotientPattern⟩⟩
+
+theorem dgmCappedMultiplicitySum_top_eq
+    [Fintype A]
+    [Fintype (A ⧸ (⊤ : AddSubgroup A))]
+    [DecidableEq (A ⧸ (⊤ : AddSubgroup A))]
+    (P : List (Finset A)) (hP : IsNonemptySetPartition P)
+    (n : ℕ) (hn : n ≤ P.length) :
+    dgmCappedMultiplicitySum (⊤ : AddSubgroup A) P n = n := by
+  letI : Fintype (A ⧸ (⊤ : AddSubgroup A)) :=
+    Fintype.ofFinite (A ⧸ (⊤ : AddSubgroup A))
+  have hlower := le_dgmCappedMultiplicitySum
+    (⊤ : AddSubgroup A) P hP n hn
+  apply Nat.le_antisymm ?_ hlower
+  classical
+  letI : Subsingleton (A ⧸ (⊤ : AddSubgroup A)) :=
+    quotientTop_subsingleton (A := A)
+  letI : Unique (A ⧸ (⊤ : AddSubgroup A)) := uniqueOfSubsingleton 0
+  rw [dgmCappedMultiplicitySum]
+  let q : A ⧸ (⊤ : AddSubgroup A) := 0
+  calc
+    (∑ z, min n (quotientLayerMultiplicity (⊤ : AddSubgroup A) P z)) =
+        min n (quotientLayerMultiplicity (⊤ : AddSubgroup A) P default) :=
+      Fintype.sum_unique _
+    _ = min n (quotientLayerMultiplicity (⊤ : AddSubgroup A) P q) := by
+      congr 2
+    _ ≤ n := min_le_left _ _
+
+theorem card_addStab_eq_natCard_stabilizer [Fintype A]
+    (T : Finset A) (hT : T.Nonempty) :
+    T.addStab.card = Nat.card (AddAction.stabilizer A (T : Set A)) := by
+  rw [← Set.ncard_coe_finset, Finset.coe_addStab hT,
+    ← SetLike.coe_sort_coe, Nat.card_coe_set_eq]
+
+/-- The top-pattern specialization of Theorem 3.1 is mechanically the
+frozen general setpartition DGM theorem. -/
+theorem generalDGMSetpartitionTheorem_of_generalPatternTheorem
+    [Fintype A] (hpattern : GeneralDGMPatternTheorem A) :
+    GeneralDGMSetpartitionTheorem A := by
+  intro P n hP hnpos hn
+  classical
+  letI : Fintype (A ⧸ (⊤ : AddSubgroup A)) :=
+    Fintype.ofFinite (A ⧸ (⊤ : AddSubgroup A))
+  letI : DecidableEq (A ⧸ (⊤ : AddSubgroup A)) := Classical.decEq _
+  let μ := topQuotientPattern (A := A) n
+  have hμnonempty : (patternSubsumSpectrum P μ).Nonempty := by
+    rw [show μ = topQuotientPattern (A := A) n by rfl,
+      patternSubsumSpectrum_top_eq_layerSubsumSpectrum]
+    exact layerSubsumSpectrum_nonempty P hP n hn
+  have hb := hpattern (⊤ : AddSubgroup A) n inferInstance inferInstance
+    P μ hμnonempty
+  have htop := dgmCappedMultiplicitySum_top_eq P hP n hn
+  have hspectrum : patternSubsumSpectrum P μ = layerSubsumSpectrum P n := by
+    exact patternSubsumSpectrum_top_eq_layerSubsumSpectrum P n
+  unfold DGMPatternBound at hb
+  dsimp only at hb
+  rw [hspectrum, htop] at hb
+  simp only [Nat.sub_self, Nat.mul_zero, Nat.add_zero] at hb
+  unfold DGMSetpartitionBound
+  let T := layerSubsumSpectrum P n
+  have hT : T.Nonempty := layerSubsumSpectrum_nonempty P hP n hn
+  have hcard := card_addStab_eq_natCard_stabilizer T hT
+  dsimp only [T]
+  rw [Nat.mul_comm, hcard]
+  exact hb
 
 /-- Raw layer multiplicity before any further quotient. -/
 def rawLayerMultiplicity (P : List (Finset A)) (x : A) : ℕ :=
