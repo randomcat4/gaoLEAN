@@ -5594,7 +5594,7 @@ theorem stabilizerLayerMultiplicity_mk_eq_raw_of_addStab_eq_singleton
 
 /-- With trivial finite stabilizer, the stabilizer-quotient capped incidence
 sum is exactly the raw capped incidence sum on the ambient group. -/
-theorem stabilizerDgmCappedMultiplicitySum_eq_raw_of_addStab_eq_singleton
+theorem dgmStabilizerCappedMultiplicitySum_eq_raw_of_addStab_eq_singleton
     [Fintype A] (C : Finset A) (hC : C.Nonempty)
     (hstab : C.addStab = {0}) (P : List (Finset A)) (n : ℕ) :
     stabilizerDgmCappedMultiplicitySum C P n =
@@ -5647,10 +5647,10 @@ theorem dgmPatternConvergent_stabilizer_ne_bot_of_target_failure
     rw [← Finset.mem_coe, hcoe, hEbot]
     simp
   have hEcap :=
-    stabilizerDgmCappedMultiplicitySum_eq_raw_of_addStab_eq_singleton
+    dgmStabilizerCappedMultiplicitySum_eq_raw_of_addStab_eq_singleton
       E hEne hEadd (dgmInterUnionLayers B C P) n
   have hTcap :=
-    stabilizerDgmCappedMultiplicitySum_eq_raw_of_addStab_eq_singleton
+    dgmStabilizerCappedMultiplicitySum_eq_raw_of_addStab_eq_singleton
       T hTne (by simpa [T] using hTargetStab) (B :: C :: P) n
   have hraw := rawDgmCappedMultiplicitySum_inter_union B C P n
   have hEcard : E.card ≤ T.card :=
