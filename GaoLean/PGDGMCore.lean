@@ -1494,6 +1494,22 @@ theorem dgmFourBounds_extra_le_two_mul
     s₁ + s₂ + l + m ≤ 2 * Hc := by
   omega
 
+/-- Divisibility rounding used between strict equation (3) and equation (4):
+two multiples of a positive subgroup cardinal cannot be strictly ordered
+without a full subgroup-cardinality gap. -/
+theorem add_le_of_lt_of_dvd
+    (d S Hc : ℕ) (hd : 0 < d) (hdS : d ∣ S) (hdH : d ∣ Hc)
+    (hlt : S < Hc) :
+    S + d ≤ Hc := by
+  obtain ⟨s, rfl⟩ := hdS
+  obtain ⟨h, hh⟩ := hdH
+  rw [hh] at hlt ⊢
+  have hsh : s < h := by
+    exact (Nat.mul_lt_mul_left hd).mp (by simpa [Nat.mul_comm] using hlt)
+  have hsuc : s + 1 ≤ h := hsh
+  simpa [Nat.mul_add, Nat.mul_comm, Nat.add_comm, Nat.add_left_comm,
+    Nat.add_assoc] using Nat.mul_le_mul_left d hsuc
+
 /-- Correct final page-14 contradiction in the form actually delivered by
 the sum of (4)--(5): the four saturated slice sizes, the missing union, and
 one positive `|H₁₂|` fit under `2|H|`.  The two coset covers omit that positive
@@ -1674,6 +1690,88 @@ theorem quotientLayerMultiplicity_cons_of_not_mem
   have hq' : ¬∃ x ∈ B, (x : A ⧸ K) = q := by
     simpa only [mem_quotientLayer_iff] using hq
   simp [quotientLayerMultiplicity, hq']
+
+/-- If at least one layer meets `q`, there is a one-layer proof-relevant
+choice in `q`.  The statement records the complete quotient multiplicity of
+the new choice, so it can be inserted into a prescribed pattern. -/
+theorem exists_layerSubsumChoice_one_in_quotient
+    {K : AddSubgroup A} [DecidableEq (A ⧸ K)]
+    (P : List (Finset A)) (q : A ⧸ K)
+    (hq : 0 < quotientLayerMultiplicity K P q) :
+    ∃ y : A, ∃ h : LayerSubsumChoice P 1 y,
+      ∀ r : A ⧸ K,
+        h.quotientMultiplicity K r = if q = r then 1 else 0 := by
+  classical
+  induction P with
+  | nil => simp [quotientLayerMultiplicity] at hq
+  | cons B P ih =>
+      by_cases hqB : q ∈ quotientLayer K B
+      · obtain ⟨x, hxB, hxq⟩ := (mem_quotientLayer_iff K B q).1 hqB
+        refine ⟨x + 0, LayerSubsumChoice.take hxB
+          (LayerSubsumChoice.zero P), ?_⟩
+        intro r
+        simp [LayerSubsumChoice.quotientMultiplicity, hxq]
+      · have htail : 0 < quotientLayerMultiplicity K P q := by
+          rw [quotientLayerMultiplicity_cons_of_not_mem K B P q hqB] at hq
+          exact hq
+        obtain ⟨y, h, hmult⟩ := ih htail
+        refine ⟨y, LayerSubsumChoice.skip h, ?_⟩
+        intro r
+        exact hmult r
+
+/-- Proof-relevant unused-layer exchange.  If `q` meets more layers than an
+exact-`n` choice uses in total, one of those `q`-layers is unused.  Inserting
+a value from it raises only the `q` quotient multiplicity by one. -/
+theorem exists_layerSubsumChoice_succ_in_quotient
+    {K : AddSubgroup A} [DecidableEq (A ⧸ K)]
+    {P : List (Finset A)} {n : ℕ} {y : A}
+    (h : LayerSubsumChoice P n y) (q : A ⧸ K)
+    (hq : n < quotientLayerMultiplicity K P q) :
+    ∃ z : A, ∃ h' : LayerSubsumChoice P (n + 1) z,
+      ∀ r : A ⧸ K,
+        h'.quotientMultiplicity K r =
+          (if q = r then 1 else 0) + h.quotientMultiplicity K r := by
+  classical
+  induction h with
+  | zero P =>
+      obtain ⟨z, h', h'mult⟩ :=
+        exists_layerSubsumChoice_one_in_quotient P q hq
+      refine ⟨z, h', ?_⟩
+      intro r
+      simpa [LayerSubsumChoice.quotientMultiplicity] using h'mult r
+  | @skip B P n y h ih =>
+      by_cases hqB : q ∈ quotientLayer K B
+      · obtain ⟨x, hxB, hxq⟩ := (mem_quotientLayer_iff K B q).1 hqB
+        refine ⟨x + y, LayerSubsumChoice.take hxB h, ?_⟩
+        intro r
+        simp only [LayerSubsumChoice.quotientMultiplicity]
+        rw [hxq]
+      · have htail : n < quotientLayerMultiplicity K P q := by
+          rwa [quotientLayerMultiplicity_cons_of_not_mem K B P q hqB] at hq
+        obtain ⟨z, h', h'mult⟩ := ih htail
+        refine ⟨z, LayerSubsumChoice.skip h', ?_⟩
+        intro r
+        exact h'mult r
+  | @take B P n b y hb h ih =>
+      by_cases hqB : q ∈ quotientLayer K B
+      · have htail : n < quotientLayerMultiplicity K P q := by
+          rw [quotientLayerMultiplicity_cons_of_mem K B P q hqB] at hq
+          omega
+        obtain ⟨z, h', h'mult⟩ := ih htail
+        refine ⟨b + z, LayerSubsumChoice.take hb h', ?_⟩
+        intro r
+        simp only [LayerSubsumChoice.quotientMultiplicity]
+        rw [h'mult r]
+        omega
+      · have htail : n < quotientLayerMultiplicity K P q := by
+          rw [quotientLayerMultiplicity_cons_of_not_mem K B P q hqB] at hq
+          omega
+        obtain ⟨z, h', h'mult⟩ := ih htail
+        refine ⟨b + z, LayerSubsumChoice.take hb h', ?_⟩
+        intro r
+        simp only [LayerSubsumChoice.quotientMultiplicity]
+        rw [h'mult r]
+        omega
 
 /-- Intersection--union can merge two quotient incidences, but never creates
 more of them.  This is the exact `Ξ_K(A') ≤ Ξ_K(A)` direction in the source
@@ -2164,6 +2262,51 @@ def DGMXiExceptionalCoset
     quotientLayerMultiplicity H P (b : A ⧸ H) ≤ k ∧
       (b : A ⧸ H) ∈ quotientLayer H (B ∪ C)
 
+/-- The proof-relevant swap giving the tail part of exceptionality.  If the
+tail met `b₁+H` in more than `k` layers, a realizing exact-`k` tail choice
+could be augmented in an unused such layer; together with one union-layer
+choice in `b₂+H`, this would realize the allegedly infeasible transformed
+two-step pattern. -/
+theorem quotientLayerMultiplicity_tail_le_of_twoStep_infeasible
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (ν : QuotientPattern H (k + 2)) (b₁ b₂ : A)
+    (νtail : QuotientPattern H k)
+    (hext : ν.IsTwoStepExtension b₁ b₂ νtail)
+    (htail : (patternSubsumSpectrum P νtail).Nonempty)
+    (hunion₂ : (b₂ : A ⧸ H) ∈ quotientLayer H (B ∪ C))
+    (hinfeasible : patternSubsumSpectrum
+      (dgmInterUnionLayers B C P) ν = ∅) :
+    quotientLayerMultiplicity H P (b₁ : A ⧸ H) ≤ k := by
+  classical
+  by_contra hnot
+  have hmore : k < quotientLayerMultiplicity H P (b₁ : A ⧸ H) :=
+    Nat.lt_of_not_ge hnot
+  obtain ⟨t, ht⟩ := htail
+  obtain ⟨⟨htailChoice, htailPattern⟩⟩ :=
+    (mem_patternSubsumSpectrum_iff P νtail t).1 ht
+  obtain ⟨z, haug, haugMult⟩ :=
+    exists_layerSubsumChoice_succ_in_quotient htailChoice
+      (b₁ : A ⧸ H) hmore
+  obtain ⟨x₂, hx₂U, hx₂q⟩ :=
+    (mem_quotientLayer_iff H (B ∪ C) (b₂ : A ⧸ H)).1 hunion₂
+  let hout : LayerSubsumChoice
+      ((B ∩ C) :: (B ∪ C) :: P) (k + 2) (x₂ + z) :=
+    LayerSubsumChoice.skip (B := B ∩ C)
+      (LayerSubsumChoice.take hx₂U haug)
+  have houtPattern : hout.RealizesPattern ν := by
+    intro q
+    change (if (x₂ : A ⧸ H) = q then 1 else 0) +
+        haug.quotientMultiplicity H q = ν q
+    rw [hx₂q, haugMult q, htailPattern q, hext q]
+    omega
+  have hmem : x₂ + z ∈ patternSubsumSpectrum
+      (dgmInterUnionLayers B C P) ν :=
+    (mem_patternSubsumSpectrum_iff _ ν _).2 ⟨⟨hout, houtPattern⟩⟩
+  rw [hinfeasible] at hmem
+  simpa using hmem
+
 /-- Under the source's exceptional-coset hypotheses, the coarse local
 two-layer gain is exactly one. -/
 theorem dgmXiLocalTwoGain_eq_one_of_exceptional
@@ -2209,6 +2352,118 @@ theorem dgmXiLocalTwoGain_eq_indicator_of_refines_exceptional
   · rw [quotientLayerMultiplicity_cons_of_not_mem L (B ∪ C) P q hunionL,
       if_neg hunionL]
     omega
+
+/-- If the transformed two-leading-layer pattern is infeasible while its
+tail pattern is feasible, the intersection layer cannot meet the first
+exceptional coset once the union layer meets the second. -/
+theorem not_mem_quotientLayer_inter_of_twoStep_infeasible
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (ν : QuotientPattern H (k + 2)) (b₁ b₂ : A)
+    (νtail : QuotientPattern H k)
+    (hext : ν.IsTwoStepExtension b₁ b₂ νtail)
+    (htail : (patternSubsumSpectrum P νtail).Nonempty)
+    (hunion₂ : (b₂ : A ⧸ H) ∈ quotientLayer H (B ∪ C))
+    (hinfeasible : patternSubsumSpectrum
+      (dgmInterUnionLayers B C P) ν = ∅) :
+    (b₁ : A ⧸ H) ∉ quotientLayer H (B ∩ C) := by
+  intro hinter
+  obtain ⟨x₁, hx₁, hx₁q⟩ :=
+    (mem_quotientLayer_iff H (B ∩ C) (b₁ : A ⧸ H)).1 hinter
+  obtain ⟨x₂, hx₂, hx₂q⟩ :=
+    (mem_quotientLayer_iff H (B ∪ C) (b₂ : A ⧸ H)).1 hunion₂
+  obtain ⟨t, ht⟩ := htail
+  have hx₁slice : x₁ ∈ dgmCosetSlice H (B ∩ C) b₁ :=
+    (mem_dgmCosetSlice_iff H (B ∩ C) b₁ x₁).2 ⟨hx₁, hx₁q⟩
+  have hx₂slice : x₂ ∈ dgmCosetSlice H (B ∪ C) b₂ :=
+    (mem_dgmCosetSlice_iff H (B ∪ C) b₂ x₂).2 ⟨hx₂, hx₂q⟩
+  have hmem := mem_patternSubsumSpectrum_cons_cons_of_twoStep
+    (B ∩ C) (B ∪ C) P ν b₁ b₂ νtail hext
+    hx₁slice hx₂slice ht
+  have hmem' : x₁ + (x₂ + t) ∈ patternSubsumSpectrum
+      (dgmInterUnionLayers B C P) ν := by
+    simpa [dgmInterUnionLayers] using hmem
+  rw [hinfeasible] at hmem'
+  simpa using hmem'
+
+/-- Symmetric form for the second exceptional coset. -/
+theorem not_mem_quotientLayer_inter_second_of_twoStep_infeasible
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (ν : QuotientPattern H (k + 2)) (b₁ b₂ : A)
+    (νtail : QuotientPattern H k)
+    (hext : ν.IsTwoStepExtension b₁ b₂ νtail)
+    (htail : (patternSubsumSpectrum P νtail).Nonempty)
+    (hunion₁ : (b₁ : A ⧸ H) ∈ quotientLayer H (B ∪ C))
+    (hinfeasible : patternSubsumSpectrum
+      (dgmInterUnionLayers B C P) ν = ∅) :
+    (b₂ : A ⧸ H) ∉ quotientLayer H (B ∩ C) := by
+  have hext' : ν.IsTwoStepExtension b₂ b₁ νtail := by
+    intro q
+    rw [hext q]
+    omega
+  exact not_mem_quotientLayer_inter_of_twoStep_infeasible
+    B C P ν b₂ b₁ νtail hext' htail hunion₁ hinfeasible
+
+/-- The first crossed coset is exceptional whenever the transformed pattern
+is infeasible.  All three clauses are derived: intersection miss, capped tail
+multiplicity, and union hit. -/
+theorem dgmXiExceptionalCoset_first_of_twoStep_infeasible
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (ν : QuotientPattern H (k + 2)) {b₁ b₂ : A}
+    (hb₁ : b₁ ∈ B) (hb₂ : b₂ ∈ C)
+    (νtail : QuotientPattern H k)
+    (hext : ν.IsTwoStepExtension b₁ b₂ νtail)
+    (htail : (patternSubsumSpectrum P νtail).Nonempty)
+    (hinfeasible : patternSubsumSpectrum
+      (dgmInterUnionLayers B C P) ν = ∅) :
+    DGMXiExceptionalCoset H B C P k b₁ := by
+  have hunion₁ : (b₁ : A ⧸ H) ∈ quotientLayer H (B ∪ C) :=
+    (mem_quotientLayer_iff H (B ∪ C) _).2
+      ⟨b₁, Finset.mem_union_left C hb₁, rfl⟩
+  have hunion₂ : (b₂ : A ⧸ H) ∈ quotientLayer H (B ∪ C) :=
+    (mem_quotientLayer_iff H (B ∪ C) _).2
+      ⟨b₂, Finset.mem_union_right B hb₂, rfl⟩
+  exact ⟨
+    not_mem_quotientLayer_inter_of_twoStep_infeasible
+      B C P ν b₁ b₂ νtail hext htail hunion₂ hinfeasible,
+    quotientLayerMultiplicity_tail_le_of_twoStep_infeasible
+      B C P ν b₁ b₂ νtail hext htail hunion₂ hinfeasible,
+    hunion₁⟩
+
+/-- Symmetric exceptional-coset conclusion for the second crossed coset. -/
+theorem dgmXiExceptionalCoset_second_of_twoStep_infeasible
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (ν : QuotientPattern H (k + 2)) {b₁ b₂ : A}
+    (hb₁ : b₁ ∈ B) (hb₂ : b₂ ∈ C)
+    (νtail : QuotientPattern H k)
+    (hext : ν.IsTwoStepExtension b₁ b₂ νtail)
+    (htail : (patternSubsumSpectrum P νtail).Nonempty)
+    (hinfeasible : patternSubsumSpectrum
+      (dgmInterUnionLayers B C P) ν = ∅) :
+    DGMXiExceptionalCoset H B C P k b₂ := by
+  have hext' : ν.IsTwoStepExtension b₂ b₁ νtail := by
+    intro q
+    rw [hext q]
+    omega
+  have hunion₁ : (b₁ : A ⧸ H) ∈ quotientLayer H (B ∪ C) :=
+    (mem_quotientLayer_iff H (B ∪ C) _).2
+      ⟨b₁, Finset.mem_union_left C hb₁, rfl⟩
+  have hunion₂ : (b₂ : A ⧸ H) ∈ quotientLayer H (B ∪ C) :=
+    (mem_quotientLayer_iff H (B ∪ C) _).2
+      ⟨b₂, Finset.mem_union_right B hb₂, rfl⟩
+  exact ⟨
+    not_mem_quotientLayer_inter_second_of_twoStep_infeasible
+      B C P ν b₁ b₂ νtail hext htail hunion₁ hinfeasible,
+    quotientLayerMultiplicity_tail_le_of_twoStep_infeasible
+      B C P ν b₂ b₁ νtail hext' htail hunion₁ hinfeasible,
+    hunion₂⟩
 
 /-- The fine quotient cosets lying over one coarse quotient coset. -/
 noncomputable def dgmQuotientRefinementFiber
@@ -2287,6 +2542,16 @@ theorem card_add_dgmSubgroupFinset_eq
       exact card_filter_add_dgmSubgroupFinset_eq L S q hq
     _ = Nat.card L * (quotientLayer L S).card := by
       simp [Nat.mul_comm]
+
+/-- Every literal `L`-saturation has cardinality divisible by `|L|`.  This is
+the integrality input used to round a strict inequality between saturated
+slice sizes up by one complete `L`-coset. -/
+theorem natCard_dvd_card_add_dgmSubgroupFinset
+    [Fintype A] (L : AddSubgroup A) [Fintype (A ⧸ L)]
+    [DecidableEq (A ⧸ L)] (S : Finset A) :
+    Nat.card L ∣ (S + dgmSubgroupFinset L).card := by
+  rw [card_add_dgmSubgroupFinset_eq L S]
+  exact ⟨(quotientLayer L S).card, rfl⟩
 
 /-- Within a fixed coarse `H`-coset, the fine quotient values met by `B∪C`
 are exactly those met by the union of the two literal `H`-slices. -/
@@ -2614,6 +2879,34 @@ theorem weighted_dgmXiTwoGain_add_missingUnion_le
     Finset.mul_sum, Finset.mul_sum, hmissing]
   simpa [fine, coarse] using hsum
 
+/-- The weighted strict-Xi claim in the exact crossed setup, with no
+exceptionality hypotheses left to supply: infeasibility of the transformed
+pattern and feasibility of its tail produce both exceptional cosets by the
+proof-relevant unused-layer exchange above. -/
+theorem weighted_dgmXiTwoGain_add_missingUnion_le_of_twoStep_infeasible
+    [Fintype A] (L H : AddSubgroup A)
+    [Fintype (A ⧸ L)] [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ L)] [DecidableEq (A ⧸ H)] (hLH : L ≤ H)
+    (B C : Finset A) (P : List (Finset A)) {k : ℕ}
+    (ν : QuotientPattern H (k + 2)) {b₁ b₂ : A}
+    (hb₁ : b₁ ∈ B) (hb₂ : b₂ ∈ C)
+    (νtail : QuotientPattern H k)
+    (hext : ν.IsTwoStepExtension b₁ b₂ νtail)
+    (htail : (patternSubsumSpectrum P νtail).Nonempty)
+    (hinfeasible : patternSubsumSpectrum
+      (dgmInterUnionLayers B C P) ν = ∅)
+    (hne : (b₁ : A ⧸ H) ≠ (b₂ : A ⧸ H)) :
+    Nat.card L * dgmXiTwoGain L B C P k +
+        (dgmMissingPairCoset H L B C b₁ ∪
+          dgmMissingPairCoset H L B C b₂).card ≤
+      Nat.card H * dgmXiTwoGain H B C P k := by
+  exact weighted_dgmXiTwoGain_add_missingUnion_le
+    L H hLH B C P k b₁ b₂ hne
+      (dgmXiExceptionalCoset_first_of_twoStep_infeasible
+        B C P ν hb₁ hb₂ νtail hext htail hinfeasible)
+      (dgmXiExceptionalCoset_second_of_twoStep_infeasible
+        B C P ν hb₁ hb₂ νtail hext htail hinfeasible)
+
 /-- Source occurrences counted in one quotient coset. -/
 noncomputable def occurrenceQuotientMultiplicity
     [Fintype A] (xs : List A) (K : AddSubgroup A)
@@ -2888,6 +3181,139 @@ def GeneralDGMPatternTheorem
     (_ : Fintype (A ⧸ K)) (_ : DecidableEq (A ⧸ K))
     (P : List (Finset A)) (μ : QuotientPattern K n),
     (patternSubsumSpectrum P μ).Nonempty → DGMPatternBound P μ
+
+/-! ### Faithful convergents for the generalized minimal-counterexample proof -/
+
+/-- The source paper's general-case convergent, in additive natural-number
+form.  Its lower endpoint is the transformed intersection--union spectrum,
+its upper endpoint is the original spectrum, and its correction term keeps
+the original `K`-incidence count exactly as on page 9. -/
+def DGMPatternConvergent
+    [Fintype A] {K : AddSubgroup A} {n : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (B C : Finset A) (P : List (Finset A))
+    (μ : QuotientPattern K n) (D : Finset A) : Prop :=
+  let P' := dgmInterUnionLayers B C P
+  let T' := patternSubsumSpectrum P' μ
+  let T := patternSubsumSpectrum (B :: C :: P) μ
+  let H := AddAction.stabilizer A (D : Set A)
+  D.Nonempty ∧ T' ⊆ D ∧ D ⊆ T ∧
+    Nat.card H *
+        (stabilizerDgmCappedMultiplicitySum D P' n - n + 1) ≤
+      D.card + Nat.card K *
+        (dgmCappedMultiplicitySum K (B :: C :: P) n - n)
+
+/-- The transformed pattern spectrum is the initial convergent whenever the
+strictly smaller transformed instance satisfies Theorem 3.1. -/
+theorem patternSubsumSpectrum_inter_union_isConvergent
+    [Fintype A] {K : AddSubgroup A} {n : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (B C : Finset A) (P : List (Finset A))
+    (μ : QuotientPattern K n)
+    (hT' : (patternSubsumSpectrum
+      (dgmInterUnionLayers B C P) μ).Nonempty)
+    (hbound : DGMPatternBound (dgmInterUnionLayers B C P) μ) :
+    DGMPatternConvergent B C P μ
+      (patternSubsumSpectrum (dgmInterUnionLayers B C P) μ) := by
+  let P' := dgmInterUnionLayers B C P
+  let T' := patternSubsumSpectrum P' μ
+  have hxi : dgmCappedMultiplicitySum K P' n ≤
+      dgmCappedMultiplicitySum K (B :: C :: P) n := by
+    simpa [P'] using dgmCappedMultiplicitySum_inter_union_le
+      K B C P n
+  have hcorr : Nat.card K * (dgmCappedMultiplicitySum K P' n - n) ≤
+      Nat.card K *
+        (dgmCappedMultiplicitySum K (B :: C :: P) n - n) := by
+    apply Nat.mul_le_mul_left
+    omega
+  unfold DGMPatternBound at hbound
+  dsimp only at hbound
+  unfold DGMPatternConvergent
+  dsimp only
+  refine ⟨by simpa [T', P'] using hT', Finset.Subset.rfl,
+    ?_, ?_⟩
+  · simpa [P', dgmInterUnionLayers] using
+      patternSubsumSpectrum_inter_union_subset B C P μ
+  · have hbound' :
+        Nat.card (AddAction.stabilizer A (T' : Set A)) *
+            (stabilizerDgmCappedMultiplicitySum T' P' n - n + 1) ≤
+          T'.card + Nat.card K * (dgmCappedMultiplicitySum K P' n - n) := by
+      simpa [T', P'] using hbound
+    exact hbound'.trans (Nat.add_le_add_left hcorr T'.card)
+
+/-- A nonempty finite family of convergents contains one whose stabilizer has
+minimum cardinality, exactly matching the source's choice of `C`. -/
+theorem exists_dgmPatternConvergent_min_stabilizer_card
+    [Fintype A] {K : AddSubgroup A} {n : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (B C : Finset A) (P : List (Finset A))
+    (μ : QuotientPattern K n) {D₀ : Finset A}
+    (hD₀ : DGMPatternConvergent B C P μ D₀) :
+    ∃ D : Finset A, DGMPatternConvergent B C P μ D ∧
+      ∀ D' : Finset A, DGMPatternConvergent B C P μ D' →
+        Nat.card (AddAction.stabilizer A (D : Set A)) ≤
+          Nat.card (AddAction.stabilizer A (D' : Set A)) := by
+  classical
+  let convergents := (Finset.univ : Finset (Finset A)).filter
+    fun D ↦ DGMPatternConvergent B C P μ D
+  have hconvergents : convergents.Nonempty := by
+    exact ⟨D₀, Finset.mem_filter.mpr ⟨Finset.mem_univ D₀, hD₀⟩⟩
+  obtain ⟨D, hDmem, hmin⟩ := Finset.exists_min_image convergents
+    (fun D ↦ Nat.card (AddAction.stabilizer A (D : Set A))) hconvergents
+  refine ⟨D, (Finset.mem_filter.mp hDmem).2, ?_⟩
+  intro D' hD'
+  exact hmin D' (Finset.mem_filter.mpr ⟨Finset.mem_univ D', hD'⟩)
+
+/-- Strict additive form of equation (1).  A convergent `D`, together with a
+disjoint extension `E` whose union satisfies the endpoint conditions but is
+not convergent, gives a genuinely strict inequality.  This is the strictness
+which must survive the later `(1)--(5)` chain. -/
+theorem dgmEquationOne_of_convergent_union_not_convergent
+    [Fintype A] {K : AddSubgroup A} {n : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (B C : Finset A) (P : List (Finset A))
+    (μ : QuotientPattern K n) (D E : Finset A)
+    (hD : DGMPatternConvergent B C P μ D)
+    (hDE : Disjoint D E)
+    (hEupper : E ⊆ patternSubsumSpectrum (B :: C :: P) μ)
+    (hnot : ¬DGMPatternConvergent B C P μ (D ∪ E)) :
+    E.card +
+        Nat.card (AddAction.stabilizer A (D : Set A)) *
+          (stabilizerDgmCappedMultiplicitySum D
+              (dgmInterUnionLayers B C P) n - n + 1) <
+      Nat.card (AddAction.stabilizer A ((D ∪ E : Finset A) : Set A)) *
+        (stabilizerDgmCappedMultiplicitySum (D ∪ E)
+            (dgmInterUnionLayers B C P) n - n + 1) := by
+  unfold DGMPatternConvergent at hD hnot
+  dsimp only at hD hnot
+  rcases hD with ⟨hDne, hDlower, hDupper, hDbound⟩
+  have hUnionNe : (D ∪ E).Nonempty := hDne.mono (Finset.subset_union_left)
+  have hUnionLower : patternSubsumSpectrum
+      (dgmInterUnionLayers B C P) μ ⊆ D ∪ E :=
+    fun x hx ↦ Finset.mem_union_left E (hDlower hx)
+  have hUnionUpper : D ∪ E ⊆
+      patternSubsumSpectrum (B :: C :: P) μ := by
+    intro x hx
+    rcases Finset.mem_union.mp hx with hxD | hxE
+    · exact hDupper hxD
+    · exact hEupper hxE
+  have hnotBound : ¬(
+      Nat.card (AddAction.stabilizer A ((D ∪ E : Finset A) : Set A)) *
+          (stabilizerDgmCappedMultiplicitySum (D ∪ E)
+              (dgmInterUnionLayers B C P) n - n + 1) ≤
+        (D ∪ E).card + Nat.card K *
+          (dgmCappedMultiplicitySum K (B :: C :: P) n - n)) := by
+    intro hbound
+    exact hnot ⟨hUnionNe, hUnionLower, hUnionUpper, hbound⟩
+  have hstrict :
+      (D ∪ E).card + Nat.card K *
+          (dgmCappedMultiplicitySum K (B :: C :: P) n - n) <
+        Nat.card (AddAction.stabilizer A ((D ∪ E : Finset A) : Set A)) *
+          (stabilizerDgmCappedMultiplicitySum (D ∪ E)
+              (dgmInterUnionLayers B C P) n - n + 1) :=
+    Nat.lt_of_not_ge hnotBound
+  rw [Finset.card_union_of_disjoint hDE] at hstrict
+  omega
 
 /-- The unique pattern modulo the top subgroup. -/
 theorem quotientTop_subsingleton :
