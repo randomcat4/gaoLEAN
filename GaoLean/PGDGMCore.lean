@@ -3091,10 +3091,10 @@ coarser pattern realized by that same choice. -/
 theorem LayerSubsumChoice.realizesPattern_of_realizes_quotientPattern_of_le
     (L H : AddSubgroup A) [Fintype (A ⧸ L)] [Fintype (A ⧸ H)]
     [DecidableEq (A ⧸ L)] [DecidableEq (A ⧸ H)] (hLH : L ≤ H)
-    {P : List (Finset A)} {n : ℕ} {y z : A}
-    (base : LayerSubsumChoice P n y) (μ : QuotientPattern H n)
+    {Pbase Pcand : List (Finset A)} {n : ℕ} {y z : A}
+    (base : LayerSubsumChoice Pbase n y) (μ : QuotientPattern H n)
     (hbase : base.RealizesPattern μ)
-    (candidate : LayerSubsumChoice P n z)
+    (candidate : LayerSubsumChoice Pcand n z)
     (hcandidate : candidate.RealizesPattern (base.quotientPattern L)) :
     candidate.RealizesPattern μ := by
   intro r
@@ -3118,15 +3118,15 @@ creates sums outside the source pattern spectrum. -/
 theorem patternSubsumSpectrum_quotientPattern_subset_of_realizes_of_le
     (L H : AddSubgroup A) [Fintype (A ⧸ L)] [Fintype (A ⧸ H)]
     [DecidableEq (A ⧸ L)] [DecidableEq (A ⧸ H)] (hLH : L ≤ H)
-    {P : List (Finset A)} {n : ℕ} {y : A}
-    (base : LayerSubsumChoice P n y) (μ : QuotientPattern H n)
+    {Pbase Q : List (Finset A)} {n : ℕ} {y : A}
+    (base : LayerSubsumChoice Pbase n y) (μ : QuotientPattern H n)
     (hbase : base.RealizesPattern μ) :
-    patternSubsumSpectrum P (base.quotientPattern L) ⊆
-      patternSubsumSpectrum P μ := by
+    patternSubsumSpectrum Q (base.quotientPattern L) ⊆
+      patternSubsumSpectrum Q μ := by
   intro z hz
   obtain ⟨⟨candidate, hcandidate⟩⟩ :=
-    (mem_patternSubsumSpectrum_iff P (base.quotientPattern L) z).1 hz
-  exact (mem_patternSubsumSpectrum_iff P μ z).2
+    (mem_patternSubsumSpectrum_iff Q (base.quotientPattern L) z).1 hz
+  exact (mem_patternSubsumSpectrum_iff Q μ z).2
     ⟨⟨candidate,
       LayerSubsumChoice.realizesPattern_of_realizes_quotientPattern_of_le
         L H hLH base μ hbase candidate hcandidate⟩⟩
@@ -4998,6 +4998,58 @@ theorem dgmPatternConvergent_stabilizer_le_original
   intro x hx
   exact patternSubsumSpectrum_quotient_eq _ μ (hDupper hx)
 
+/-- In an aperiodic pattern target, a convergent with nontrivial stabilizer
+supplies an actual target choice whose stabilizer coset escapes the target.
+The proof-relevant choice is retained so that its quotient pattern can be
+used for the crossed two-layer construction. -/
+theorem exists_escape_patternChoice_of_nontrivial_convergent
+    [Fintype A] {K : AddSubgroup A} {n : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (B C : Finset A) (P : List (Finset A))
+    (μ : QuotientPattern K n)
+    (hTargetStab :
+      (patternSubsumSpectrum (B :: C :: P) μ).addStab = {0})
+    (E : Finset A) (hE : DGMPatternConvergent B C P μ E)
+    (hEnontrivial :
+      AddAction.stabilizer A (E : Set A) ≠ ⊥) :
+    ∃ (y : A) (base : LayerSubsumChoice (B :: C :: P) n y),
+      base.RealizesPattern μ ∧
+      ¬dgmCosetFiber (AddAction.stabilizer A (E : Set A)) y ⊆
+        patternSubsumSpectrum (B :: C :: P) μ := by
+  classical
+  let T := patternSubsumSpectrum (B :: C :: P) μ
+  let H := AddAction.stabilizer A (E : Set A)
+  have hEdata := hE
+  unfold DGMPatternConvergent at hEdata
+  dsimp only at hEdata
+  rcases hEdata with ⟨hEne, _, hEupper, _⟩
+  have hTne : T.Nonempty := hEne.mono hEupper
+  have haexists : ∃ a : A, a ∈ H ∧ a ≠ 0 := by
+    by_contra h
+    push Not at h
+    apply hEnontrivial
+    apply le_antisymm
+    · intro a ha
+      show a ∈ (⊥ : AddSubgroup A)
+      simpa using h a ha
+    · exact bot_le
+  obtain ⟨a, haH, ha0⟩ := haexists
+  have haT : a ∉ T.addStab := by
+    rw [show T.addStab = {0} by simpa [T] using hTargetStab]
+    simpa using ha0
+  obtain ⟨y, hyT, hayT⟩ :=
+    exists_mem_add_not_mem_of_not_mem_addStab T hTne a haT
+  obtain ⟨⟨base, hbase⟩⟩ :=
+    (mem_patternSubsumSpectrum_iff (B :: C :: P) μ y).1
+      (by simpa [T] using hyT)
+  refine ⟨y, base, hbase, ?_⟩
+  intro hcoset
+  apply hayT
+  apply hcoset
+  apply (mem_dgmCosetFiber_iff H y (a + y)).2
+  change (a : A ⧸ H) + (y : A ⧸ H) = (y : A ⧸ H)
+  rw [(QuotientAddGroup.eq_zero_iff a).2 haH, zero_add]
+
 /-- The transformed pattern spectrum is the initial convergent whenever the
 strictly smaller transformed instance satisfies Theorem 3.1. -/
 theorem patternSubsumSpectrum_inter_union_isConvergent
@@ -5306,6 +5358,299 @@ theorem dgmEquationOne_of_convergent_union_not_convergent
 
 alias dgmEquationTwo_of_convergent_union_not_convergent :=
   dgmEquationOne_of_convergent_union_not_convergent
+
+/-- The transformed spectrum of the fine pattern induced by an escaping
+source choice is empty.  Fine-to-coarse pattern transport puts it inside the
+original transformed spectrum, convergence puts that spectrum inside `E`,
+and `E` is disjoint from the deficient stabilizer coset.  This is the exact
+gate used to invoke the crossed two-leading-layer decomposition. -/
+theorem patternSubsumSpectrum_interUnion_quotientPattern_eq_empty_of_escape
+    [Fintype A] {K : AddSubgroup A} {n : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (B C : Finset A) (P : List (Finset A))
+    (μ : QuotientPattern K n) (E : Finset A)
+    (hE : DGMPatternConvergent B C P μ E)
+    {y : A} (base : LayerSubsumChoice (B :: C :: P) n y)
+    (hbase : base.RealizesPattern μ)
+    (hescape : ¬dgmCosetFiber
+      (AddAction.stabilizer A (E : Set A)) y ⊆
+        patternSubsumSpectrum (B :: C :: P) μ) :
+    patternSubsumSpectrum (dgmInterUnionLayers B C P)
+      (base.quotientPattern (AddAction.stabilizer A (E : Set A))) = ∅ := by
+  classical
+  let H := AddAction.stabilizer A (E : Set A)
+  let ν := base.quotientPattern H
+  let T := patternSubsumSpectrum (B :: C :: P) μ
+  have hEdata := hE
+  unfold DGMPatternConvergent at hEdata
+  dsimp only at hEdata
+  rcases hEdata with ⟨hEne, hElower, hEupper, _⟩
+  have hHle : H ≤ K := by
+    simpa [H] using dgmPatternConvergent_stabilizer_le_original
+      B C P μ E hE
+  have hfineUpper :
+      patternSubsumSpectrum (dgmInterUnionLayers B C P) ν ⊆
+        patternSubsumSpectrum (dgmInterUnionLayers B C P) μ := by
+    simpa [ν] using
+      (patternSubsumSpectrum_quotientPattern_subset_of_realizes_of_le
+        H K hHle base μ hbase :
+          patternSubsumSpectrum (dgmInterUnionLayers B C P)
+              (base.quotientPattern H) ⊆
+            patternSubsumSpectrum (dgmInterUnionLayers B C P) μ)
+  have hyfine : y ∈ patternSubsumSpectrum (B :: C :: P) ν :=
+    (mem_patternSubsumSpectrum_iff _ ν y).2
+      ⟨⟨base, base.realizes_quotientPattern H⟩⟩
+  have hdisj : Disjoint (E : Set A) (dgmCosetFiber H y : Set A) :=
+    disjoint_cosetFiber_of_periodic_subset_of_not_subset
+      E T hEne H rfl (by simpa [T] using hEupper) y
+        (by simpa [H, T] using hescape)
+  apply Finset.not_nonempty_iff_eq_empty.mp
+  rintro ⟨x, hx⟩
+  have hxE : x ∈ E := hElower (hfineUpper hx)
+  have hxquot : (x : A ⧸ H) = (y : A ⧸ H) :=
+    (patternSubsumSpectrum_quotient_eq _ ν hx).trans
+      (patternSubsumSpectrum_quotient_eq _ ν hyfine).symm
+  exact (Set.disjoint_left.1 hdisj) hxE
+    ((mem_dgmCosetFiber_iff H y x).2 hxquot)
+
+/-- The aperiodic/nontrivial convergent branch now reaches the paper's
+actual initial crossed data without assuming a fine pattern or its
+infeasibility.  Both are extracted from one retained source choice. -/
+theorem exists_initialCrossedData_of_nontrivial_convergent
+    [Fintype A] {K : AddSubgroup A} {k : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (B C : Finset A) (P : List (Finset A))
+    (μ : QuotientPattern K (k + 2))
+    (hTargetStab :
+      (patternSubsumSpectrum (B :: C :: P) μ).addStab = {0})
+    (E : Finset A) (hE : DGMPatternConvergent B C P μ E)
+    (hEnontrivial : AddAction.stabilizer A (E : Set A) ≠ ⊥) :
+    ∃ (y : A) (base : LayerSubsumChoice (B :: C :: P) (k + 2) y),
+      base.RealizesPattern μ ∧
+      (¬dgmCosetFiber (AddAction.stabilizer A (E : Set A)) y ⊆
+        patternSubsumSpectrum (B :: C :: P) μ) ∧
+      ∃ b₁ ∈ B, b₁ ∉ C ∧ ∃ b₂ ∈ C, b₂ ∉ B ∧
+        ∃ νtail : QuotientPattern
+            (AddAction.stabilizer A (E : Set A)) k,
+          QuotientPattern.IsTwoStepExtension
+              (base.quotientPattern (AddAction.stabilizer A (E : Set A)))
+              b₁ b₂ νtail ∧
+          (patternSubsumSpectrum P νtail).Nonempty ∧
+          (dgmCrossedD12 B C P b₁ b₂ νtail).Nonempty ∧
+          (dgmCrossedPairTail1 B C P b₁ b₂ νtail).Nonempty := by
+  classical
+  obtain ⟨y, base, hbase, hescape⟩ :=
+    exists_escape_patternChoice_of_nontrivial_convergent
+      B C P μ hTargetStab E hE hEnontrivial
+  let H := AddAction.stabilizer A (E : Set A)
+  let ν := base.quotientPattern H
+  have hνfeasible :
+      (patternSubsumSpectrum (B :: C :: P) ν).Nonempty := by
+    exact ⟨y, (mem_patternSubsumSpectrum_iff _ ν y).2
+      ⟨⟨base, base.realizes_quotientPattern H⟩⟩⟩
+  have hinfeasible :
+      patternSubsumSpectrum (dgmInterUnionLayers B C P) ν = ∅ := by
+    simpa [H, ν] using
+      patternSubsumSpectrum_interUnion_quotientPattern_eq_empty_of_escape
+        B C P μ E hE base hbase hescape
+  obtain ⟨b₁, hb₁, hb₁C, b₂, hb₂, hb₂B, νtail,
+      hext, htail, hD12, hpair1⟩ :=
+    exists_initialCrossedData_of_interUnion_infeasible
+      B C P ν hνfeasible hinfeasible
+  exact ⟨y, base, hbase, hescape, b₁, hb₁, hb₁C,
+    b₂, hb₂, hb₂B, νtail, hext, htail, hD12, hpair1⟩
+
+/-- Source-faithful strict equation (2) for any nonempty piece of the fine
+pattern spectrum in the deficient stabilizer coset.  The fine pattern is not
+an arbitrary interface: it is canonically induced by the retained original
+choice `base`, and the refinement theorem above proves that the piece still
+lies in the original `μ`-target. -/
+theorem dgmStrictEquationTwo_of_minimal_convergent_refined_piece
+    [Fintype A] {K : AddSubgroup A} {n : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (B C : Finset A) (P : List (Finset A))
+    (μ : QuotientPattern K n) (E : Finset A)
+    (hE : DGMPatternConvergent B C P μ E)
+    (hmin : ∀ E' : Finset A, DGMPatternConvergent B C P μ E' →
+      Nat.card (AddAction.stabilizer A (E : Set A)) ≤
+        Nat.card (AddAction.stabilizer A (E' : Set A)))
+    {y : A} (base : LayerSubsumChoice (B :: C :: P) n y)
+    (hbase : base.RealizesPattern μ)
+    (D : Finset A) (hD : D.Nonempty)
+    (hDfine : D ⊆ patternSubsumSpectrum (B :: C :: P)
+      (base.quotientPattern (AddAction.stabilizer A (E : Set A))))
+    (hescape : ¬dgmCosetFiber
+      (AddAction.stabilizer A (E : Set A)) y ⊆
+        patternSubsumSpectrum (B :: C :: P) μ) :
+    D.card + Nat.card (AddAction.stabilizer A (E : Set A)) *
+        (dgmCappedMultiplicitySum
+          (AddAction.stabilizer A (E : Set A))
+          (dgmInterUnionLayers B C P) n - n + 1) <
+      Nat.card (AddAction.stabilizer A (D : Set A)) *
+        (dgmCappedMultiplicitySum
+          (AddAction.stabilizer A (D : Set A))
+          (dgmInterUnionLayers B C P) n - n + 1) := by
+  classical
+  let H := AddAction.stabilizer A (E : Set A)
+  let ν := base.quotientPattern H
+  let T := patternSubsumSpectrum (B :: C :: P) μ
+  have hHle : H ≤ K := by
+    simpa [H] using dgmPatternConvergent_stabilizer_le_original
+      B C P μ E hE
+  have hfineUpper : patternSubsumSpectrum (B :: C :: P) ν ⊆ T := by
+    simpa [ν, T] using
+      (patternSubsumSpectrum_quotientPattern_subset_of_realizes_of_le
+        H K hHle base μ hbase :
+          patternSubsumSpectrum (B :: C :: P) (base.quotientPattern H) ⊆
+            patternSubsumSpectrum (B :: C :: P) μ)
+  have hyfine : y ∈ patternSubsumSpectrum (B :: C :: P) ν := by
+    exact (mem_patternSubsumSpectrum_iff _ ν y).2
+      ⟨⟨base, base.realizes_quotientPattern H⟩⟩
+  have hDfiber : ∀ x ∈ D, (x : A ⧸ H) = (y : A ⧸ H) := by
+    intro x hx
+    exact (patternSubsumSpectrum_quotient_eq _ ν (hDfine hx)).trans
+      (patternSubsumSpectrum_quotient_eq _ ν hyfine).symm
+  have hex : ∃ z : A, z ∈ dgmCosetFiber H y ∧ z ∉ T := by
+    by_contra h
+    apply hescape
+    intro z hzfiber
+    by_contra hzT
+    exact h ⟨z, hzfiber, hzT⟩
+  obtain ⟨z, hzfiber, hzT⟩ := hex
+  have hzquot : (z : A ⧸ H) = (y : A ⧸ H) :=
+    (mem_dgmCosetFiber_iff H y z).1 hzfiber
+  have hDupper : D ⊆ T := fun x hx ↦ hfineUpper (hDfine hx)
+  have hzD : z ∉ D := fun hz ↦ hzT (hDupper hz)
+  have hnot : ¬DGMPatternConvergent B C P μ (E ∪ D) := by
+    apply dgmPatternConvergent_union_not_convergent_of_minimal
+      B C P μ E D hE hmin hD z
+    · intro x hx
+      exact (hDfiber x hx).trans hzquot.symm
+    · exact hzD
+    · simpa [H, T] using
+        (show ¬dgmCosetFiber H z ⊆ T from by
+          intro hzcoset
+          apply hzT
+          exact hzcoset (by
+            apply (mem_dgmCosetFiber_iff H z z).2
+            rfl))
+  have hEdata := hE
+  unfold DGMPatternConvergent at hEdata
+  dsimp only at hEdata
+  rcases hEdata with ⟨hEne, _, hEupper, _⟩
+  have hdisjCoset : Disjoint (E : Set A) (dgmCosetFiber H y : Set A) :=
+    disjoint_cosetFiber_of_periodic_subset_of_not_subset
+      E T hEne H rfl (by simpa [T] using hEupper) y
+        (by simpa [H, T] using
+          (show ¬dgmCosetFiber H y ⊆ T from by
+            intro hsub
+            exact hzT (hsub hzfiber)))
+  have hdisj : Disjoint E D := by
+    rw [Finset.disjoint_left]
+    intro x hxE hxD
+    exact (Set.disjoint_left.1 hdisjCoset) hxE
+      ((mem_dgmCosetFiber_iff H y x).2 (hDfiber x hxD))
+  have hUnionStab :
+      AddAction.stabilizer A ((E ∪ D : Finset A) : Set A) =
+        AddAction.stabilizer A (D : Set A) := by
+    apply stabilizer_union_eq_right_of_periodic_left_proper_fiber
+      H E D hEne hD rfl y
+    · intro x hx
+      exact hDfiber x hx
+    · exact hdisjCoset
+    · exact hzquot
+    · exact hzD
+  have hstrict := dgmEquationOne_of_convergent_union_not_convergent
+    B C P μ E D hE hdisj (by simpa [T] using hDupper) hnot
+  rw [← dgmCappedMultiplicitySum_stabilizer_eq E
+      (dgmInterUnionLayers B C P) n,
+    ← dgmCappedMultiplicitySum_stabilizer_eq (E ∪ D)
+      (dgmInterUnionLayers B C P) n,
+    hUnionStab] at hstrict
+  simpa [H] using hstrict
+
+/-- The three crossed pieces `D₁,D₂,D₁₂` satisfy the paper's strict
+equation (2).  All three inequalities are instances of the preceding
+source-faithful lemma; the second crossed component is required only through
+the nonemptiness already forced by the numeric gate. -/
+theorem dgmCrossedStrictEquationTwo_three
+    [Fintype A] {K : AddSubgroup A} {k : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (B C : Finset A) (P : List (Finset A))
+    (μ : QuotientPattern K (k + 2)) (E : Finset A)
+    (hE : DGMPatternConvergent B C P μ E)
+    (hmin : ∀ E' : Finset A, DGMPatternConvergent B C P μ E' →
+      Nat.card (AddAction.stabilizer A (E : Set A)) ≤
+        Nat.card (AddAction.stabilizer A (E' : Set A)))
+    {y : A} (base : LayerSubsumChoice (B :: C :: P) (k + 2) y)
+    (hbase : base.RealizesPattern μ)
+    (b₁ b₂ : A)
+    (νtail : QuotientPattern
+      (AddAction.stabilizer A (E : Set A)) k)
+    (hext : QuotientPattern.IsTwoStepExtension
+      (base.quotientPattern (AddAction.stabilizer A (E : Set A)))
+      b₁ b₂ νtail)
+    (hD12 : (dgmCrossedD12 B C P b₁ b₂ νtail).Nonempty)
+    (hpair1 : (dgmCrossedPairTail1 B C P b₁ b₂ νtail).Nonempty)
+    (hpair2 : (dgmCrossedPairTail2 B C P b₁ b₂ νtail).Nonempty)
+    (hescape : ¬dgmCosetFiber
+      (AddAction.stabilizer A (E : Set A)) y ⊆
+        patternSubsumSpectrum (B :: C :: P) μ) :
+    let H := AddAction.stabilizer A (E : Set A)
+    let Q := dgmInterUnionLayers B C P
+    let common := Nat.card H *
+      (dgmCappedMultiplicitySum H Q (k + 2) - (k + 2) + 1)
+    (dgmCrossedD1 B C P b₁ b₂ νtail).card + common <
+        Nat.card (dgmCrossedH1 B C P b₁ b₂ νtail) *
+          (dgmCappedMultiplicitySum
+            (dgmCrossedH1 B C P b₁ b₂ νtail) Q (k + 2) -
+              (k + 2) + 1) ∧
+      (dgmCrossedD2 B C P b₁ b₂ νtail).card + common <
+        Nat.card (dgmCrossedH2 B C P b₁ b₂ νtail) *
+          (dgmCappedMultiplicitySum
+            (dgmCrossedH2 B C P b₁ b₂ νtail) Q (k + 2) -
+              (k + 2) + 1) ∧
+      (dgmCrossedD12 B C P b₁ b₂ νtail).card + common <
+        Nat.card (dgmCrossedH12 B C P b₁ b₂ νtail) *
+          (dgmCappedMultiplicitySum
+            (dgmCrossedH12 B C P b₁ b₂ νtail) Q (k + 2) -
+              (k + 2) + 1) := by
+  classical
+  dsimp only
+  let H := AddAction.stabilizer A (E : Set A)
+  let ν := base.quotientPattern H
+  have hD12fine : dgmCrossedD12 B C P b₁ b₂ νtail ⊆
+      patternSubsumSpectrum (B :: C :: P) ν := by
+    intro x hx
+    exact dgmCrossedD12_subset_patternSubsumSpectrum
+      B C P ν b₁ b₂ νtail hext hx
+  have hD1ne : (dgmCrossedD1 B C P b₁ b₂ νtail).Nonempty := by
+    rw [dgmCrossedD1]
+    exact hpair1.add ⟨0, hD12.zero_mem_addStab⟩
+  have hD2ne : (dgmCrossedD2 B C P b₁ b₂ νtail).Nonempty := by
+    rw [dgmCrossedD2]
+    exact hpair2.add ⟨0, hD12.zero_mem_addStab⟩
+  have hstrict1 :=
+    dgmStrictEquationTwo_of_minimal_convergent_refined_piece
+      B C P μ E hE hmin base hbase
+      (dgmCrossedD1 B C P b₁ b₂ νtail) hD1ne
+      (fun x hx ↦ hD12fine
+        (dgmCrossedD1_subset_D12 B C P b₁ b₂ νtail hD12 hx))
+      hescape
+  have hstrict2 :=
+    dgmStrictEquationTwo_of_minimal_convergent_refined_piece
+      B C P μ E hE hmin base hbase
+      (dgmCrossedD2 B C P b₁ b₂ νtail) hD2ne
+      (fun x hx ↦ hD12fine
+        (dgmCrossedD2_subset_D12 B C P b₁ b₂ νtail hD12 hx))
+      hescape
+  have hstrict12 :=
+    dgmStrictEquationTwo_of_minimal_convergent_refined_piece
+      B C P μ E hE hmin base hbase
+      (dgmCrossedD12 B C P b₁ b₂ νtail) hD12 hD12fine hescape
+  exact ⟨by simpa [H, ν, dgmCrossedH1] using hstrict1,
+    by simpa [H, ν, dgmCrossedH2] using hstrict2,
+    by simpa [H, ν, dgmCrossedH12] using hstrict12⟩
 
 /-- The unique pattern modulo the top subgroup. -/
 theorem quotientTop_subsingleton :
