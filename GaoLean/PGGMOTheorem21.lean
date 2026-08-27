@@ -1134,20 +1134,23 @@ def tailIndices (n rho : ℕ) : Finset (Fin n) :=
   Finset.univ.filter fun c ↦ rho ≤ c.val
 
 /-- Literal weak `rho`-factor form, with source cell `rho + 1` represented by
-Lean tail index `rho`.  Field `transition` makes `partition` the fixed
-`F_{rho+1}` selected from the genuine intermediate `Lambda_{rho+1}`, while
-`chain` starts from the source-admissible `Lambda_0`.  Conditions (I), (IV)
-and (V) are retained exactly; (II) and (III) belong to `FactorForm`. -/
+Lean tail index `rho`.  The transition retains its independently fixed
+`F_{rho+1}`, while `partition_inLambda` only requires the factor partition to
+belong to the genuine intermediate `Lambda_{rho+1}`, exactly as condition
+(V) states.  The chain starts from source-admissible `Lambda_0`; conditions
+(I) and (IV) are explicit, while (II) and (III) belong to `FactorForm`. -/
 structure WeakFactorForm
     {xs : List A} {seed : Selection xs} {n : ℕ}
     (I : GMOTheoremEInput xs seed n) (rho : ℕ) where
-  range : rho ≤ n - 2
+  range : rho + 2 ≤ n
   partition : Theorem21SetPartition xs n seed.card
   admissible : GMOReplacementAdmissible I partition
   previous : Definition1ExtremalState xs seed n
   chain : Definition1SourceChain I rho previous
   next : Definition1ExtremalState xs seed n
-  transition : Definition1Transition rho previous next partition
+  F : Theorem21SetPartition xs n seed.card
+  transition : Definition1Transition rho previous next F
+  partition_inLambda : transition.InLambda partition
   tail_actual : ∀ r, r ≤ rho →
     ⊥ < partition.tailPeriod r ∧ partition.tailPeriod r < ⊤
   leading_exception : ∀ c : Fin n, c.val < rho →
@@ -1181,7 +1184,7 @@ theorem WeakFactorForm.inLambda
     {I : GMOTheoremEInput xs seed n}
     (W : WeakFactorForm I rho) :
     W.transition.InLambda W.partition := by
-  exact ⟨W.transition.F_mem_previous, W.transition.F_tail_fixed, rfl⟩
+  exact W.partition_inLambda
 
 omit [Fintype A] in
 /-- Elementary removal engine used in dissertation Lemma 1.  If `x` has a
@@ -1545,6 +1548,39 @@ theorem Theorem21SetPartition.valueCell_eq_of_moveOccurrence_of_ne
   rfl
 
 omit [Fintype A] in
+/-- A same-support occurrence move stays in the literal source `Lambda_0`
+family when it enlarges the full sumset and does not erase the distinguished
+anchor value of its source cell. -/
+theorem GMOReplacementAdmissible.moveOccurrence
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    {P Q : Theorem21SetPartition xs n seed.card}
+    {q d : Fin n} {i : Occurrence xs}
+    (hP : GMOReplacementAdmissible I P)
+    (hqd : q ≠ d)
+    (hiq : i ∈ P.cells q)
+    (hanchor : occurrenceValue xs (I.anchor q) ≠ occurrenceValue xs i)
+    (hQcells : ∀ c, Q.cells c = P.moveOccurrenceCells q d i c)
+    (hsumset : P.sumset ⊆ Q.sumset) :
+    GMOReplacementAdmissible I Q := by
+  classical
+  constructor
+  · exact hP.1.trans hsumset
+  · intro c
+    by_cases hcq : c = q
+    · subst c
+      rw [P.valueCell_eq_erase_of_moveOccurrence hiq hQcells]
+      unfold eraseValue
+      exact Finset.mem_erase.mpr ⟨hanchor, hP.2 q⟩
+    · by_cases hcd : c = d
+      · subst c
+        rw [P.valueCell_eq_insert_of_moveOccurrence hqd hQcells]
+        unfold insertValue
+        exact Finset.mem_insert_of_mem (hP.2 d)
+      · rw [P.valueCell_eq_of_moveOccurrence_of_ne hQcells hcq hcd]
+        exact hP.2 c
+
+omit [Fintype A] in
 /-- Quotient-image form of the source-cell erase wrapper. -/
 theorem quotientLayer_eraseValue_eq_of_duplicate
     (H : AddSubgroup A) (C : Finset A) {x y : A}
@@ -1763,6 +1799,26 @@ theorem Definition1InitialValid.mem_of_sumset_subset
   omega
 
 omit [Fintype A] in
+/-- Source-family base-stage monotone closure.  In addition to full-sumset
+inclusion, the replacement must remain literally `Lambda_0`-admissible. -/
+theorem Definition1InitialValidUnder.mem_of_sumset_subset
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    {state : Definition1ExtremalState xs seed n}
+    (valid : Definition1InitialValidUnder I state)
+    {P Q : Theorem21SetPartition xs n seed.card}
+    (hPmem : P ∈ state.upsilon)
+    (hQadmissible : GMOReplacementAdmissible I Q)
+    (hsubset : P.sumset ⊆ Q.sumset) :
+    Q ∈ state.upsilon := by
+  have hPdata := (valid.mem_upsilon_iff P).1 hPmem
+  have hPQcard : P.sumset.card ≤ Q.sumset.card :=
+    Finset.card_le_card hsubset
+  have hQmax := valid.maximal Q hQadmissible
+  apply (valid.mem_upsilon_iff Q).2
+  exact ⟨hQadmissible, by omega⟩
+
+omit [Fintype A] in
 /-- Successor-stage monotone closure from the recursive Definition 1 data.
 The four hypotheses are exactly the checks made in the paper's "simple
 inductive argument": the replacement survived the previous stage, fixes the
@@ -1899,6 +1955,105 @@ theorem Definition1ExtremalChain.MonotoneReplacement.next_of_tail_subsets
       Q.tailSumset (r + 1)) :
     MonotoneReplacement P Q
       (Definition1ExtremalChain.next prior state F step) := by
+  have hQprevious := prior.mem_final_of_monotoneReplacement hprior
+  have hQcard := prior.tail_card_eq_chosen_of_mem hQprevious
+  have hPdata := (step.mem_next_upsilon_iff P).1 hPnext
+  have hPtail : P.tailSumset r = previous.chosen.tailSumset r :=
+    hPdata.2.1
+  have hQtail : Q.tailSumset r = previous.chosen.tailSumset r := by
+    exact (Finset.eq_of_subset_of_card_le
+      (hPtail ▸ hPtailSubsetQ) (by rw [hQcard])).symm
+  exact MonotoneReplacement.next prior state F step hprior hPnext hQtail
+    hFimagesQ hPnextTailSubsetQ
+
+/-- Recursive exchange certificate for the literal source chain.  Its base
+case additionally records that the replacement remains in `Lambda_0`. -/
+inductive Definition1SourceChain.MonotoneReplacement
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (P Q : Theorem21SetPartition xs n seed.card) :
+    {r : ℕ} → {state : Definition1ExtremalState xs seed n} →
+      Definition1SourceChain I r state → Prop
+  | initial (state : Definition1ExtremalState xs seed n)
+      (valid : Definition1InitialValidUnder I state)
+      (hPmem : P ∈ state.upsilon)
+      (hQadmissible : GMOReplacementAdmissible I Q)
+      (hsubset : P.sumset ⊆ Q.sumset) :
+      MonotoneReplacement P Q
+        (Definition1SourceChain.initial state valid)
+  | next {r : ℕ} {previous : Definition1ExtremalState xs seed n}
+      (prior : Definition1SourceChain I r previous)
+      (state : Definition1ExtremalState xs seed n)
+      (F : Theorem21SetPartition xs n seed.card)
+      (step : Definition1Transition r previous state F)
+      (hprior : MonotoneReplacement P Q prior)
+      (hPnext : P ∈ state.upsilon)
+      (hQtail : Q.tailSumset r = previous.chosen.tailSumset r)
+      (hFimagesQ : F.quotientImagesIncluded Q
+        (AddAction.stabilizer A
+          (previous.chosen.tailSumset r : Set A)))
+      (hPtailSubsetQ : P.tailSumset (r + 1) ⊆ Q.tailSumset (r + 1)) :
+      MonotoneReplacement P Q
+        (Definition1SourceChain.next prior state F step)
+
+omit [Fintype A] in
+/-- A recorded source-chain exchange belongs to the final `Upsilon`. -/
+theorem Definition1SourceChain.mem_final_of_monotoneReplacement
+    {xs : List A} {seed : Selection xs} {n r : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    {state : Definition1ExtremalState xs seed n}
+    {P Q : Theorem21SetPartition xs n seed.card}
+    (chain : Definition1SourceChain I r state)
+    (hmono : Definition1SourceChain.MonotoneReplacement P Q chain) :
+    Q ∈ state.upsilon := by
+  induction hmono with
+  | initial state valid hPmem hQadmissible hsubset =>
+      exact valid.mem_of_sumset_subset hPmem hQadmissible hsubset
+  | next prior state F step hprior hPnext hQtail hFimagesQ
+      hPtailSubsetQ ih =>
+      exact step.mem_next_of_monotone hPnext ih hQtail hFimagesQ
+        hPtailSubsetQ
+
+omit [Fintype A] in
+/-- Stage membership fixes the relevant tail cardinality also for the
+source-admissible chain. -/
+theorem Definition1SourceChain.tail_card_eq_chosen_of_mem
+    {xs : List A} {seed : Selection xs} {n r : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    {state : Definition1ExtremalState xs seed n}
+    (chain : Definition1SourceChain I r state)
+    {Q : Theorem21SetPartition xs n seed.card}
+    (hQ : Q ∈ state.upsilon) :
+    (Q.tailSumset r).card = (state.chosen.tailSumset r).card := by
+  cases chain with
+  | initial state valid =>
+      have hcard := (valid.mem_upsilon_iff Q).1 hQ |>.2
+      simpa [Theorem21SetPartition.tailSumset,
+        Theorem21SetPartition.tailValueCells,
+        Theorem21SetPartition.sumset] using hcard
+  | @next r previous prior state F step =>
+      exact (step.mem_next_upsilon_iff Q).1 hQ |>.2.2.2.2
+
+omit [Fintype A] in
+/-- Practical successor constructor for a literal source-chain exchange. -/
+theorem Definition1SourceChain.MonotoneReplacement.next_of_tail_subsets
+    {xs : List A} {seed : Selection xs} {n r : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    {previous : Definition1ExtremalState xs seed n}
+    {prior : Definition1SourceChain I r previous}
+    {state : Definition1ExtremalState xs seed n}
+    {F P Q : Theorem21SetPartition xs n seed.card}
+    {step : Definition1Transition r previous state F}
+    (hprior : MonotoneReplacement P Q prior)
+    (hPnext : P ∈ state.upsilon)
+    (hPtailSubsetQ : P.tailSumset r ⊆ Q.tailSumset r)
+    (hFimagesQ : F.quotientImagesIncluded Q
+      (AddAction.stabilizer A
+        (previous.chosen.tailSumset r : Set A)))
+    (hPnextTailSubsetQ : P.tailSumset (r + 1) ⊆
+      Q.tailSumset (r + 1)) :
+    MonotoneReplacement P Q
+      (Definition1SourceChain.next prior state F step) := by
   have hQprevious := prior.mem_final_of_monotoneReplacement hprior
   have hQcard := prior.tail_card_eq_chosen_of_mem hQprevious
   have hPdata := (step.mem_next_upsilon_iff P).1 hPnext
@@ -2059,6 +2214,24 @@ theorem List.drop_set_eq_take_append_cons_drop
               simpa using ih (L := L) (q := q) hrq' hq'
 
 omit [AddCommGroup A] [Fintype A] in
+/-- Updating a position strictly before the dropped prefix has no effect on
+the resulting suffix. -/
+theorem List.drop_set_eq_of_lt
+    {X : Type*} (L : List X) (x : X) {q r : ℕ} (hqr : q < r) :
+    (L.set q x).drop r = L.drop r := by
+  induction r generalizing L q with
+  | zero => omega
+  | succ r ih =>
+      cases L with
+      | nil => simp
+      | cons a L =>
+          cases q with
+          | zero => simp
+          | succ q =>
+              simp only [List.set, List.drop_succ_cons]
+              exact ih (L := L) (q := q) (by omega)
+
+omit [AddCommGroup A] [Fintype A] in
 /-- Updating one coordinate of a finite tuple and converting it to a list is
 the same as converting first and using `List.set`. -/
 theorem List.ofFn_ite_eq_set {X : Type*} {n : ℕ}
@@ -2100,6 +2273,18 @@ theorem Theorem21SetPartition.valueCellsAfterErase_eq_set
   rw [hfun]
   simpa using List.ofFn_ite_eq_set
     (fun c : Fin n ↦ P.valueCell c) q (eraseValue (P.valueCell q) x)
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Erasing a cell before a tail does not alter that tail's layer list. -/
+theorem Theorem21SetPartition.tailValueCellsAfterErase_eq_of_source_lt
+    {xs : List A} {n m r : ℕ} (P : Theorem21SetPartition xs n m)
+    (q : Fin n) (x : A) (hqr : q.val < r) :
+    P.tailValueCellsAfterErase q x r = P.tailValueCells r := by
+  unfold Theorem21SetPartition.tailValueCellsAfterErase
+    Theorem21SetPartition.tailValueCells
+  rw [P.valueCellsAfterErase_eq_set]
+  exact List.drop_set_eq_of_lt P.valueCells
+    (eraseValue (P.valueCell q) x) hqr
 
 omit [AddCommGroup A] [Fintype A] in
 /-- Exact decomposition of the erased tail around its modified cell. -/
@@ -2532,6 +2717,29 @@ theorem Theorem21SetPartition.tailSumset_eq_afterErase_of_later_periodic
       ⟨hxq, y, hyq, hyx, hyquot⟩ hrk)
 
 omit [Fintype A] in
+/-- If the erased tail at `min k q` is `H`-periodic, then every old tail up
+to stage `k` is contained in the honest moved partition: before the source
+cell this follows by periodic removal, and after the source cell erasure has
+already disappeared from the suffix.  This is the exact `l = min k q`
+bookkeeping missing from the index-aligned subcase. -/
+theorem Theorem21SetPartition.tailSumset_eq_afterErase_of_min_periodic
+    {xs : List A} {n m r k : ℕ} (P : Theorem21SetPartition xs n m)
+    (H : AddSubgroup A) (q : Fin n) {x : A}
+    (hrk : r ≤ k)
+    (hdouble : P.IsHDoubledInCell H q x)
+    (hperiodicMin : H ≤ AddAction.stabilizer A
+      (P.tailSumsetAfterErase q x (min k q.val) : Set A)) :
+    P.tailSumset r = P.tailSumsetAfterErase q x r := by
+  by_cases hrq : r ≤ q.val
+  · have hrmin : r ≤ min k q.val := Nat.le_min.mpr ⟨hrk, hrq⟩
+    exact P.tailSumset_eq_afterErase_of_later_periodic H q hrmin hrq
+      hdouble hperiodicMin
+  · have hqr : q.val < r := by omega
+    unfold Theorem21SetPartition.tailSumset
+      Theorem21SetPartition.tailSumsetAfterErase
+    rw [P.tailValueCellsAfterErase_eq_of_source_lt q x hqr]
+
+omit [Fintype A] in
 /-- Full recursive admissibility half of dissertation Lemma 1.  A single
 honest occurrence move from a class doubled modulo the later tail stabilizer
 survives every Definition 1 extremal stage up to that tail, provided erasing
@@ -2582,6 +2790,387 @@ theorem Definition1ExtremalChain.MonotoneReplacement.of_moveOccurrence_of_later_
       exact MonotoneReplacement.next_of_moveOccurrence_of_erase_eq
         hprior hP (by omega) hqd hiq hix hdouble hQcells
         heraseCurrent heraseNext
+
+omit [Fintype A] in
+/-- Source-chain counterpart of the recursive Lemma 1 exchange.  Literal
+`Lambda_0` admissibility of `Q` is consumed only at the base stage; all later
+steps are the genuine Definition 1 transitions. -/
+theorem Definition1SourceChain.MonotoneReplacement.of_moveOccurrence_of_later_periodic
+    {xs : List A} {seed : Selection xs} {n r k : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    {state : Definition1ExtremalState xs seed n}
+    {chain : Definition1SourceChain I r state}
+    {P Q : Theorem21SetPartition xs n seed.card}
+    {q d : Fin n} {i : Occurrence xs} {x : A}
+    (hP : P ∈ state.upsilon) (hrk : r ≤ k) (hkq : k ≤ q.val)
+    (hQadmissible : GMOReplacementAdmissible I Q)
+    (hqd : q ≠ d) (hiq : i ∈ P.cells q)
+    (hix : occurrenceValue xs i = x)
+    (hdouble : P.IsHDoubledInCell
+      (AddAction.stabilizer A (P.tailSumset k : Set A)) q x)
+    (hQcells : ∀ c, Q.cells c = P.moveOccurrenceCells q d i c)
+    (hperiodicLater : AddAction.stabilizer A
+        (P.tailSumset k : Set A) ≤
+      AddAction.stabilizer A
+        (P.tailSumsetAfterErase q x k : Set A)) :
+    MonotoneReplacement P Q chain := by
+  induction chain with
+  | initial state valid =>
+      have herase0 := P.tailSumset_eq_afterErase_of_later_periodic
+        (AddAction.stabilizer A (P.tailSumset k : Set A)) q
+        (Nat.zero_le k) (Nat.zero_le q.val) hdouble hperiodicLater
+      have htail : P.tailSumset 0 ⊆ Q.tailSumset 0 :=
+        P.tailSumset_subset_moveOccurrence_of_erase_eq hqd hiq hQcells 0
+          (by simpa [hix] using herase0)
+      have hsum : P.sumset ⊆ Q.sumset := by
+        simpa [Theorem21SetPartition.tailSumset,
+          Theorem21SetPartition.tailValueCells,
+          Theorem21SetPartition.sumset] using htail
+      exact MonotoneReplacement.initial state valid hP hQadmissible hsum
+  | @next r previous prior state F step ih =>
+      have hPdata := (step.mem_next_upsilon_iff P).1 hP
+      have hprior : MonotoneReplacement P Q prior :=
+        ih hPdata.1 (by omega)
+      have heraseCurrent := P.tailSumset_eq_afterErase_of_later_periodic
+        (AddAction.stabilizer A (P.tailSumset k : Set A)) q
+        (by omega : r ≤ k) (by omega : r ≤ q.val) hdouble hperiodicLater
+      have heraseNext := P.tailSumset_eq_afterErase_of_later_periodic
+        (AddAction.stabilizer A (P.tailSumset k : Set A)) q
+        (by omega : r + 1 ≤ k) (by omega : r + 1 ≤ q.val)
+        hdouble hperiodicLater
+      have hcurrent : P.tailSumset r ⊆ Q.tailSumset r :=
+        P.tailSumset_subset_moveOccurrence_of_erase_eq hqd hiq hQcells r
+          (by simpa [hix] using heraseCurrent)
+      have hnext : P.tailSumset (r + 1) ⊆ Q.tailSumset (r + 1) :=
+        P.tailSumset_subset_moveOccurrence_of_erase_eq hqd hiq hQcells
+          (r + 1) (by simpa [hix] using heraseNext)
+      have hPtail : P.tailSumset r = previous.chosen.tailSumset r :=
+        hPdata.2.1
+      have hHK : AddAction.stabilizer A (P.tailSumset k : Set A) ≤
+          AddAction.stabilizer A
+            (previous.chosen.tailSumset r : Set A) := by
+        rw [← hPtail]
+        exact P.stabilizer_tailSumset_antitone (by omega)
+      have hPimagesQ : P.quotientImagesIncluded Q
+          (AddAction.stabilizer A
+            (previous.chosen.tailSumset r : Set A)) :=
+        P.quotientImagesIncluded_moveOccurrence_of_mono hHK hqd hiq hix
+          hdouble hQcells
+      have hFimagesQ : F.quotientImagesIncluded Q
+          (AddAction.stabilizer A
+            (previous.chosen.tailSumset r : Set A)) :=
+        Theorem21SetPartition.quotientImagesIncluded_trans
+          (P := F) (Q := P) (R := Q) hPdata.2.2.2.1 hPimagesQ
+      exact MonotoneReplacement.next_of_tail_subsets hprior hP hcurrent
+        hFimagesQ hnext
+
+omit [Fintype A] in
+/-- Full `l = min k q` recursive exchange along the literal source chain. -/
+theorem Definition1SourceChain.MonotoneReplacement.of_moveOccurrence_of_min_periodic
+    {xs : List A} {seed : Selection xs} {n r k : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    {state : Definition1ExtremalState xs seed n}
+    {chain : Definition1SourceChain I r state}
+    {P Q : Theorem21SetPartition xs n seed.card}
+    {q d : Fin n} {i : Occurrence xs} {x : A}
+    (hP : P ∈ state.upsilon) (hrk : r ≤ k)
+    (hQadmissible : GMOReplacementAdmissible I Q)
+    (hqd : q ≠ d) (hiq : i ∈ P.cells q)
+    (hix : occurrenceValue xs i = x)
+    (hdouble : P.IsHDoubledInCell
+      (AddAction.stabilizer A (P.tailSumset k : Set A)) q x)
+    (hQcells : ∀ c, Q.cells c = P.moveOccurrenceCells q d i c)
+    (hperiodicMin : AddAction.stabilizer A
+        (P.tailSumset k : Set A) ≤
+      AddAction.stabilizer A
+        (P.tailSumsetAfterErase q x (min k q.val) : Set A)) :
+    MonotoneReplacement P Q chain := by
+  induction chain with
+  | initial state valid =>
+      have herase0 := P.tailSumset_eq_afterErase_of_min_periodic
+        (AddAction.stabilizer A (P.tailSumset k : Set A)) q
+        (Nat.zero_le k) hdouble hperiodicMin
+      have htail : P.tailSumset 0 ⊆ Q.tailSumset 0 :=
+        P.tailSumset_subset_moveOccurrence_of_erase_eq hqd hiq hQcells 0
+          (by simpa [hix] using herase0)
+      have hsum : P.sumset ⊆ Q.sumset := by
+        simpa [Theorem21SetPartition.tailSumset,
+          Theorem21SetPartition.tailValueCells,
+          Theorem21SetPartition.sumset] using htail
+      exact MonotoneReplacement.initial state valid hP hQadmissible hsum
+  | @next r previous prior state F step ih =>
+      have hPdata := (step.mem_next_upsilon_iff P).1 hP
+      have hprior : MonotoneReplacement P Q prior :=
+        ih hPdata.1 (by omega)
+      have heraseCurrent := P.tailSumset_eq_afterErase_of_min_periodic
+        (AddAction.stabilizer A (P.tailSumset k : Set A)) q
+        (by omega : r ≤ k) hdouble hperiodicMin
+      have heraseNext := P.tailSumset_eq_afterErase_of_min_periodic
+        (AddAction.stabilizer A (P.tailSumset k : Set A)) q
+        (by omega : r + 1 ≤ k) hdouble hperiodicMin
+      have hcurrent : P.tailSumset r ⊆ Q.tailSumset r :=
+        P.tailSumset_subset_moveOccurrence_of_erase_eq hqd hiq hQcells r
+          (by simpa [hix] using heraseCurrent)
+      have hnext : P.tailSumset (r + 1) ⊆ Q.tailSumset (r + 1) :=
+        P.tailSumset_subset_moveOccurrence_of_erase_eq hqd hiq hQcells
+          (r + 1) (by simpa [hix] using heraseNext)
+      have hPtail : P.tailSumset r = previous.chosen.tailSumset r :=
+        hPdata.2.1
+      have hHK : AddAction.stabilizer A (P.tailSumset k : Set A) ≤
+          AddAction.stabilizer A
+            (previous.chosen.tailSumset r : Set A) := by
+        rw [← hPtail]
+        exact P.stabilizer_tailSumset_antitone (by omega)
+      have hPimagesQ : P.quotientImagesIncluded Q
+          (AddAction.stabilizer A
+            (previous.chosen.tailSumset r : Set A)) :=
+        P.quotientImagesIncluded_moveOccurrence_of_mono hHK hqd hiq hix
+          hdouble hQcells
+      have hFimagesQ : F.quotientImagesIncluded Q
+          (AddAction.stabilizer A
+            (previous.chosen.tailSumset r : Set A)) :=
+        Theorem21SetPartition.quotientImagesIncluded_trans
+          (P := F) (Q := P) (R := Q) hPdata.2.2.2.1 hPimagesQ
+      exact MonotoneReplacement.next_of_tail_subsets hprior hP hcurrent
+        hFimagesQ hnext
+
+omit [Fintype A] in
+/-- The genuine `l = min rho q` maximal-exchange contradiction for a weak
+factor form, with the source paper's `x ≠ a_q` convention made explicit as
+the anchor-value hypothesis.  A wrapper can choose such a representative
+from a doubled quotient class. -/
+theorem WeakFactorForm.lemma1_minTail_of_anchor_ne
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (W : WeakFactorForm I rho)
+    (q : Fin n) (x : A)
+    (hexception : W.partition.IsHException
+      (W.partition.tailPeriod rho) x)
+    (hdouble : W.partition.IsHDoubledInCell
+      (W.partition.tailPeriod rho) q x)
+    (hanchor : occurrenceValue xs (I.anchor q) ≠ x) :
+    ¬ W.partition.tailPeriod rho ≤
+      AddAction.stabilizer A
+        (W.partition.tailSumsetAfterErase q x (min rho q.val) : Set A) := by
+  classical
+  intro hperiodic
+  rcases hexception with ⟨d, hmissing⟩
+  rcases hdouble with ⟨hxq, y, hyq, hyx, hyquot⟩
+  rcases Finset.mem_image.mp hxq with ⟨i, hiq, hix⟩
+  rcases Finset.mem_image.mp hyq with ⟨j, hjq, hjy⟩
+  have hqd : q ≠ d := by
+    intro hqd
+    subst d
+    apply hmissing
+    exact (mem_quotientLayer_iff (W.partition.tailPeriod rho)
+      (W.partition.valueCell q) _).2 ⟨x, hxq, rfl⟩
+  have hji : j ≠ i := by
+    intro hji
+    subst j
+    apply hyx
+    rw [← hix, ← hjy]
+  have htarget : ∀ z ∈ W.partition.cells d,
+      occurrenceValue xs z ≠ occurrenceValue xs i := by
+    intro z hzd hzvalue
+    apply hmissing
+    apply (mem_quotientLayer_iff (W.partition.tailPeriod rho)
+      (W.partition.valueCell d) _).2
+    refine ⟨occurrenceValue xs z,
+      Finset.mem_image.mpr ⟨z, hzd, rfl⟩, ?_⟩
+    simp [hzvalue, hix]
+  obtain ⟨Q, hQcells, _hQsupport⟩ := W.partition.exists_moveOccurrence
+    hqd hiq ⟨j, hjq, hji⟩ htarget
+  have herase0 := W.partition.tailSumset_eq_afterErase_of_min_periodic
+    (W.partition.tailPeriod rho) q (Nat.zero_le rho)
+    ⟨hxq, y, hyq, hyx, hyquot⟩ hperiodic
+  have hsum : W.partition.sumset ⊆ Q.sumset := by
+    have htail : W.partition.tailSumset 0 ⊆ Q.tailSumset 0 :=
+      W.partition.tailSumset_subset_moveOccurrence_of_erase_eq
+        hqd hiq hQcells 0 (by simpa [hix] using herase0)
+    simpa [Theorem21SetPartition.tailSumset,
+      Theorem21SetPartition.tailValueCells,
+      Theorem21SetPartition.sumset] using htail
+  have hQadmissible : GMOReplacementAdmissible I Q :=
+    W.admissible.moveOccurrence hqd hiq (by simpa [hix] using hanchor)
+      hQcells hsum
+  have hdoubleStab : W.partition.IsHDoubledInCell
+      (AddAction.stabilizer A
+        (W.partition.tailSumset rho : Set A)) q x := by
+    simpa [Theorem21SetPartition.tailPeriod] using
+      (show W.partition.IsHDoubledInCell
+        (W.partition.tailPeriod rho) q x from
+        ⟨hxq, y, hyq, hyx, hyquot⟩)
+  have hperiodicStab : AddAction.stabilizer A
+        (W.partition.tailSumset rho : Set A) ≤
+      AddAction.stabilizer A
+        (W.partition.tailSumsetAfterErase q x (min rho q.val) : Set A) := by
+    simpa [Theorem21SetPartition.tailPeriod] using hperiodic
+  have hmono : Definition1SourceChain.MonotoneReplacement
+      W.partition Q W.chain :=
+    Definition1SourceChain.MonotoneReplacement.of_moveOccurrence_of_min_periodic
+      W.inLambda.1 le_rfl hQadmissible hqd hiq hix hdoubleStab hQcells
+      hperiodicStab
+  have hQprevious : Q ∈ W.previous.upsilon :=
+    W.chain.mem_final_of_monotoneReplacement hmono
+  have heraseRho := W.partition.tailSumset_eq_afterErase_of_min_periodic
+    (W.partition.tailPeriod rho) q le_rfl
+    ⟨hxq, y, hyq, hyx, hyquot⟩ hperiodic
+  have hPsubsetQ : W.partition.tailSumset rho ⊆ Q.tailSumset rho :=
+    W.partition.tailSumset_subset_moveOccurrence_of_erase_eq
+      hqd hiq hQcells rho (by simpa [hix] using heraseRho)
+  have hQcard : (Q.tailSumset rho).card =
+      (W.previous.chosen.tailSumset rho).card :=
+    W.chain.tail_card_eq_chosen_of_mem hQprevious
+  have hPtail : W.partition.tailSumset rho =
+      W.previous.chosen.tailSumset rho := W.inLambda.2.1
+  have hQeqP : Q.tailSumset rho = W.partition.tailSumset rho :=
+    (Finset.eq_of_subset_of_card_le hPsubsetQ (by
+      rw [hQcard, hPtail])).symm
+  have hQtail : Q.tailSumset rho =
+      W.previous.chosen.tailSumset rho := hQeqP.trans hPtail
+  have hQinc : Q.quotientIncidenceAt (W.partition.tailPeriod rho) =
+      W.partition.quotientIncidenceAt (W.partition.tailPeriod rho) + 1 :=
+    W.partition.quotientIncidenceAt_move_eq_add_one
+      (W.partition.tailPeriod rho) hqd hiq hix
+      ⟨hxq, y, hyq, hyx, hyquot⟩ hmissing hQcells
+  have hH : W.partition.tailPeriod rho = AddAction.stabilizer A
+      (W.previous.chosen.tailSumset rho : Set A) := by
+    unfold Theorem21SetPartition.tailPeriod
+    rw [hPtail]
+  have hQmax := W.transition.incidence_maximal Q hQprevious hQtail
+  have hPinc := W.inLambda.2.2
+  rw [← hH] at hQmax hPinc
+  rw [hQinc, hPinc] at hQmax
+  omega
+
+omit [Fintype A] in
+/-- Anchor-safe `l = min rho q` form with the paper's “without loss of
+generality `x ≠ a_q`” made constructive.  If the named representative is the
+anchor value, the other representative in its doubled quotient class is
+chosen instead; it is still a doubled exception in the same class. -/
+theorem WeakFactorForm.exists_lemma1_minTail_representative
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (W : WeakFactorForm I rho)
+    (q : Fin n) (x : A)
+    (hexception : W.partition.IsHException
+      (W.partition.tailPeriod rho) x)
+    (hdouble : W.partition.IsHDoubledInCell
+      (W.partition.tailPeriod rho) q x) :
+    ∃ z : A,
+      QuotientAddGroup.mk' (W.partition.tailPeriod rho) z =
+        QuotientAddGroup.mk' (W.partition.tailPeriod rho) x ∧
+      W.partition.IsHException (W.partition.tailPeriod rho) z ∧
+      W.partition.IsHDoubledInCell (W.partition.tailPeriod rho) q z ∧
+      occurrenceValue xs (I.anchor q) ≠ z ∧
+      ¬ W.partition.tailPeriod rho ≤
+        AddAction.stabilizer A
+          (W.partition.tailSumsetAfterErase q z (min rho q.val) : Set A) := by
+  rcases hdouble with ⟨hxq, y, hyq, hyx, hyquot⟩
+  by_cases hanchor : occurrenceValue xs (I.anchor q) ≠ x
+  · refine ⟨x, rfl, hexception,
+      ⟨hxq, y, hyq, hyx, hyquot⟩, hanchor, ?_⟩
+    exact W.lemma1_minTail_of_anchor_ne q x hexception
+      ⟨hxq, y, hyq, hyx, hyquot⟩ hanchor
+  · have hanchorEq : occurrenceValue xs (I.anchor q) = x :=
+      Classical.not_not.mp hanchor
+    have hyException : W.partition.IsHException
+        (W.partition.tailPeriod rho) y := by
+      rcases hexception with ⟨d, hd⟩
+      refine ⟨d, ?_⟩
+      intro hyMem
+      apply hd
+      simpa [hyquot] using hyMem
+    have hyDouble : W.partition.IsHDoubledInCell
+        (W.partition.tailPeriod rho) q y :=
+      ⟨hyq, x, hxq, fun hxy ↦ hyx hxy.symm, hyquot.symm⟩
+    have hyAnchor : occurrenceValue xs (I.anchor q) ≠ y := by
+      rw [hanchorEq]
+      exact fun hxy ↦ hyx hxy.symm
+    refine ⟨y, hyquot, hyException, hyDouble, hyAnchor, ?_⟩
+    exact W.lemma1_minTail_of_anchor_ne q y hyException hyDouble hyAnchor
+
+omit [Fintype A] in
+/-- Condition (I) closes the `q < rho` branch of Lemma 1.  The suffix after
+cell `q` has period `tailPeriod (q+1)`, which contains `tailPeriod rho` by
+stabilizer nesting.  Adding the nonempty erased `q`-cell on the left therefore
+leaves the erased `q`-tail `tailPeriod rho`-periodic. -/
+theorem WeakFactorForm.periodic_tailSumsetAfterErase_of_source_lt
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (W : WeakFactorForm I rho)
+    (q : Fin n) (x : A)
+    (hdouble : W.partition.IsHDoubledInCell
+      (W.partition.tailPeriod rho) q x)
+    (hqrho : q.val < rho) :
+    W.partition.tailPeriod rho ≤
+      AddAction.stabilizer A
+        (W.partition.tailSumsetAfterErase q x q.val : Set A) := by
+  classical
+  rcases hdouble with ⟨hxq, y, hyq, hyx, hyquot⟩
+  have hsucc : q.val + 1 ≤ rho := by omega
+  have hperiodNest : W.partition.tailPeriod rho ≤
+      W.partition.tailPeriod (q.val + 1) := by
+    unfold Theorem21SetPartition.tailPeriod
+    exact W.partition.stabilizer_tailSumset_antitone hsucc
+  have hleft : IsNonemptySetPartition
+      [eraseValue (W.partition.valueCell q) x] := by
+    intro B hB
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hB
+    subst B
+    unfold eraseValue
+    exact ⟨y, Finset.mem_erase.mpr ⟨hyx, hyq⟩⟩
+  have hright : IsNonemptySetPartition
+      (W.partition.valueCells.drop (q.val + 1)) :=
+    W.partition.valueCells_nonempty.drop (q.val + 1)
+  have happend : W.partition.tailPeriod (q.val + 1) ≤
+      AddAction.stabilizer A
+        (W.partition.tailSumsetAfterErase q x q.val : Set A) := by
+    unfold Theorem21SetPartition.tailPeriod
+      Theorem21SetPartition.tailSumset
+      Theorem21SetPartition.tailSumsetAfterErase
+      Theorem21SetPartition.tailValueCells
+    rw [W.partition.tailValueCellsAfterErase_decompose q x le_rfl]
+    simp only [Nat.sub_self, List.take_zero, List.nil_append]
+    exact stabilizer_fullLayer_append_right_mono
+      [eraseValue (W.partition.valueCell q) x]
+      (W.partition.valueCells.drop (q.val + 1)) hleft hright
+  exact hperiodNest.trans happend
+
+omit [Fintype A] in
+/-- Full constructive form of dissertation Lemma 1.  It implements the
+source's harmless renaming of a doubled representative away from the anchor,
+then proves both `rho ≤ q` and nonperiodicity of the erased `rho`-tail. -/
+theorem WeakFactorForm.exists_lemma1_representative
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (W : WeakFactorForm I rho)
+    (q : Fin n) (x : A)
+    (hexception : W.partition.IsHException
+      (W.partition.tailPeriod rho) x)
+    (hdouble : W.partition.IsHDoubledInCell
+      (W.partition.tailPeriod rho) q x) :
+    ∃ z : A,
+      QuotientAddGroup.mk' (W.partition.tailPeriod rho) z =
+        QuotientAddGroup.mk' (W.partition.tailPeriod rho) x ∧
+      W.partition.IsHException (W.partition.tailPeriod rho) z ∧
+      W.partition.IsHDoubledInCell (W.partition.tailPeriod rho) q z ∧
+      occurrenceValue xs (I.anchor q) ≠ z ∧
+      rho ≤ q.val ∧
+      ¬ W.partition.tailPeriod rho ≤
+        AddAction.stabilizer A
+          (W.partition.tailSumsetAfterErase q z rho : Set A) := by
+  obtain ⟨z, hzquot, hzException, hzDouble, hzAnchor, hzMin⟩ :=
+    W.exists_lemma1_minTail_representative q x hexception hdouble
+  have hrhoq : rho ≤ q.val := by
+    by_contra hnot
+    have hqrho : q.val < rho := by omega
+    have hperiod := W.periodic_tailSumsetAfterErase_of_source_lt
+      q z hzDouble hqrho
+    apply hzMin
+    simpa [Nat.min_eq_right (Nat.le_of_lt hqrho)] using hperiod
+  refine ⟨z, hzquot, hzException, hzDouble, hzAnchor, hrhoq, ?_⟩
+  simpa [Nat.min_eq_left hrhoq] using hzMin
 
 omit [Fintype A] in
 /-- `q`-in-tail maximality contradiction used inside dissertation Lemma 1.
@@ -3084,8 +3673,9 @@ structure GMOTheoremEOutput
 
 /-- Source-faithful Theorem E output relative to its literal initial
 setpartition and anchors.  The period is the actual stabilizer, not an
-arbitrary subperiod, and every unused labelled source occurrence is retained.
-No `N ≥ 1` or global no-doubled conclusion is built into this structure. -/
+arbitrary subperiod; when it is nontrivial, every unused labelled source
+occurrence lies in the common core.  No unconditional `N ≥ 1` or global
+no-doubled conclusion is built into this structure. -/
 structure GMOTheoremESourceOutput
     {xs : List A} {seed : Selection xs} {n : ℕ}
     (I : GMOTheoremEInput xs seed n) where
@@ -3098,7 +3688,7 @@ structure GMOTheoremESourceOutput
         partition.exceptionDefect H + 1) - n) * Nat.card H ≤
       partition.sumset.card
   unused_mem_commonCore :
-    ∀ i : Occurrence xs, i ∉ partition.support →
+    H ≠ ⊥ → ∀ i : Occurrence xs, i ∉ partition.support →
       occurrenceValue xs i ∈ partition.commonCore H
 
 /-- Literal source statement of ordinary Theorem E.  Its input is an initial
@@ -3107,7 +3697,7 @@ def GMOTheoremESourceStatement
     (A : Type u) [AddCommGroup A] [Fintype A] : Prop :=
   ∀ (xs : List A) (seed : Selection xs) (n : ℕ)
     (I : GMOTheoremEInput xs seed n),
-    Nonempty (GMOTheoremESourceOutput I)
+    0 < n → Nonempty (GMOTheoremESourceOutput I)
 
 /-- Forget the literal base-family data after the source theorem has been
 proved. -/
@@ -3120,7 +3710,7 @@ def GMOTheoremESourceOutput.toProjected
   H := out.H
   periodic := out.actual_period ▸ le_rfl
   card_lower := out.card_lower
-  unused_in_core := fun _hH ↦ out.unused_mem_commonCore
+  unused_in_core := out.unused_mem_commonCore
 
 /-- One sufficient route to a Theorem E output.  Global elimination of
 doubled exceptions yields the numerical inequality, while the independent
@@ -3395,12 +3985,13 @@ theorem GMOTheoremESourceOutput.one_le_commonCosetCount_of_exists_unused
     {xs : List A} {seed : Selection xs} {n : ℕ}
     {I : GMOTheoremEInput xs seed n}
     (out : GMOTheoremESourceOutput I)
+    (hH : out.H ≠ ⊥)
     (hu : ∃ i : Occurrence xs, i ∉ out.partition.support) :
     1 ≤ out.partition.commonCosetCount out.H := by
   classical
   rcases hu with ⟨i, hi⟩
   have hx : occurrenceValue xs i ∈ out.partition.commonCore out.H :=
-    out.unused_mem_commonCore i hi
+    out.unused_mem_commonCore hH i hi
   have hcoset : addCosetFinset out.H (occurrenceValue xs i) ⊆
       out.partition.commonCore out.H := by
     intro y hy
@@ -3420,12 +4011,13 @@ theorem GMOTheoremESourceOutput.support_eq_univ_of_commonCosetCount_eq_zero
     {xs : List A} {seed : Selection xs} {n : ℕ}
     {I : GMOTheoremEInput xs seed n}
     (out : GMOTheoremESourceOutput I)
+    (hH : out.H ≠ ⊥)
     (hN : out.partition.commonCosetCount out.H = 0) :
     out.partition.support = Finset.univ := by
   apply Finset.eq_univ_iff_forall.mpr
   intro i
   by_contra hi
-  have hOne := out.one_le_commonCosetCount_of_exists_unused ⟨i, hi⟩
+  have hOne := out.one_le_commonCosetCount_of_exists_unused hH ⟨i, hi⟩
   omega
 
 /-- The source number `N = |commonCore| / |H|` really counts cosets at the

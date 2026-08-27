@@ -179,6 +179,15 @@ inductive LayerSubsumChoice :
 
 namespace LayerSubsumChoice
 
+/-- A proof-relevant exact-layer choice can never select more layers than
+the source list contains. -/
+theorem weight_le_length {P : List (Finset A)} {n : ℕ} {y : A}
+    (h : LayerSubsumChoice P n y) : n ≤ P.length := by
+  induction h with
+  | zero => simp
+  | skip _ ih => simpa using ih.trans (Nat.le_succ _)
+  | take _ _ ih => simpa using Nat.succ_le_succ ih
+
 /-- The number of selected layers whose chosen value lies in a prescribed
 quotient coset.  This counts selected *layers*, as required by the pattern
 formalism in DeVos--Goddyn--Mohar, not raw element occurrences. -/
@@ -281,6 +290,16 @@ theorem mem_patternSubsumSpectrum_iff
     obtain ⟨⟨h, _⟩⟩ := hy
     exact h.mem_layerSubsumSpectrum
 
+theorem patternSubsumSpectrum_nonempty_weight_le_length
+    {K : AddSubgroup A} {n : ℕ} [Fintype (A ⧸ K)]
+    [DecidableEq (A ⧸ K)]
+    (P : List (Finset A)) (μ : QuotientPattern K n)
+    (hS : (patternSubsumSpectrum P μ).Nonempty) :
+    n ≤ P.length := by
+  obtain ⟨y, hy⟩ := hS
+  obtain ⟨⟨h, _⟩⟩ := (mem_patternSubsumSpectrum_iff P μ y).1 hy
+  exact h.weight_le_length
+
 theorem patternSubsumSpectrum_subset_layerSubsumSpectrum
     {K : AddSubgroup A} {n : ℕ} [Fintype (A ⧸ K)]
     [DecidableEq (A ⧸ K)]
@@ -302,6 +321,39 @@ theorem patternSubsumSpectrum_nonempty_iff
     exact ⟨y, (mem_patternSubsumSpectrum_iff P μ y).1 hy⟩
   · rintro ⟨y, hy⟩
     exact ⟨y, (mem_patternSubsumSpectrum_iff P μ y).2 hy⟩
+
+/-- A weight-zero pattern is pointwise zero. -/
+theorem QuotientPattern.eq_zero_of_weight_zero
+    {K : AddSubgroup A} [Fintype (A ⧸ K)]
+    (μ : QuotientPattern K 0) (q : A ⧸ K) : μ q = 0 := by
+  have hle : μ q ≤ ∑ r : A ⧸ K, μ r :=
+    Finset.single_le_sum (fun _ _ ↦ Nat.zero_le _) (Finset.mem_univ q)
+  rw [μ.weight_eq] at hle
+  omega
+
+/-- Exact base case for the tail pattern: every weight-zero pattern spectrum
+is `{0}`, independently of the number or contents of the unused layers. -/
+theorem patternSubsumSpectrum_zero_eq_singleton
+    {K : AddSubgroup A} [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (P : List (Finset A)) (μ : QuotientPattern K 0) :
+    patternSubsumSpectrum P μ = {0} := by
+  classical
+  ext y
+  constructor
+  · intro hy
+    have hzero : y = 0 := by
+      have hraw := patternSubsumSpectrum_subset_layerSubsumSpectrum P μ hy
+      simpa using hraw
+    simpa [hzero]
+  · intro hy
+    have hzero : y = 0 := by simpa using hy
+    subst y
+    apply (mem_patternSubsumSpectrum_iff P μ 0).2
+    refine ⟨⟨LayerSubsumChoice.zero P, ?_⟩⟩
+    intro q
+    simp [LayerSubsumChoice.RealizesPattern,
+      LayerSubsumChoice.quotientMultiplicity,
+      μ.eq_zero_of_weight_zero q]
 
 /-- The proof-relevant recursive choices represent exactly the elements of
 `layerSubsumSpectrum`. -/
@@ -1318,6 +1370,43 @@ theorem card_dgmCosetFiber [Fintype A]
       Fintype.card_congr (dgmSubgroupEquivCosetFiber H b).symm
     _ = Nat.card H := Nat.card_eq_fintype_card.symm
 
+/-- A fixed quotient pattern forces every realizing sum into one `H`-coset,
+so its spectrum has at most `|H|` elements. -/
+theorem patternSubsumSpectrum_card_le_natCard_patternGroup
+    [Fintype A] (H : AddSubgroup A) [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)] {n : ℕ}
+    (P : List (Finset A)) (μ : QuotientPattern H n)
+    (hS : (patternSubsumSpectrum P μ).Nonempty) :
+    (patternSubsumSpectrum P μ).card ≤ Nat.card H := by
+  obtain ⟨s, hs⟩ := hS
+  have hsubset : patternSubsumSpectrum P μ ⊆ dgmCosetFiber H s := by
+    intro y hy
+    apply (mem_dgmCosetFiber_iff H s y).2
+    rw [patternSubsumSpectrum_quotient_eq P μ hy,
+      patternSubsumSpectrum_quotient_eq P μ hs]
+  simpa [card_dgmCosetFiber] using Finset.card_le_card hsubset
+
+/-- Every point of a nonempty `H`-periodic finite set brings its full literal
+`H`-coset with it. -/
+theorem dgmCosetFiber_subset_of_mem_of_stabilizer_eq
+    [Fintype A] (C : Finset A) (hC : C.Nonempty)
+    (H : AddSubgroup A)
+    (hstab : AddAction.stabilizer A (C : Set A) = H)
+    {y : A} (hy : y ∈ C) :
+    dgmCosetFiber H y ⊆ C := by
+  intro z hz
+  have hsub : z - y ∈ H :=
+    QuotientAddGroup.eq_iff_sub_mem.mp
+      ((mem_dgmCosetFiber_iff H y z).1 hz)
+  have hst : z - y ∈ C.addStab := by
+    rw [← Finset.mem_coe, Finset.coe_addStab hC, hstab]
+    exact hsub
+  have htranslate := (Finset.mem_addStab hC).1 hst
+  have hmem : (z - y) + y ∈ (z - y) +ᵥ C :=
+    Finset.mem_vadd_finset.mpr ⟨y, hy, rfl⟩
+  rw [htranslate] at hmem
+  simpa using hmem
+
 /-- Saturation of one sliced leading layer by `L`. -/
 noncomputable def dgmSingleSliceSaturation [Fintype A]
     (H L : AddSubgroup A) (B : Finset A) (b : A) : Finset A :=
@@ -1509,6 +1598,200 @@ theorem add_le_of_lt_of_dvd
   have hsuc : s + 1 ≤ h := hsh
   simpa [Nat.mul_add, Nat.mul_comm, Nat.add_comm, Nat.add_left_comm,
     Nat.add_assoc] using Nat.mul_le_mul_left d hsuc
+
+/-- Pure natural-number core of the strict-Xi combination.  This combines
+the strict convergent inequality, paper equation (3), and the weighted Xi
+claim without turning any weak inequality into a strict one. -/
+theorem dgmStrictXiArithmetic
+    (l h B D M AL TL AH TH k : ℕ)
+    (hkTL : k ≤ TL) (hkTH : k ≤ TH)
+    (hweightL : k + 2 ≤ AL) (hweightH : k + 2 ≤ AH)
+    (hTLAL : TL ≤ AL) (hTHAH : TH ≤ AH)
+    (hstrict : D + h * (AH - (k + 2) + 1) <
+      l * (AL - (k + 2) + 1))
+    (hthree : B + l * (TL - k) ≤ D + h * (TH - k))
+    (hxi : l * (AL - TL) + M ≤ h * (AH - TH)) :
+    B + M < h := by
+  let tL := TL - k
+  let tH := TH - k
+  let gL := AL - TL
+  let gH := AH - TH
+  have hTL : TL = k + tL := by dsimp [tL]; omega
+  have hTH : TH = k + tH := by dsimp [tH]; omega
+  have hAL : AL = k + tL + gL := by
+    dsimp [gL]
+    omega
+  have hAH : AH = k + tH + gH := by
+    dsimp [gH]
+    omega
+  have hposL : 1 ≤ tL + gL := by omega
+  have hposH : 1 ≤ tH + gH := by omega
+  have hnormL : k + tL + gL - (k + 2) + 1 = tL + gL - 1 := by
+    omega
+  have hnormH : k + tH + gH - (k + 2) + 1 = tH + gH - 1 := by
+    omega
+  have hstrict' : D + h * (tH + gH - 1) <
+      l * (tL + gL - 1) := by
+    rw [hAL, hAH] at hstrict
+    rw [hnormL, hnormH] at hstrict
+    exact hstrict
+  have hthree' : B + l * tL ≤ D + h * tH := by
+    rw [hTL, hTH] at hthree
+    simpa only [Nat.add_sub_cancel_left] using hthree
+  have hxi' : l * gL + M ≤ h * gH := by
+    rw [hAL, hTL, hAH, hTH] at hxi
+    have hgainL : k + tL + gL - (k + tL) = gL := by omega
+    have hgainH : k + tH + gH - (k + tH) = gH := by omega
+    rw [hgainL, hgainH] at hxi
+    exact hxi
+  have hexpandL : l * (tL + gL - 1) + l = l * tL + l * gL := by
+    calc
+      l * (tL + gL - 1) + l = l * ((tL + gL - 1) + 1) := by
+        rw [Nat.mul_add, Nat.mul_one]
+      _ = l * (tL + gL) := by congr 1 <;> omega
+      _ = l * tL + l * gL := by rw [Nat.mul_add]
+  have hexpandH : h * (tH + gH - 1) + h = h * tH + h * gH := by
+    calc
+      h * (tH + gH - 1) + h = h * ((tH + gH - 1) + 1) := by
+        rw [Nat.mul_add, Nat.mul_one]
+      _ = h * (tH + gH) := by congr 1 <;> omega
+      _ = h * tH + h * gH := by rw [Nat.mul_add]
+  omega
+
+/-- Paper equation (4), isolated from its combinatorial inputs.  Dropping
+the nonnegative missing-set term from strict equation (3) and rounding
+between two `l`-multiples gives one complete extra `l`-coset. -/
+theorem dgmEquationFour_of_strictXiArithmetic
+    (l h B D M AL TL AH TH k : ℕ)
+    (hl : 0 < l) (hlB : l ∣ B) (hlh : l ∣ h)
+    (hkTL : k ≤ TL) (hkTH : k ≤ TH)
+    (hweightL : k + 2 ≤ AL) (hweightH : k + 2 ≤ AH)
+    (hTLAL : TL ≤ AL) (hTHAH : TH ≤ AH)
+    (hstrict : D + h * (AH - (k + 2) + 1) <
+      l * (AL - (k + 2) + 1))
+    (hthree : B + l * (TL - k) ≤ D + h * (TH - k))
+    (hxi : l * (AL - TL) + M ≤ h * (AH - TH)) :
+    B + l ≤ h := by
+  have hBM : B + M < h := dgmStrictXiArithmetic
+    l h B D M AL TL AH TH k hkTL hkTH hweightL hweightH
+      hTLAL hTHAH hstrict hthree hxi
+  exact add_le_of_lt_of_dvd l B h hl hlB hlh (lt_of_le_of_lt
+    (Nat.le_add_right B M) hBM)
+
+/-- Paper equation (5), isolated from its combinatorial inputs.  Here the
+missing-set term is itself an `l`-multiple, so the strict Xi inequality can
+be rounded without discarding it. -/
+theorem dgmEquationFive_of_strictXiArithmetic
+    (l h B D M AL TL AH TH k : ℕ)
+    (hl : 0 < l) (hlB : l ∣ B) (hlM : l ∣ M) (hlh : l ∣ h)
+    (hkTL : k ≤ TL) (hkTH : k ≤ TH)
+    (hweightL : k + 2 ≤ AL) (hweightH : k + 2 ≤ AH)
+    (hTLAL : TL ≤ AL) (hTHAH : TH ≤ AH)
+    (hstrict : D + h * (AH - (k + 2) + 1) <
+      l * (AL - (k + 2) + 1))
+    (hthree : B + l * (TL - k) ≤ D + h * (TH - k))
+    (hxi : l * (AL - TL) + M ≤ h * (AH - TH)) :
+    B + l + M ≤ h := by
+  have hBM : B + M < h := dgmStrictXiArithmetic
+    l h B D M AL TL AH TH k hkTL hkTH hweightL hweightH
+      hTLAL hTHAH hstrict hthree hxi
+  have hround : B + M + l ≤ h :=
+    add_le_of_lt_of_dvd l (B + M) h hl (Nat.dvd_add hlB hlM) hlh hBM
+  omega
+
+/-- Strict Xi arithmetic in the literal three-summand form delivered by
+`dgmEquationThree_threeSummand`.  The two Kneser losses appear as `2*l`;
+the `+1` in Claim 1 cancels one loss and the strict convergent inequality
+cancels the other. -/
+theorem dgmStrictXiArithmetic_threeSummand
+    (l h B D M AL TL AH TH k : ℕ)
+    (hkTL : k ≤ TL) (hkTH : k ≤ TH)
+    (hweightL : k + 2 ≤ AL) (hweightH : k + 2 ≤ AH)
+    (hTLAL : TL ≤ AL) (hTHAH : TH ≤ AH)
+    (hstrict : D + h * (AH - (k + 2) + 1) <
+      l * (AL - (k + 2) + 1))
+    (hthree : B + l * (TL - k + 1) ≤
+      D + 2 * l + h * (TH - k))
+    (hxi : l * (AL - TL) + M ≤ h * (AH - TH)) :
+    B + M < h := by
+  let tL := TL - k
+  let tH := TH - k
+  let gL := AL - TL
+  let gH := AH - TH
+  have hTL : TL = k + tL := by dsimp [tL]; omega
+  have hTH : TH = k + tH := by dsimp [tH]; omega
+  have hAL : AL = k + tL + gL := by dsimp [gL]; omega
+  have hAH : AH = k + tH + gH := by dsimp [gH]; omega
+  have hposL : 2 ≤ tL + gL := by omega
+  have hposH : 2 ≤ tH + gH := by omega
+  have hnormL : k + tL + gL - (k + 2) + 1 = tL + gL - 1 := by
+    omega
+  have hnormH : k + tH + gH - (k + 2) + 1 = tH + gH - 1 := by
+    omega
+  have hstrict' : D + h * (tH + gH - 1) <
+      l * (tL + gL - 1) := by
+    rw [hAL, hAH, hnormL, hnormH] at hstrict
+    exact hstrict
+  have hthree' : B + l * (tL + 1) ≤ D + 2 * l + h * tH := by
+    rw [hTL, hTH] at hthree
+    simpa only [Nat.add_sub_cancel_left] using hthree
+  have hxi' : l * gL + M ≤ h * gH := by
+    rw [hAL, hTL, hAH, hTH] at hxi
+    have hgainL : k + tL + gL - (k + tL) = gL := by omega
+    have hgainH : k + tH + gH - (k + tH) = gH := by omega
+    rw [hgainL, hgainH] at hxi
+    exact hxi
+  have hexpandL : l * (tL + gL - 1) + l = l * tL + l * gL := by
+    calc
+      l * (tL + gL - 1) + l = l * ((tL + gL - 1) + 1) := by
+        rw [Nat.mul_add, Nat.mul_one]
+      _ = l * (tL + gL) := by congr 1 <;> omega
+      _ = l * tL + l * gL := by rw [Nat.mul_add]
+  have hexpandH : h * (tH + gH - 1) + h = h * tH + h * gH := by
+    calc
+      h * (tH + gH - 1) + h = h * ((tH + gH - 1) + 1) := by
+        rw [Nat.mul_add, Nat.mul_one]
+      _ = h * (tH + gH) := by congr 1 <;> omega
+      _ = h * tH + h * gH := by rw [Nat.mul_add]
+  rw [Nat.mul_add, Nat.mul_one] at hthree'
+  omega
+
+theorem dgmEquationFour_of_threeSummand
+    (l h B D M AL TL AH TH k : ℕ)
+    (hl : 0 < l) (hlB : l ∣ B) (hlh : l ∣ h)
+    (hkTL : k ≤ TL) (hkTH : k ≤ TH)
+    (hweightL : k + 2 ≤ AL) (hweightH : k + 2 ≤ AH)
+    (hTLAL : TL ≤ AL) (hTHAH : TH ≤ AH)
+    (hstrict : D + h * (AH - (k + 2) + 1) <
+      l * (AL - (k + 2) + 1))
+    (hthree : B + l * (TL - k + 1) ≤
+      D + 2 * l + h * (TH - k))
+    (hxi : l * (AL - TL) + M ≤ h * (AH - TH)) :
+    B + l ≤ h := by
+  have hBM := dgmStrictXiArithmetic_threeSummand
+    l h B D M AL TL AH TH k hkTL hkTH hweightL hweightH
+      hTLAL hTHAH hstrict hthree hxi
+  exact add_le_of_lt_of_dvd l B h hl hlB hlh
+    (lt_of_le_of_lt (Nat.le_add_right B M) hBM)
+
+theorem dgmEquationFive_of_threeSummand
+    (l h B D M AL TL AH TH k : ℕ)
+    (hl : 0 < l) (hlB : l ∣ B) (hlM : l ∣ M) (hlh : l ∣ h)
+    (hkTL : k ≤ TL) (hkTH : k ≤ TH)
+    (hweightL : k + 2 ≤ AL) (hweightH : k + 2 ≤ AH)
+    (hTLAL : TL ≤ AL) (hTHAH : TH ≤ AH)
+    (hstrict : D + h * (AH - (k + 2) + 1) <
+      l * (AL - (k + 2) + 1))
+    (hthree : B + l * (TL - k + 1) ≤
+      D + 2 * l + h * (TH - k))
+    (hxi : l * (AL - TL) + M ≤ h * (AH - TH)) :
+    B + l + M ≤ h := by
+  have hBM := dgmStrictXiArithmetic_threeSummand
+    l h B D M AL TL AH TH k hkTL hkTH hweightL hweightH
+      hTLAL hTHAH hstrict hthree hxi
+  have hround := add_le_of_lt_of_dvd l (B + M) h hl
+    (Nat.dvd_add hlB hlM) hlh hBM
+  omega
 
 /-- Correct final page-14 contradiction in the form actually delivered by
 the sum of (4)--(5): the four saturated slice sizes, the missing union, and
@@ -2553,6 +2836,43 @@ theorem natCard_dvd_card_add_dgmSubgroupFinset
   rw [card_add_dgmSubgroupFinset_eq L S]
   exact ⟨(quotientLayer L S).card, rfl⟩
 
+/-- The complement of an `L`-saturated pair of slices inside one `H`-coset
+also has cardinality divisible by `|L|`.  This is the integrality input for
+the common `X₁₂,Y₁₂` term in paper equation (5). -/
+theorem natCard_dvd_card_dgmMissingPairCoset
+    [Fintype A] (H L : AddSubgroup A) (hLH : L ≤ H)
+    [Fintype (A ⧸ L)] [DecidableEq (A ⧸ L)]
+    (B C : Finset A) (b : A) :
+    Nat.card L ∣ (dgmMissingPairCoset H L B C b).card := by
+  have hH : Nat.card L ∣ Nat.card H := AddSubgroup.card_dvd_of_le hLH
+  have hpair : Nat.card L ∣
+      (dgmPairSliceSaturation H L B C b).card := by
+    simpa [dgmPairSliceSaturation] using
+      natCard_dvd_card_add_dgmSubgroupFinset L
+        (dgmCosetSlice H B b ∪ dgmCosetSlice H C b)
+  have hcard := card_missing_add_pairSaturation H L hLH B C b
+  have heq : (dgmMissingPairCoset H L B C b).card =
+      Nat.card H - (dgmPairSliceSaturation H L B C b).card := by
+    omega
+  rw [heq]
+  exact Nat.dvd_sub hH hpair
+
+/-- For distinct coarse cosets the union of the two missing sets is again a
+union of complete `L`-cosets, hence its cardinality is divisible by `|L|`. -/
+theorem natCard_dvd_card_dgmMissingPairCoset_union
+    [Fintype A] (H L : AddSubgroup A) (hLH : L ≤ H)
+    [Fintype (A ⧸ L)] [DecidableEq (A ⧸ L)]
+    (B C : Finset A) (b₁ b₂ : A)
+    (hne : (b₁ : A ⧸ H) ≠ (b₂ : A ⧸ H)) :
+    Nat.card L ∣
+      (dgmMissingPairCoset H L B C b₁ ∪
+        dgmMissingPairCoset H L B C b₂).card := by
+  rw [Finset.card_union_of_disjoint
+    (disjoint_dgmMissingPairCoset_of_ne H L B C b₁ b₂ hne)]
+  exact Nat.dvd_add
+    (natCard_dvd_card_dgmMissingPairCoset H L hLH B C b₁)
+    (natCard_dvd_card_dgmMissingPairCoset H L hLH B C b₂)
+
 /-- Saturate every layer by a subgroup.  This is the paper's sequence
 `(A₃+L, …, Aₘ+L)` used in the inductive tail call of equation (2). -/
 noncomputable def dgmSaturateLayers [Fintype A]
@@ -3592,6 +3912,74 @@ def GeneralDGMPatternTheorem
     (P : List (Finset A)) (μ : QuotientPattern K n),
     (patternSubsumSpectrum P μ).Nonempty → DGMPatternBound P μ
 
+/-- The generalized theorem restricted to all instances at one inner
+minimal-counterexample measure.  This is the codomain of the well-founded
+strong induction, allowing the subgroup and pattern weight to change. -/
+def DGMPatternAtMeasure [Fintype A]
+    (M : DGMPatternInnerMeasure) : Prop :=
+  ∀ (K : AddSubgroup A) (n : ℕ)
+    (_ : Fintype (A ⧸ K)) (_ : DecidableEq (A ⧸ K))
+    (P : List (Finset A)) (μ : QuotientPattern K n),
+    dgmPatternInnerMeasure P μ = M →
+    (patternSubsumSpectrum P μ).Nonempty → DGMPatternBound P μ
+
+theorem dgmPatternInnerMeasure_lt_of_patternSpectrum_card_lt
+    [Fintype A]
+    {K₁ K₂ : AddSubgroup A} {n₁ n₂ : ℕ}
+    [Fintype (A ⧸ K₁)] [DecidableEq (A ⧸ K₁)]
+    [Fintype (A ⧸ K₂)] [DecidableEq (A ⧸ K₂)]
+    (P₁ : List (Finset A)) (μ₁ : QuotientPattern K₁ n₁)
+    (P₂ : List (Finset A)) (μ₂ : QuotientPattern K₂ n₂)
+    (hcard : (patternSubsumSpectrum P₁ μ₁).card <
+      (patternSubsumSpectrum P₂ μ₂).card) :
+    DGMPatternInnerLt (dgmPatternInnerMeasure P₁ μ₁)
+      (dgmPatternInnerMeasure P₂ μ₂) := by
+  exact Prod.Lex.left _ _ hcard
+
+/-- The saturated tail is genuinely smaller in the first measure coordinate.
+The tail pattern lies in one `H`-coset, that coset is no larger than a
+nonempty `H`-periodic convergent `C`, and an escaping sum makes `C` a proper
+subset of the original pattern spectrum. -/
+theorem dgmSaturatedTail_measure_lt_of_escape
+    [Fintype A] (L H : AddSubgroup A)
+    [Fintype (A ⧸ H)] [DecidableEq (A ⧸ H)]
+    (P : List (Finset A)) {k : ℕ} (νtail : QuotientPattern H k)
+    {K : AddSubgroup A} {n : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (Q : List (Finset A)) (μ : QuotientPattern K n)
+    (C : Finset A) (hC : C.Nonempty)
+    (hCsub : C ⊆ patternSubsumSpectrum Q μ)
+    (hCstab : AddAction.stabilizer A (C : Set A) = H)
+    {y : A} (hy : y ∈ patternSubsumSpectrum Q μ)
+    (hescape : ¬dgmCosetFiber H y ⊆ patternSubsumSpectrum Q μ)
+    (hSat : (patternSubsumSpectrum
+      (dgmSaturateLayers L P) νtail).Nonempty) :
+    DGMPatternInnerLt
+      (dgmPatternInnerMeasure (dgmSaturateLayers L P) νtail)
+      (dgmPatternInnerMeasure Q μ) := by
+  have hyC : y ∉ C := by
+    intro hyC
+    apply hescape
+    exact (dgmCosetFiber_subset_of_mem_of_stabilizer_eq
+      C hC H hCstab hyC).trans hCsub
+  have hClt : C.card < (patternSubsumSpectrum Q μ).card := by
+    apply Finset.card_lt_card
+    refine ⟨hCsub, ?_⟩
+    intro hback
+    exact hyC (hback hy)
+  obtain ⟨c, hc⟩ := hC
+  have hHleC : Nat.card H ≤ C.card := by
+    have hcoset := Finset.card_le_card
+      (dgmCosetFiber_subset_of_mem_of_stabilizer_eq C ⟨c, hc⟩ H hCstab hc)
+    simpa [card_dgmCosetFiber] using hcoset
+  have hSatLeH :
+      (patternSubsumSpectrum (dgmSaturateLayers L P) νtail).card ≤
+        Nat.card H :=
+    patternSubsumSpectrum_card_le_natCard_patternGroup
+      H (dgmSaturateLayers L P) νtail hSat
+  apply dgmPatternInnerMeasure_lt_of_patternSpectrum_card_lt
+  exact hSatLeH.trans_lt (hHleC.trans_lt hClt)
+
 /-- Exact inductive tail call used in equation (2).  Once the genuinely
 smaller saturated-tail instance satisfies the generalized pattern bound and
 its spectrum stabilizer is identified as `L`, the result transports back to
@@ -3633,6 +4021,133 @@ theorem dgmTailPatternBound_of_saturatedPatternBound
       simpa [Tsat] using
         patternSubsumSpectrum_dgmSaturateLayers_eq_add L H hLH P μ hn] at hb
   exact hb
+
+/-- Claim 1 from the actual well-founded strong induction.  The saturated
+tail instance is proved strictly smaller by the escape chain, its stabilizer
+is derived (not assumed) from the crossed base-tail sum, and the smaller
+instance theorem is then transported back to the original tail Xi terms. -/
+theorem dgmClaimOne_of_strongIH
+    [Fintype A] (M : DGMPatternInnerMeasure)
+    (ih : ∀ M', DGMPatternInnerLt M' M → DGMPatternAtMeasure (A := A) M')
+    (L₀ L H : AddSubgroup A)
+    [Fintype (A ⧸ L)] [DecidableEq (A ⧸ L)]
+    [Fintype (A ⧸ H)] [DecidableEq (A ⧸ H)]
+    (hL₀L : L₀ ≤ L) (hLH : L ≤ H)
+    (P : List (Finset A)) {k : ℕ} (νtail : QuotientPattern H k)
+    (hk : 0 < k)
+    {K : AddSubgroup A} {n : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (Q : List (Finset A)) (μ : QuotientPattern K n)
+    (hmeasure : dgmPatternInnerMeasure Q μ = M)
+    (C : Finset A) (hC : C.Nonempty)
+    (hCsub : C ⊆ patternSubsumSpectrum Q μ)
+    (hCstab : AddAction.stabilizer A (C : Set A) = H)
+    {y : A} (hy : y ∈ patternSubsumSpectrum Q μ)
+    (hescape : ¬dgmCosetFiber H y ⊆ patternSubsumSpectrum Q μ)
+    (hTail : (patternSubsumSpectrum P νtail).Nonempty)
+    (X : Finset A) (hX : X.Nonempty)
+    (hDstab : AddAction.stabilizer A
+      ((((X + patternSubsumSpectrum P νtail) +
+        dgmSubgroupFinset L₀ : Finset A)) : Set A) = L) :
+    Nat.card L * (dgmCappedMultiplicitySum L P k - k + 1) ≤
+      (patternSubsumSpectrum P νtail + dgmSubgroupFinset L).card +
+        Nat.card H * (dgmCappedMultiplicitySum H P k - k) := by
+  classical
+  let Psat := dgmSaturateLayers L P
+  let Ssat := patternSubsumSpectrum Psat νtail
+  have hSatEq : Ssat = patternSubsumSpectrum P νtail +
+      dgmSubgroupFinset L := by
+    simpa [Psat, Ssat] using
+      patternSubsumSpectrum_dgmSaturateLayers_eq_add L H hLH P νtail hk
+  have hSat : Ssat.Nonempty := by
+    rw [hSatEq]
+    exact hTail.add
+      ⟨0, (mem_dgmSubgroupFinset_iff L 0).2 L.zero_mem⟩
+  have hlt := dgmSaturatedTail_measure_lt_of_escape
+    L H P νtail Q μ C hC hCsub hCstab hy hescape (by simpa [Psat, Ssat] using hSat)
+  have hltM : DGMPatternInnerLt (dgmPatternInnerMeasure Psat νtail) M := by
+    rw [← hmeasure]
+    simpa [Psat] using hlt
+  have hsmall := ih (dgmPatternInnerMeasure Psat νtail) hltM
+  have hbound : DGMPatternBound Psat νtail :=
+    hsmall H k inferInstance inferInstance Psat νtail rfl (by
+      simpa [Ssat] using hSat)
+  have hTailStab : AddAction.stabilizer A
+      ((patternSubsumSpectrum P νtail + dgmSubgroupFinset L : Finset A) : Set A) = L :=
+    stabilizer_tail_saturation_eq_of_stabilizer_base_tail
+      L₀ L hL₀L X (patternSubsumSpectrum P νtail) hX hTail hDstab
+  have hSatStab : AddAction.stabilizer A (Ssat : Set A) = L := by
+    rw [hSatEq]
+    exact hTailStab
+  have hout := dgmTailPatternBound_of_saturatedPatternBound
+    L H hLH P νtail hk hbound (by simpa [Psat, Ssat] using hSatStab)
+  exact hout
+
+/-- The separate `k=0` Claim 1 base.  No positive-weight saturation
+transport is used: the tail pattern spectrum is exactly `{0}` and both Xi
+corrections vanish. -/
+theorem dgmClaimOne_zero
+    [Fintype A] (L H : AddSubgroup A)
+    [Fintype (A ⧸ L)] [DecidableEq (A ⧸ L)]
+    [Fintype (A ⧸ H)] [DecidableEq (A ⧸ H)]
+    (P : List (Finset A)) (νtail : QuotientPattern H 0) :
+    Nat.card L * (dgmCappedMultiplicitySum L P 0 - 0 + 1) ≤
+      (patternSubsumSpectrum P νtail + dgmSubgroupFinset L).card +
+        Nat.card H * (dgmCappedMultiplicitySum H P 0 - 0) := by
+  classical
+  rw [patternSubsumSpectrum_zero_eq_singleton P νtail]
+  simp [dgmCappedMultiplicitySum, card_dgmSubgroupFinset]
+
+/-- Paper equation (3) in its source shape.  One Kneser step combines the
+saturated crossed base with the saturated tail; Claim 1 supplies the tail
+cardinality.  The strict/non-strict boundary is kept in additive form. -/
+theorem dgmEquationThree_of_claimOne
+    [Fintype A] (L H : AddSubgroup A)
+    [Fintype (A ⧸ L)] [DecidableEq (A ⧸ L)]
+    [Fintype (A ⧸ H)] [DecidableEq (A ⧸ H)]
+    (B T D : Finset A) (hB : B.Nonempty) (hT : T.Nonempty)
+    (hD : (B + dgmSubgroupFinset L) +
+      (T + dgmSubgroupFinset L) = D)
+    (hstab : AddAction.stabilizer A (D : Set A) = L)
+    (P : List (Finset A)) (k : ℕ)
+    (hclaim1 : Nat.card L *
+        (dgmCappedMultiplicitySum L P k - k + 1) ≤
+      (T + dgmSubgroupFinset L).card +
+        Nat.card H * (dgmCappedMultiplicitySum H P k - k)) :
+    (B + dgmSubgroupFinset L).card +
+        Nat.card L * (dgmCappedMultiplicitySum L P k - k) ≤
+      D.card + Nat.card H *
+        (dgmCappedMultiplicitySum H P k - k) := by
+  classical
+  let Bsat := B + dgmSubgroupFinset L
+  let Tsat := T + dgmSubgroupFinset L
+  have hBsat : Bsat.Nonempty := hB.add
+    ⟨0, (mem_dgmSubgroupFinset_iff L 0).2 L.zero_mem⟩
+  have hTsat : Tsat.Nonempty := hT.add
+    ⟨0, (mem_dgmSubgroupFinset_iff L 0).2 L.zero_mem⟩
+  have hDne : D.Nonempty := by
+    rw [← hD]
+    exact hBsat.add hTsat
+  have hDadd : D.addStab = dgmSubgroupFinset L := by
+    ext a
+    rw [← Finset.mem_coe, Finset.coe_addStab hDne, hstab]
+    exact (mem_dgmSubgroupFinset_iff L a).symm
+  have hsat (S : Finset A) :
+      (S + dgmSubgroupFinset L) + dgmSubgroupFinset L =
+        S + dgmSubgroupFinset L := by
+    calc
+      (S + dgmSubgroupFinset L) + dgmSubgroupFinset L =
+          S + (dgmSubgroupFinset L + dgmSubgroupFinset L) := by ac_rfl
+      _ = S + dgmSubgroupFinset L := by
+        rw [dgmSubgroupFinset_add_eq_of_le L L le_rfl]
+  have hk := Finset.add_kneser Bsat Tsat
+  have hk' : Bsat.card + Tsat.card ≤ D.card + Nat.card L := by
+    rw [show Bsat + Tsat = D by simpa [Bsat, Tsat] using hD,
+      hDadd, card_dgmSubgroupFinset] at hk
+    simpa [Bsat, Tsat, hsat] using hk
+  rw [Nat.mul_add, Nat.mul_one] at hclaim1
+  dsimp only [Bsat, Tsat] at hk'
+  omega
 
 /-- Combined three-summand form of paper equation (3), after one additional
 Kneser step for the two leading slices.  Iterated Kneser supplies the two
