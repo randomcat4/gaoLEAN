@@ -7,7 +7,7 @@
 | P7-L03 | GMO existence/structural | OPEN_AS_PARAMETER | STRICTLY_WEAKER | `GAOARGMOInterfaces` |
 | P7-L04 | GJM small Davenport | OPEN_AS_PARAMETER | STRICTLY_WEAKER | `SmallDavenportProductOneFreeAtMost` |
 | P7-L05 | Olson ordinary Davenport formula | OPEN | STRICTLY_WEAKER | `IsOrdinaryDavenportConstant` parameter |
-| P7-L06 | plus-minus half bound | PARTIAL_INTERNAL | STRICTLY_WEAKER | `PGPlusMinusGroupAlgebra`；只余不变因子→增广幂零层 |
+| P7-L06 | plus-minus half bound | CHECKED_FROM_INVARIANT_DATA | EXACT_CONDITIONAL | `PGPlusMinusGroupAlgebra`；增广幂零已闭合，只余 Olson 数据与 `D(B)` 公式的对接 |
 | P7-L07 | low/high/middle reflection consumers | PROVED_HERE | STRICTLY_WEAKER | `PGLowReflection`, `PGHighReflection`, `PGMiddle*` |
 | P7-L08 | quotient extraction and defect correction | PROVED_HERE | STRICTLY_WEAKER | `PGReflectionExtraction`, `PGRotationExtraction` |
 | P7-L09 | Davenport concatenation inequality | PROVED_HERE | STRICTLY_WEAKER | `PGDavenportConvolution.ordinaryDavenport_subgroup_quotient` |

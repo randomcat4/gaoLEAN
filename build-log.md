@@ -726,3 +726,20 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
   forbidden-declaration scan and `git diff --check` pass.
 - Proposition 3.1 remains partial only at the invariant-factor-to-`I^D=0`
   layer; the top-level manuscript status is unchanged.
+
+## 2026-08-26: Proposition 3.1 augmentation nilpotence closure (M52)
+
+- Proved the sharp finite-generator ideal identity
+  `I^(1 + sum_i (r_i - 1)) = 0` from `y_i^r_i = 0`.
+- Instantiated it with the literal augmentation generators
+  `y_i = [f_i]-[0]` and relations `p^mu_i f_i = 0`.
+- Proved that an additive generating list yields augmentation-product
+  nilpotence at `1 + sum_i (p^mu_i - 1)`, that this degree is odd for odd
+  `p`, and the exact half bound at that degree.
+- Added the source-facing theorem identifying that degree with `D(B)`;
+  Proposition 3.1's internal group-algebra proof is now checked. The only
+  remaining boundary for its literal manuscript statement is the Olson
+  invariant-factor/Davenport formula.
+- Full server build: 8738 jobs, exit 0. New audited declarations use only
+  `propext`, `Classical.choice`, and `Quot.sound`; forbidden scan and
+  `git diff --check` pass.

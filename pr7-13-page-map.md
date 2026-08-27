@@ -31,8 +31,8 @@
 | Theorem 2.2 structural clause | full spectrum / common-coset concentration | `OrdinaryGMOStructuralProvider`; `PlusMinusGMOStructuralProvider` | `CONDITIONAL`；共同陪集语义显式保留 |
 | Proposition 2.3 | 标准下界与单位元 padding | `PGDavenportBridge`; `PGLowerBound`; `PGSynthesis` | `CHECKED`，由 ordinary Davenport witness 内部构造 |
 | Lemma 2.4 | identity padding | `PGBase.exists_zeroCore_of_smallDavenport`; 两个 bot controller 基例 | `CONDITIONAL` 于 small-Davenport 上界 |
-| Proposition 3.1 statement | `D_pm(B) <= (D(B)+1)/2` | `PGPlusMinusGroupAlgebra.plusMinusDavenportAtMost_half_of_augmentationProductsVanishAt` | `CONDITIONAL`；已从增广生成元乘积幂零性内部导出 |
-| Proposition 3.1 proof | 群代数增广理想幂零证明 | `PGPlusMinusGroupAlgebra` | `PARTIAL`；`[x]+[-x]-2[0]=[-x]([x]-[0])^2`、乘积 support、`[0]` 系数和非零矛盾已核验；尚差从 p 群不变因子分解证明 `I^D=0` |
+| Proposition 3.1 statement | `D_pm(B) <= (D(B)+1)/2` | `PGPlusMinusGroupAlgebra.plusMinusDavenportAtMost_half_of_invariantFactorDavenport` | `CONDITIONAL`；证明本身已闭合，仅待 Olson 不变因子公式将生成元次数识别为普通 Davenport 常数 |
+| Proposition 3.1 proof | 群代数增广理想幂零证明 | `PGPlusMinusGroupAlgebra` | `CHECKED`；从有限不变生成元 `p^μ_i f_i=0` 内部证出 `I^(1+Σ(p^μ_i-1))=0`，并闭合乘积 support、`[0]` 系数与半界结论；不变因子存在性及 `D(B)` 公式记在 Olson 边界 |
 | Proposition 4.1 | `a<=1` 低反射全旋转支 | `PGOrdinaryGMOBridge`; `PGLowReflection` | `CONDITIONAL` 于 ordinary GMO |
 | Proposition 4.2 | `a>=D+1` 同类型配对、高反射支 | `PGPairReservoir`; `PGPairSelection`; `PGWeightedGMOTransport`; `PGHighReflection` | `CONDITIONAL` 于 restricted coefficient 与 weighted GMO |
 | (4.4)--(4.6) | 中间区间 `e,ell` 与 surplus 算术 | `PGCapacity`; `PGMiddleReflection` | `CHECKED` |
@@ -64,9 +64,8 @@
 
 1. GMO 的 existence/structural 定理本身；
 2. GJM small-Davenport 等号（当前只保留所需 bound 接口）；
-3. Olson invariant-factor 公式及数值推论；
-4. Proposition 3.1 中从 p 群不变因子分解到增广理想 `I^D=0` 的剩余层；
-5. 一般 homocyclic 数值 corollary 的最终 Lean 导出。
+3. Olson invariant-factor 公式、从有限阿贝尔 `p` 群自动生成所需数据，以及数值推论；
+4. 一般 homocyclic 数值 corollary 的最终 Lean 导出。
 
 两个独立审计后，主实例另行补证了 `|Dih(A)|=2|A|`、exact-length/
 at-least threshold 等价以及 Lemma 5.2；它们不再列为缺口。上述其余承重边界未改动。

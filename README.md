@@ -248,5 +248,7 @@ M50 已将 13 页稿 Lemma 5.2 从外部参数改为内部定理。
 `PGDavenportConvolution.lean` 用 occurrence-labelled 前缀/后缀拼接证明
 `D(K)+D(A/K)≤D(A)+1`，`GAOARFinal` 现从有限群的精确 ordinary Davenport
 常数内部导出该不等式。终稿总状态仍为
-`CRITICAL_GAPS / LEAN_CONDITIONAL`；剩余承重边界为 Proposition 3.1、
-Olson、GJM 与 GMO，见 `milestone-50.md` 和 `pr7-13-page-map.md`。
+`CRITICAL_GAPS / LEAN_CONDITIONAL`。M52 又将 Proposition 3.1 从不变生成元
+到增广理想幂零、系数矛盾与半界的内部证明闭合；剩余承重边界
+为 Olson 不变因子/Davenport 公式、GJM 与 GMO，见 `milestone-52.md`
+和 `pr7-13-page-map.md`。
