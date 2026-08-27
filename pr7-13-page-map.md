@@ -54,7 +54,7 @@
 | Theorem 5.1 base cases | `P_S(0)` 与 `Q(0)` 分别证明 | `PGBase`; `PGInduction.concreteControllerAt_bot_of_smallDavenport`; `PGGJM` | `CHECKED`；所需 small-Davenport 上界已内部供给 |
 | Theorem 5.1 induction | 每次严格下降 `H<K`，同时强归纳 | `PGInduction`; `PGControllerClosure`; `GAOARResidualController` | `CHECKED` 的调度器，整体 `CONDITIONAL` 于 source providers |
 | §6 main completion | 三个 reflection regimes 与上下界装配 | `PGReflectionRegimes`; `PGSynthesis`; `GAOARFinal` | `CONDITIONAL`；未把 desired upper bound 作为参数 |
-| Corollary 6.1 | homocyclic / elementary-abelian 数值公式 | `PGOlson.isOrdinaryDavenportConstant_invariantProduct`（ordinary 数值核） | `PARTIAL`；不变因子 ordinary 数值公式已证，尚未把最终 Gao 条件式装配专门打包成正文的 homocyclic/elementary-abelian 展示式 |
+| Corollary 6.1 | homocyclic / elementary-abelian 数值公式 | `PGHomocyclic.pgGao_homocyclic_display_of_structuralRemainingInputs`; `PGHomocyclic.pgGao_elementaryAbelian_display_of_structuralRemainingInputs` | `CHECKED`（条件仅继承主定理的 GMO 边界）；Lean 核验 `|C_(p^k)^r|=p^(kr)`、`D=1+r(p^k-1)` 及正文两条字面展示式 |
 
 ## 当前严格裁决
 
@@ -62,13 +62,12 @@
 平移保持、严格同时下降和最终条件式装配已有实质 Lean 覆盖。以下内容仍阻止
 `LEAN_FULLY_CHECKED`：
 
-1. GMO 的 existence/structural 定理本身；
-2. homocyclic / elementary-abelian 数值 corollary 的最终展示式封装（其 ordinary Davenport 数值核已证）。
+1. GMO 的 existence/structural 定理本身。
 
 两个独立审计后，主实例另行补证了 `|Dih(A)|=2|A|`、exact-length/
 at-least threshold 等价、Lemma 5.2、Olson 公式、Proposition 3.1 以及 GJM
 small-Davenport 等号；它们不再列为缺口。当前唯一真正承重的数学边界是 GMO；
-数值 corollary 是在该边界闭合后的封装工作。
+数值 corollary 已完成，并精确继承同一个 GMO 边界，没有另加数学假设。
 
 因此当前不是该 13 页稿的无条件完整 Lean；准确状态是主证明骨架
 `LEAN_CONDITIONAL`，并有上述逐段缺口账。

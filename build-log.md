@@ -781,3 +781,16 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
   now contains only GMO existence/structural providers.
 - Full server build: 8740 jobs, exit 0. New theorem audits use only `propext`,
   `Classical.choice`, and `Quot.sound`.
+
+## 2026-08-27: Homocyclic Corollary 6.1 packaging (M55)
+
+- Added `GaoLean.PGHomocyclic` and proved the cardinality identity
+  `|C_(p^k)^r| = p^(k*r)` together with the exact ordinary Davenport value
+  `1 + r*(p^k-1)`.
+- Packaged the manuscript's literal homocyclic threshold
+  `2*p^(k*r) + r*(p^k-1) + 1`, exact block size `2*p^(k*r)`, and its
+  elementary-abelian `k=1` specialization.
+- These corollaries inherit exactly the existing visible GMO input package;
+  no new source theorem, numerical assumption, or hidden axiom is introduced.
+- Full server build: 8741 jobs, exit 0. The three new audited declarations use
+  only `propext`, `Classical.choice`, and `Quot.sound`.

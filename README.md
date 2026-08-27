@@ -254,4 +254,7 @@ M50 已将 13 页稿 Lemma 5.2 从外部参数改为内部定理。
 升级为任意有限阿贝尔奇 `p` 群上的无条件 Lean 定理。M54 又用反射路径的相邻差、
 边界抵消和平衡符号排序，直接证明任意有限阿贝尔核上的 GJM small-Davenport
 等号所需上下界，并同时解除所有商群 small-Davenport 参数。当前唯一承重边界是
-GMO existence/structural 定理，见 `milestone-54.md` 和 `pr7-13-page-map.md`。
+GMO existence/structural 定理。M55 又把 Corollary 6.1 的同循环群与初等阿贝尔群
+展示式逐字封装：Lean 内部核验群阶、Olson 数值及最终阈值，且只继承主定理已有
+的 GMO 输入包，没有新增外部前提。见 `milestone-55.md` 和
+`pr7-13-page-map.md`。
