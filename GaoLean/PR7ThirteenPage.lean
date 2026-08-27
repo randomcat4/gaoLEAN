@@ -16,9 +16,10 @@ prime characteristic and every exact ordinary Davenport value `D`, the exact
 Gao threshold is `2 * |A| + D`, with an occurrence-labelled block of literal
 cardinality `2 * |A|`.
 
-The displayed invariant-factor formula and the equality with the small
-Davenport constant are source corollaries requiring Olson and
-Godara--Joshi--Mazumdar.  They are not silently folded into this definition.
+The displayed invariant-factor formula is now proved internally through
+Olson's theorem.  The equality with the small Davenport constant remains a
+source corollary requiring Godara--Joshi--Mazumdar and is not silently folded
+into this definition.
 -/
 
 namespace GaoLean

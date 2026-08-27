@@ -743,3 +743,23 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
 - Full server build: 8738 jobs, exit 0. New audited declarations use only
   `propext`, `Classical.choice`, and `Quot.sound`; forbidden scan and
   `git diff --check` pass.
+
+## 2026-08-27: Olson formula and unconditional Proposition 3.1 (M53)
+
+- Added `GaoLean.PGOlson`, including the literal ordinary group-algebra
+  expansion, the coefficient contradiction for zero-sum-free sequences, and
+  the sharp ordinary Davenport upper bound from augmentation nilpotence.
+- Constructed an occurrence-labelled zero-sum-free witness for the explicit
+  finite product of cyclic `p`-groups and proved its exact Davenport constant
+  `1 + sum_i (p ^ mu_i - 1)`.
+- Used Mathlib's classification of finite abelian groups, together with the
+  p-group cardinality hypothesis, to show that every nontrivial primary
+  factor has prime `p` and to obtain the required invariant product.
+- Proved `plusMinusDavenportAtMost_half_of_isPGroup`, the manuscript's
+  Proposition 3.1 for every finite abelian odd p-group, and internally derived
+  the oddness and restricted-coefficient inputs used by `GAOARFinal`.
+- Refactored the final source package: Olson, Proposition 3.1, and subgroup
+  plus-minus bounds are no longer assumptions. Only GJM small-Davenport and
+  GMO existence/structural providers remain load-bearing.
+- Full server build: 8739 jobs, exit 0. The audited declarations use only
+  `propext`, `Classical.choice`, and `Quot.sound`.
