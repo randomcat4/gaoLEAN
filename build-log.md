@@ -861,6 +861,27 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
 - Independent review confirmed DGM alone does not imply the simultaneous
   source/positive-weight/negative-weight cosets of Corollary 1.3. The paper's
   structural setpartition theorem and Theorem 1.1 induction remain required.
-- Targeted server build succeeded for 8740 jobs; the full `GaoLean` build
-  succeeded for 8751 jobs. Completed declarations use only `propext`,
+- Targeted server builds and source assembly pass; completed declarations use
+  only `propext`, `Classical.choice`, and `Quot.sound`.
+
+## 2026-08-27: DGM portions and faithful GMO theorem boundaries (M60)
+
+- Added the canonical DGM initial portion, minimum-stabilizer portion
+  reduction, trivial-stabilizer quotient transport, and the mechanical
+  implication from the corrected aperiodic extension property to the next
+  DGM induction bound.
+- Added occurrence-faithful GMO Theorem 2.1/Theorem E structures.  The
+  trivial/top stabilizer branches and `N=1` common-coset conversion are
+  proved.  The proper induction boundary explicitly includes `d*(G) <= n`
+  and permits the replacement partition to change.
+- Added direct signed Theorem 1.1 infrastructure: exact signed-spectrum
+  homomorphism/quotient transport, the full-stabilizer branch, and faithful
+  whole-block-to-three-coset conversion.
+- Joint target build: 8706 jobs, exit 0.  Full `GaoLean` server build: 8753
+  jobs, exit 0.
+- Forbidden-declaration scan is clean in the three new proof modules.  Printed
+  dependencies of completed declarations use only `propext`,
   `Classical.choice`, and `Quot.sound`.
+- This is an honest conditional checkpoint.  The general DGM
+  intersection--union extension, ordinary Theorem E/2.5 induction, and signed
+  Theorem 1.1 Steps 5--6 remain unproved.

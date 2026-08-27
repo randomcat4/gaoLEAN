@@ -30,11 +30,13 @@ lake build GaoFormal.AxiomAudit
 ```
 
 工具链固定为 Lean `v4.32.0`，Mathlib 固定为公开标签 `v4.32.0`。
-最新验收点见 `milestone-48.md`：秩三平面下降、任意秩结构 GMO 控制器及冻结
-`PGGaoV1Statement` 的最终条件式装配均已完成并在服务器验证。
+最新验收点见 `milestone-60.md`：DGM portion 归约、普通 GMO Theorem 2.1
+的 occurrence-faithful 边界，以及 signed Theorem 1.1 的商群输运已在服务器
+验证。顶层仍为 `LEAN_CONDITIONAL`；M60 明列 DGM extension、Theorem E/2.5
+归纳与 signed Step 5--6 三处未证数学承重点。
 
 下文保留各历史里程碑当时的边界描述；其中写有“仍缺”“partial”或
-“NOT_FORMALIZED”的段落是过程记录，已由 M48 的最新状态取代。
+“NOT_FORMALIZED”的段落是过程记录，应以 M60 的最新缺口账为准。
 
 PG 分支的真实覆盖与外部阻塞见 `pg-coverage.md`。冻结 PG-GAO 陈述已编译，
 但陈述定义不计作证明；当前 PG-PM 仅为显式外部参数下的条件结论。PG-O3

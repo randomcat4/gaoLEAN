@@ -163,6 +163,126 @@ theorem layerSubsumSpectrum_nonempty
           intro x hx
           exact Finset.mem_union_right _ hx)
 
+/-- Proof-relevant exact-layer choice.  Unlike membership in the finite
+spectrum, this object retains which recursive layers were skipped or used;
+it is the input needed to group a witness choice by stabilizer cosets in the
+nontrivial-portion extension. -/
+inductive LayerSubsumChoice :
+    List (Finset A) → ℕ → A → Type _
+  | zero (P : List (Finset A)) : LayerSubsumChoice P 0 0
+  | skip {B : Finset A} {P : List (Finset A)} {n : ℕ} {y : A} :
+      LayerSubsumChoice P n y → LayerSubsumChoice (B :: P) n y
+  | take {B : Finset A} {P : List (Finset A)} {n : ℕ}
+      {b y : A} :
+      b ∈ B → LayerSubsumChoice P n y →
+      LayerSubsumChoice (B :: P) (n + 1) (b + y)
+
+/-- The proof-relevant recursive choices represent exactly the elements of
+`layerSubsumSpectrum`. -/
+theorem nonempty_layerSubsumChoice_iff_mem
+    (P : List (Finset A)) (n : ℕ) (y : A) :
+    Nonempty (LayerSubsumChoice P n y) ↔
+      y ∈ layerSubsumSpectrum P n := by
+  constructor
+  · rintro ⟨h⟩
+    induction h with
+    | zero P => simp
+    | @skip B P n y h ih =>
+        obtain rfl | n := n
+        · simpa using ih
+        · exact Finset.mem_union_left _ ih
+    | @take B P n b y hb h ih =>
+        exact Finset.mem_union_right _
+          (Finset.mem_add.mpr ⟨b, hb, y, ih, rfl⟩)
+  · induction P generalizing n y with
+    | nil =>
+        obtain rfl | n := n
+        · simp only [layerSubsumSpectrum_zero, Finset.mem_singleton]
+          intro hy
+          subst y
+          exact ⟨LayerSubsumChoice.zero []⟩
+        · simp
+    | cons B P ih =>
+        obtain rfl | n := n
+        · simp only [layerSubsumSpectrum_zero, Finset.mem_singleton]
+          intro hy
+          subst y
+          exact ⟨LayerSubsumChoice.zero (B :: P)⟩
+        · rw [layerSubsumSpectrum_cons_succ, Finset.mem_union]
+          rintro (hy | hy)
+          · obtain ⟨hchoice⟩ := ih (n + 1) y hy
+            exact ⟨LayerSubsumChoice.skip hchoice⟩
+          · obtain ⟨b, hb, z, hz, hbzy⟩ := Finset.mem_add.mp hy
+            obtain ⟨hchoice⟩ := ih n z hz
+            subst y
+            exact ⟨LayerSubsumChoice.take hb hchoice⟩
+
+/-- Replacing two layers by their intersection and union cannot create a
+new exact-layer sum.  This is the spectrum half of the DGM
+intersection--union transform. -/
+theorem layerSubsumSpectrum_inter_union_subset
+    (B C : Finset A) (P : List (Finset A)) (n : ℕ) :
+    layerSubsumSpectrum ((B ∩ C) :: (B ∪ C) :: P) n ⊆
+      layerSubsumSpectrum (B :: C :: P) n := by
+  classical
+  intro y hy
+  obtain rfl | n := n
+  · simpa using hy
+  obtain rfl | k := n
+  · simp only [Nat.zero_add, layerSubsumSpectrum_one, layerUnion,
+      Finset.mem_union, Finset.mem_inter] at hy ⊢
+    tauto
+  rw [layerSubsumSpectrum_cons_succ] at hy ⊢
+  rcases Finset.mem_union.mp hy with hySkipInter | hyTakeInter
+  · rw [layerSubsumSpectrum_cons_succ] at hySkipInter
+    rcases Finset.mem_union.mp hySkipInter with hyTail | hyTakeUnion
+    · exact Finset.mem_union_left _
+        (Finset.mem_union_left _ hyTail)
+    · obtain ⟨z, hzUnion, t, ht, rfl⟩ := Finset.mem_add.mp hyTakeUnion
+      rcases Finset.mem_union.mp hzUnion with hzB | hzC
+      · exact Finset.mem_union_right _
+          (Finset.mem_add.mpr ⟨z, hzB, t,
+            Finset.mem_union_left _ ht, rfl⟩)
+      · exact Finset.mem_union_left _
+          (Finset.mem_union_right _
+            (Finset.mem_add.mpr ⟨z, hzC, t, ht, rfl⟩))
+  · obtain ⟨x, hxInter, s, hs, rfl⟩ := Finset.mem_add.mp hyTakeInter
+    have hxB : x ∈ B := (Finset.mem_inter.mp hxInter).1
+    have hxC : x ∈ C := (Finset.mem_inter.mp hxInter).2
+    rw [layerSubsumSpectrum_cons_succ] at hs
+    rcases Finset.mem_union.mp hs with hsTail | hsTakeUnion
+    · exact Finset.mem_union_right _
+        (Finset.mem_add.mpr ⟨x, hxB, s,
+          Finset.mem_union_left _ hsTail, rfl⟩)
+    · obtain ⟨z, hzUnion, t, ht, rfl⟩ := Finset.mem_add.mp hsTakeUnion
+      rcases Finset.mem_union.mp hzUnion with hzB | hzC
+      · exact Finset.mem_union_right _
+          (Finset.mem_add.mpr ⟨z, hzB, x + t,
+            Finset.mem_union_right _
+              (Finset.mem_add.mpr ⟨x, hxC, t, ht, rfl⟩), by
+                ac_rfl⟩)
+      · exact Finset.mem_union_right _
+          (Finset.mem_add.mpr ⟨x, hxB, z + t,
+            Finset.mem_union_right _
+              (Finset.mem_add.mpr ⟨z, hzC, t, ht, rfl⟩), rfl⟩)
+
+/-- A translation outside the stabilizer of a nonempty finite set moves
+some member of the set outside it. -/
+theorem exists_mem_add_not_mem_of_not_mem_addStab
+    (T : Finset A) (hT : T.Nonempty) (a : A)
+    (ha : a ∉ T.addStab) :
+    ∃ y ∈ T, a + y ∉ T := by
+  classical
+  by_contra h
+  push Not at h
+  have hsubset : a +ᵥ T ⊆ T := by
+    intro z hz
+    obtain ⟨y, hy, rfl⟩ := (Finset.mem_vadd_finset.mp hz)
+    exact h y hy
+  have heq : a +ᵥ T = T :=
+    Finset.eq_of_subset_of_card_le hsubset (by simp)
+  exact ha ((Finset.mem_addStab hT).2 heq)
+
 /-- The projected finite set contributed by a single layer modulo `K`. -/
 noncomputable def quotientLayer (K : AddSubgroup A) (B : Finset A) :
     Finset (A ⧸ K) := by
@@ -702,6 +822,67 @@ theorem rawDgmCappedMultiplicitySum_cons_succ
     (s := dgmHeadExtensionSet B P n)
     (t := (Finset.univ : Finset A)) (Finset.subset_univ _)]
 
+/-- Quotienting by the stabilizer of `C` is injective when that stabilizer is
+the singleton zero subgroup. -/
+theorem stabilizerQuotient_mk_injective_of_addStab_eq_singleton
+    (C : Finset A) (hC : C.Nonempty) (hstab : C.addStab = {0}) :
+    Function.Injective
+      ((↑) : A → A ⧸ AddAction.stabilizer A (C : Set A)) := by
+  intro x y hxy
+  have hsub : x - y ∈ AddAction.stabilizer A (C : Set A) :=
+    QuotientAddGroup.eq_iff_sub_mem.mp hxy
+  have hfin : x - y ∈ C.addStab := by
+    rw [← Finset.mem_coe, Finset.coe_addStab hC]
+    exact hsub
+  rw [hstab] at hfin
+  have : x - y = 0 := by simpa using hfin
+  exact sub_eq_zero.mp this
+
+theorem mem_stabilizerQuotientLayer_mk_iff_of_addStab_eq_singleton
+    (C D : Finset A) (hC : C.Nonempty) (hstab : C.addStab = {0})
+    (x : A) :
+    (x : A ⧸ AddAction.stabilizer A (C : Set A)) ∈
+        stabilizerQuotientLayer C D ↔ x ∈ D := by
+  constructor
+  · intro hx
+    obtain ⟨y, hy, hyx⟩ := Finset.mem_image.mp hx
+    have hinj := stabilizerQuotient_mk_injective_of_addStab_eq_singleton
+      C hC hstab
+    have hy_eq : y = x := hinj hyx
+    simpa [hy_eq] using hy
+  · intro hx
+    exact Finset.mem_image.mpr ⟨x, hx, rfl⟩
+
+/-- If the stabilizer of `C` is trivial, counting the quotient layers which
+contain the image of `x` is exactly the same as counting the original layers
+which contain `x`. -/
+theorem stabilizerLayerMultiplicity_mk_eq_raw_of_addStab_eq_singleton
+    (C : Finset A) (hC : C.Nonempty) (hstab : C.addStab = {0})
+    (P : List (Finset A)) (x : A) :
+    stabilizerLayerMultiplicity C P
+        (x : A ⧸ AddAction.stabilizer A (C : Set A)) =
+      rawLayerMultiplicity P x := by
+  classical
+  induction P with
+  | nil => simp [stabilizerLayerMultiplicity, rawLayerMultiplicity]
+  | cons B P ih =>
+      by_cases hx : x ∈ B
+      · have hqx :
+            (x : A ⧸ AddAction.stabilizer A (C : Set A)) ∈
+              stabilizerQuotientLayer C B :=
+          (mem_stabilizerQuotientLayer_mk_iff_of_addStab_eq_singleton
+            C B hC hstab x).2 hx
+        rw [stabilizerLayerMultiplicity_cons_of_mem C B P _ hqx,
+          rawLayerMultiplicity_cons_of_mem B P x hx, ih]
+      · have hqx :
+            (x : A ⧸ AddAction.stabilizer A (C : Set A)) ∉
+              stabilizerQuotientLayer C B := by
+          simpa using
+            (mem_stabilizerQuotientLayer_mk_iff_of_addStab_eq_singleton
+              C B hC hstab x).not.mpr hx
+        rw [stabilizerLayerMultiplicity_cons_of_not_mem C B P _ hqx,
+          rawLayerMultiplicity_cons_of_not_mem B P x hx, ih]
+
 /-- Double counting raw layer-value incidences. -/
 theorem sum_rawLayerMultiplicity
     [Fintype A] (P : List (Finset A)) :
@@ -1051,6 +1232,128 @@ theorem dgmInitialPortionBound_of_quotient_tail_bound
     C0.card + C0.addStab.card * n
   omega
 
+/-- Tail layers projected modulo the stabilizer of an arbitrary candidate
+portion. -/
+def dgmPortionQuotientLayers [Fintype A]
+    (C : Finset A) (P : List (Finset A)) :=
+  P.map fun B ↦ stabilizerQuotientLayer C B
+
+/-- A DGM portion in the sense needed by the minimal-stabilizer argument.
+It contains the canonical initial portion, stays inside the target spectrum,
+and satisfies the stabilizer-aware incidence inequality. -/
+def DGMPortion [Fintype A]
+    (B : Finset A) (P : List (Finset A)) (n : ℕ)
+    (C : Finset A) : Prop :=
+  dgmInitialPortion B P n ⊆ C ∧
+  C ⊆ layerSubsumSpectrum (B :: P) (n + 1) ∧
+  C.Nonempty ∧
+  let X := dgmHeadExtensionSet B P n
+  X.card + C.addStab.card *
+      rawDgmCappedMultiplicitySum (dgmPortionQuotientLayers C P) n ≤
+    C.card + C.addStab.card * n
+
+/-- The already-proved canonical bound packages the initial set as a genuine
+portion. -/
+theorem dgmInitialPortion_isPortion
+    [Fintype A] (B : Finset A) (P : List (Finset A)) (n : ℕ)
+    (hB : B.Nonempty) (hP : IsNonemptySetPartition P)
+    (hn : n ≤ P.length)
+    (hbound : DGMInitialPortionBound B P n) :
+    DGMPortion B P n (dgmInitialPortion B P n) := by
+  refine ⟨Finset.Subset.rfl, dgmHeadExtensionSet_add_tail_subset B P n,
+    ?_, ?_⟩
+  · exact (hB.mono fun x hx ↦ Finset.mem_union_left _ hx).add
+      (layerSubsumSpectrum_nonempty P hP n hn)
+  · simpa [DGMInitialPortionBound, dgmPortionQuotientLayers,
+      dgmInitialPortionQuotientLayers] using hbound
+
+/-- The exact remaining combinatorial step in the nontrivial-stabilizer
+branch of the aperiodic induction: when the final exact-sum spectrum is
+aperiodic, every portion with nontrivial stabilizer admits a portion with
+strictly smaller stabilizer.  The aperiodicity hypothesis is essential
+(without it the statement already fails in `ZMod 2`).  This proposition is
+defined, not assumed. -/
+def DGMPortionExtensionProperty [Fintype A]
+    (B : Finset A) (P : List (Finset A)) (n : ℕ) : Prop :=
+  (layerSubsumSpectrum (B :: P) (n + 1)).addStab = {0} →
+    ∀ C : Finset A,
+      DGMPortion B P n C → C.addStab ≠ {0} →
+      ∃ C' : Finset A,
+        DGMPortion B P n C' ∧ C'.addStab.card < C.addStab.card
+
+/-- A nonempty finite family of portions has a member with minimum
+stabilizer cardinality. -/
+theorem exists_dgmPortion_min_addStab_card
+    [Fintype A] (B : Finset A) (P : List (Finset A)) (n : ℕ)
+    {C0 : Finset A} (hC0 : DGMPortion B P n C0) :
+    ∃ C : Finset A,
+      DGMPortion B P n C ∧
+      ∀ C' : Finset A, DGMPortion B P n C' →
+        C.addStab.card ≤ C'.addStab.card := by
+  classical
+  let portions := (Finset.univ : Finset (Finset A)).filter
+    fun C ↦ DGMPortion B P n C
+  have hportions : portions.Nonempty := by
+    exact ⟨C0, Finset.mem_filter.mpr ⟨Finset.mem_univ C0, hC0⟩⟩
+  obtain ⟨C, hCmem, hmin⟩ :=
+    Finset.exists_min_image portions (fun C ↦ C.addStab.card) hportions
+  refine ⟨C, (Finset.mem_filter.mp hCmem).2, ?_⟩
+  intro C' hC'
+  exact hmin C' (Finset.mem_filter.mpr ⟨Finset.mem_univ C', hC'⟩)
+
+/-- Minimality plus the extension property forces a portion to have trivial
+stabilizer. -/
+theorem exists_dgmPortion_addStab_eq_singleton_of_extension
+    [Fintype A] (B : Finset A) (P : List (Finset A)) (n : ℕ)
+    {C0 : Finset A} (hC0 : DGMPortion B P n C0)
+    (hTargetStab :
+      (layerSubsumSpectrum (B :: P) (n + 1)).addStab = {0})
+    (hext : DGMPortionExtensionProperty B P n) :
+    ∃ C : Finset A, DGMPortion B P n C ∧ C.addStab = {0} := by
+  obtain ⟨C, hC, hmin⟩ :=
+    exists_dgmPortion_min_addStab_card B P n hC0
+  refine ⟨C, hC, ?_⟩
+  by_contra hnontrivial
+  obtain ⟨C', hC', hlt⟩ := hext hTargetStab C hC hnontrivial
+  exact (not_lt_of_ge (hmin C' hC')) hlt
+
+/-- For a nontrivial-stabilizer portion inside an aperiodic target, there is
+an exact-layer choice whose entire stabilizer coset is not contained in the
+target.  The returned proof-relevant choice is the starting point for the
+`R_j,d_j,D` coset-pattern construction. -/
+theorem exists_escape_layerSubsumChoice_of_nontrivial_portion
+    [Fintype A] (B : Finset A) (P : List (Finset A)) (n : ℕ)
+    (hTargetStab :
+      (layerSubsumSpectrum (B :: P) (n + 1)).addStab = {0})
+    (C : Finset A) (hC : DGMPortion B P n C)
+    (hCnontrivial : C.addStab ≠ {0}) :
+    ∃ y : A,
+      Nonempty (LayerSubsumChoice (B :: P) (n + 1) y) ∧
+      ¬(({y} : Finset A) + C.addStab ⊆
+        layerSubsumSpectrum (B :: P) (n + 1)) := by
+  classical
+  let T := layerSubsumSpectrum (B :: P) (n + 1)
+  have hCnonempty : C.Nonempty := hC.2.2.1
+  have hTnonempty : T.Nonempty := hCnonempty.mono hC.2.1
+  have haexists : ∃ a ∈ C.addStab, a ≠ 0 := by
+    by_contra h
+    push Not at h
+    apply hCnontrivial
+    apply Finset.eq_singleton_iff_unique_mem.mpr
+    exact ⟨hCnonempty.zero_mem_addStab, h⟩
+  obtain ⟨a, haC, ha0⟩ := haexists
+  have haT : a ∉ T.addStab := by
+    rw [show T.addStab = {0} by simpa [T] using hTargetStab]
+    simpa using ha0
+  obtain ⟨y, hyT, hayT⟩ :=
+    exists_mem_add_not_mem_of_not_mem_addStab T hTnonempty a haT
+  refine ⟨y, (nonempty_layerSubsumChoice_iff_mem _ _ _).2 hyT, ?_⟩
+  intro hcoset
+  apply hayT
+  apply hcoset
+  exact Finset.mem_add.mpr
+    ⟨y, Finset.mem_singleton_self y, a, haC, by ac_rfl⟩
+
 /-- The first genuinely new proof obligation after quotienting by the final
 stabilizer: the aperiodic DGM core.  `image_layerSubsumSpectrum` and
 `addStab_layerSubsumSpectrum_stabilizerQuotient_eq_singleton` close the
@@ -1094,6 +1397,85 @@ theorem rawDgmCappedMultiplicitySum_projected
   apply Finset.sum_congr rfl
   intro q _
   rw [rawLayerMultiplicity_projected_eq_stabilizerLayerMultiplicity]
+
+/-- With trivial stabilizer, quotienting all layers preserves the total
+capped raw multiplicity, not merely each pointwise multiplicity. -/
+theorem rawDgmCappedMultiplicitySum_portionQuotient_eq_of_addStab_eq_singleton
+    [Fintype A] (C : Finset A) (hC : C.Nonempty)
+    (hstab : C.addStab = {0}) (P : List (Finset A)) (n : ℕ) :
+    rawDgmCappedMultiplicitySum (dgmPortionQuotientLayers C P) n =
+      rawDgmCappedMultiplicitySum P n := by
+  classical
+  let H : AddSubgroup A := AddAction.stabilizer A (C : Set A)
+  let q : A → A ⧸ H := fun x ↦ (x : A ⧸ H)
+  have hq_inj : Function.Injective q := by
+    simpa [q, H] using
+      stabilizerQuotient_mk_injective_of_addStab_eq_singleton C hC hstab
+  have hq_surj : Function.Surjective q := by
+    simpa [q, H] using QuotientAddGroup.mk'_surjective H
+  let e : A ≃ A ⧸ H := Equiv.ofBijective q ⟨hq_inj, hq_surj⟩
+  unfold rawDgmCappedMultiplicitySum
+  symm
+  refine Fintype.sum_equiv e
+    (fun x : A ↦ min n (rawLayerMultiplicity P x))
+    (fun z : A ⧸ H ↦
+      min n (rawLayerMultiplicity (dgmPortionQuotientLayers C P) z)) ?_
+  intro x
+  congr 1
+  change rawLayerMultiplicity P x =
+    rawLayerMultiplicity
+      (P.map fun B ↦ stabilizerQuotientLayer C B)
+      (x : A ⧸ AddAction.stabilizer A (C : Set A))
+  symm
+  rw [rawLayerMultiplicity_projected_eq_stabilizerLayerMultiplicity]
+  exact
+    stabilizerLayerMultiplicity_mk_eq_raw_of_addStab_eq_singleton
+      C hC hstab P x
+
+/-- A portion whose stabilizer has already been reduced to zero closes the
+current successor step of the aperiodic DGM induction. -/
+theorem dgm_cons_bound_of_trivialStab_portion
+    [Fintype A] (B : Finset A) (P : List (Finset A)) (n : ℕ)
+    (C : Finset A) (hportion : DGMPortion B P n C)
+    (hstab : C.addStab = {0}) :
+    rawDgmCappedMultiplicitySum (B :: P) (n + 1) - (n + 1) + 1 ≤
+      (layerSubsumSpectrum (B :: P) (n + 1)).card := by
+  rcases hportion with ⟨_, hCsub, hCnonempty, hnum⟩
+  have hquot :=
+    rawDgmCappedMultiplicitySum_portionQuotient_eq_of_addStab_eq_singleton
+      C hCnonempty hstab P n
+  change
+    (dgmHeadExtensionSet B P n).card + C.addStab.card *
+        rawDgmCappedMultiplicitySum (dgmPortionQuotientLayers C P) n ≤
+      C.card + C.addStab.card * n at hnum
+  rw [hquot, hstab] at hnum
+  simp only [Finset.card_singleton, one_mul] at hnum
+  have hcard : C.card ≤
+      (layerSubsumSpectrum (B :: P) (n + 1)).card :=
+    Finset.card_le_card hCsub
+  have hCpos : 1 ≤ C.card := Finset.card_pos.mpr hCnonempty
+  rw [rawDgmCappedMultiplicitySum_cons_succ]
+  omega
+
+/-- The complete minimal-portion closure for one successor step.  Once the
+canonical initial portion is known to satisfy its numerical bound, the
+aperiodic extension property produces a trivial-stabilizer portion, and the
+preceding theorem closes the DGM inequality. -/
+theorem dgm_cons_bound_of_initialPortionBound_of_extension
+    [Fintype A] (B : Finset A) (P : List (Finset A)) (n : ℕ)
+    (hB : B.Nonempty) (hP : IsNonemptySetPartition P)
+    (hn : n ≤ P.length)
+    (hTargetStab :
+      (layerSubsumSpectrum (B :: P) (n + 1)).addStab = {0})
+    (hInitial : DGMInitialPortionBound B P n)
+    (hext : DGMPortionExtensionProperty B P n) :
+    rawDgmCappedMultiplicitySum (B :: P) (n + 1) - (n + 1) + 1 ≤
+      (layerSubsumSpectrum (B :: P) (n + 1)).card := by
+  have hC0 := dgmInitialPortion_isPortion B P n hB hP hn hInitial
+  obtain ⟨C, hC, hCstab⟩ :=
+    exists_dgmPortion_addStab_eq_singleton_of_extension
+      B P n hC0 hTargetStab hext
+  exact dgm_cons_bound_of_trivialStab_portion B P n C hC hCstab
 
 /-- Package the aperiodic core on the quotient by the stabilizer of `T`,
 hiding the canonical finite quotient instance. -/

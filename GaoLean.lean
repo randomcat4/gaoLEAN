@@ -70,6 +70,8 @@ import GaoLean.PGPlusMinusSetpartition
 import GaoLean.PGDGMStructuralGap
 import GaoLean.PGGMOOrdinarySource
 import GaoLean.PGGMOPlusMinusSource
+import GaoLean.PGGMOTheorem21
+import GaoLean.PGGMOTheorem11
 import GaoLean.PGGMOSourceAssembly
 import GaoLean.PGDavenportBound
 import GaoLean.PGOrdinaryGMOBridge
