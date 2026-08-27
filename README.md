@@ -309,3 +309,13 @@ Definition 1 全链的抽象单调替换归纳；signed 结构 Corollary 1.3 的
 亦已完成。DGM 的 top-pattern 到冻结 General DGM 接口运输、inner-measure 严格下降
 及 `Xi_K(A')≤Xi_K(A)` 也已核验。状态仍为 `LEAN_CONDITIONAL`，精确剩余见
 `milestone-64.md`。
+
+M65 已从唯一显式的 General DGM 输入完整推出奇阶 `{±1}` 的 Corollary 1.2/1.3
+source package，因此终稿所需三个 signed providers（prescribed target、ambient
+structural、all-subgroup structural）均已机械闭合，且没有使用已否决的 ordinary
+Davenport 捷径。普通线同时从 General DGM 与无 doubled exceptions 推出修正后的
+Theorem E 精确基数式，数值/cardinality 部分不再是文献边界。DGM 的 strict
+weighted `Xi` 也已细化到 exceptional fibre 的逐 fine-coset indicator。总状态仍是
+`LEAN_CONDITIONAL`：尚缺 General DGM pattern minimal-counterexample 的严格核心，
+以及普通 Definition 1/Lemmas 1--5 产生无 doubled exceptions 和 unused-core 结构。
+见 `milestone-65.md`。

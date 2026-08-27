@@ -970,3 +970,22 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
 - The manuscript remains conditional: General DGM's strict weighted Xi core, the
   concrete ordinary equation (3.1) propagation and Lemmas 2--5, the odd
   signed Corollary 1.2 Step 1, and final provider assembly remain.
+
+## 2026-08-27: Signed provider closure and Theorem E numerical bound (M65)
+
+- Proved the complete odd `{+1,-1}` Corollary 1.2/1.3 source package from the
+  single explicit General-DGM family, including labelled signed-zero
+  expansion, exact zero padding, quotient target translation, and cross-type
+  stabilizer induction.  This mechanically supplies all three signed
+  manuscript providers without an ordinary-Davenport shortcut.
+- Proved Theorem E's corrected cardinality formula from General DGM and no
+  doubled exceptions at the actual sumset stabilizer.  The proof preserves
+  outside-core occurrence multiplicity and handles Nat subtraction directly.
+- Formalized the fine/coarse local Xi gain decomposition and the exact
+  exceptional-fibre incidence indicator needed for the strict weighted DGM
+  claim.
+- Joint target build: 8707 jobs, exit 0.  Full project build: 8753 jobs,
+  exit 0.  Forbidden-declaration and whitespace scans are clean.
+- The manuscript remains conditional only on the still-unproved General DGM
+  pattern-minimality core and the ordinary Definition 1/Lemmas 1--5
+  structural output; no provider has been hidden or renamed away.

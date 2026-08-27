@@ -1803,6 +1803,304 @@ theorem Definition1Transition.not_isHDoubledException_of_move_admissible
   exact step.not_incidence_add_one_of_mem_next hP
     (hadmissible Q hQsupport hQinc) hQinc
 
+/-- Membership in `A_c + H` is exactly membership of the quotient class in
+the projected cell. -/
+theorem Theorem21SetPartition.mem_thickenedCell_iff_mem_quotientLayer
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (H : AddSubgroup A) (c : Fin n) (x : A) :
+    x ∈ P.thickenedCell H c ↔
+      QuotientAddGroup.mk' H x ∈ quotientLayer H (P.valueCell c) := by
+  classical
+  constructor
+  · intro hx
+    rcases Finset.mem_add.mp hx with ⟨a, ha, h, hh, rfl⟩
+    apply (mem_quotientLayer_iff H (P.valueCell c) _).2
+    refine ⟨a, ha, ?_⟩
+    change QuotientAddGroup.mk' H a = QuotientAddGroup.mk' H (a + h)
+    rw [QuotientAddGroup.mk'_apply, QuotientAddGroup.mk'_apply]
+    rw [QuotientAddGroup.eq_iff_sub_mem]
+    have hh' : h ∈ H := (mem_subgroupFinset H h).1 hh
+    convert H.neg_mem hh' using 1
+    abel
+  · intro hx
+    obtain ⟨a, ha, haquot⟩ :=
+      (mem_quotientLayer_iff H (P.valueCell c) _).1 hx
+    have hax : a - x ∈ H :=
+      QuotientAddGroup.eq_iff_sub_mem.mp haquot
+    have hxa : x - a ∈ H := by
+      simpa only [neg_sub] using H.neg_mem hax
+    apply Finset.mem_add.mpr
+    refine ⟨a, ha, x - a, (mem_subgroupFinset H (x - a)).2 hxa, ?_⟩
+    abel
+
+/-- The dissertation's `H`-exception predicate is exactly failure to lie in
+the common `H`-saturation of all cells. -/
+theorem Theorem21SetPartition.isHException_iff_not_mem_commonCore
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (H : AddSubgroup A) (x : A) :
+    P.IsHException H x ↔ x ∉ P.commonCore H := by
+  classical
+  rw [P.mem_commonCore_iff H x]
+  simp only [Theorem21SetPartition.IsHException, not_forall]
+  constructor
+  · rintro ⟨c, hc⟩
+    exact ⟨c, fun hx ↦ hc
+      ((P.mem_thickenedCell_iff_mem_quotientLayer H c x).1 hx)⟩
+  · rintro ⟨c, hc⟩
+    exact ⟨c, fun hx ↦ hc
+      ((P.mem_thickenedCell_iff_mem_quotientLayer H c x).2 hx)⟩
+
+/-- If doubled exceptions have been eliminated, quotient projection is
+injective on the outside-common-core part of every cell.  This is the exact
+counting property needed to turn `e` occurrences into `e` distinct quotient
+classes in Theorem E. -/
+theorem Theorem21SetPartition.quotient_injOn_outside_commonCore
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (H : AddSubgroup A)
+    (hno : ∀ x : A, ¬ P.IsHDoubledException H x)
+    (c : Fin n) :
+    Set.InjOn (QuotientAddGroup.mk' H)
+      (P.valueCell c \ P.commonCore H : Set A) := by
+  intro x hx y hy hquot
+  by_contra hxy
+  have hxException : P.IsHException H x :=
+    (P.isHException_iff_not_mem_commonCore H x).2
+      hx.2
+  have hxDoubled : P.IsHDoubledInCell H c x := by
+    refine ⟨hx.1, y, hy.1, ?_, hquot.symm⟩
+    exact fun hyx ↦ hxy hyx.symm
+  exact hno x ⟨hxException, c, hxDoubled⟩
+
+/-- A finite set has at most `|H|` representatives in each quotient class,
+hence its cardinality is at most `|H|` times the size of its quotient image.
+-/
+theorem card_le_natCard_mul_card_quotientLayer
+    (H : AddSubgroup A) (B : Finset A) :
+    B.card ≤ Nat.card H * (quotientLayer H B).card := by
+  classical
+  apply Finset.card_le_mul_card_image B (Nat.card H)
+  intro q hq
+  obtain ⟨x, hx, hxq⟩ := (mem_quotientLayer_iff H B q).1 hq
+  have hmap : Set.MapsTo (fun a : A ↦ a - x)
+      (B.filter fun a ↦ QuotientAddGroup.mk' H a = q : Set A)
+      (subgroupFinset H : Set A) := by
+    intro a ha
+    have haq := (Finset.mem_filter.mp ha).2
+    apply (mem_subgroupFinset H (a - x)).2
+    exact QuotientAddGroup.eq_iff_sub_mem.mp (haq.trans hxq.symm)
+  have hinj : Set.InjOn (fun a : A ↦ a - x)
+      (B.filter fun a ↦ QuotientAddGroup.mk' H a = q : Set A) := by
+    intro a _ b _ hab
+    exact sub_left_injective hab
+  have hfiber := Finset.card_le_card_of_injOn (fun a : A ↦ a - x)
+    hmap hinj
+  have hHcard : (subgroupFinset H).card = Nat.card H := by
+    simpa [subgroupFinset, Nat.card_eq_fintype_card] using
+      (Fintype.card_subtype (fun x : A ↦ x ∈ H)).symm
+  simpa [hHcard] using hfiber
+
+/-- The source number `N = |commonCore| / |H|` is bounded by the number of
+quotient classes represented by the common core. -/
+theorem Theorem21SetPartition.commonCosetCount_le_card_quotientLayer_commonCore
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (H : AddSubgroup A) :
+    P.commonCosetCount H ≤ (quotientLayer H (P.commonCore H)).card := by
+  unfold Theorem21SetPartition.commonCosetCount
+  exact Nat.div_le_of_le_mul
+    (card_le_natCard_mul_card_quotientLayer H (P.commonCore H))
+
+/-- Every quotient class represented by the common core is represented in
+each individual value cell. -/
+theorem Theorem21SetPartition.quotientLayer_commonCore_subset_valueCell
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (H : AddSubgroup A) (c : Fin n) :
+    quotientLayer H (P.commonCore H) ⊆ quotientLayer H (P.valueCell c) := by
+  classical
+  intro q hq
+  obtain ⟨x, hx, rfl⟩ :=
+    (mem_quotientLayer_iff H (P.commonCore H) q).1 hq
+  exact (P.mem_thickenedCell_iff_mem_quotientLayer H c x).1
+    ((P.mem_commonCore_iff H x).1 hx c)
+
+/-- Values of one cell lying outside the common `H`-saturation. -/
+noncomputable def Theorem21SetPartition.outsideCoreValueCell
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (H : AddSubgroup A) (c : Fin n) : Finset A := by
+  classical
+  exact P.valueCell c \ P.commonCore H
+
+/-- Outside-core quotient classes are disjoint from common-core quotient
+classes. -/
+theorem Theorem21SetPartition.disjoint_quotientLayer_commonCore_outside
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (H : AddSubgroup A) (c : Fin n) :
+    Disjoint (quotientLayer H (P.commonCore H))
+      (quotientLayer H (P.outsideCoreValueCell H c)) := by
+  classical
+  rw [Finset.disjoint_left]
+  intro q hqcore hqout
+  obtain ⟨x, hxcore, hxq⟩ :=
+    (mem_quotientLayer_iff H (P.commonCore H) q).1 hqcore
+  obtain ⟨y, hyout, hyq⟩ :=
+    (mem_quotientLayer_iff H (P.outsideCoreValueCell H c) q).1 hqout
+  have hyx : y - x ∈ H := by
+    exact QuotientAddGroup.eq_iff_sub_mem.mp (hyq.trans hxq.symm)
+  have hycore : y ∈ P.commonCore H := by
+    apply (P.mem_commonCore_iff H y).2
+    intro d
+    apply (P.mem_thickenedCell_iff_mem_quotientLayer H d y).2
+    have hxLayer := (P.mem_thickenedCell_iff_mem_quotientLayer H d x).1
+      ((P.mem_commonCore_iff H x).1 hxcore d)
+    simpa [hyq, hxq] using hxLayer
+  exact (Finset.mem_sdiff.mp (by
+    simpa [Theorem21SetPartition.outsideCoreValueCell] using hyout)).2 hycore
+
+/-- With no doubled exceptions, one cell contributes at least `N + e_c`
+distinct quotient classes: the common classes plus one distinct class for
+each outside-core value. -/
+theorem Theorem21SetPartition.commonCosetCount_add_cellExceptionDefect_le
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (H : AddSubgroup A)
+    (hno : ∀ x : A, ¬ P.IsHDoubledException H x) (c : Fin n) :
+    P.commonCosetCount H + P.cellExceptionDefect H c ≤
+      (quotientLayer H (P.valueCell c)).card := by
+  classical
+  let coreQ := quotientLayer H (P.commonCore H)
+  let outside := P.outsideCoreValueCell H c
+  let outsideQ := quotientLayer H outside
+  have hcoreLe : P.commonCosetCount H ≤ coreQ.card :=
+    P.commonCosetCount_le_card_quotientLayer_commonCore H
+  have houtCard : outsideQ.card = outside.card := by
+    apply Finset.card_image_iff.mpr
+    simpa [outside, Theorem21SetPartition.outsideCoreValueCell] using
+      P.quotient_injOn_outside_commonCore H hno c
+  have houtDefect : outside.card = P.cellExceptionDefect H c := by
+    simp [outside, Theorem21SetPartition.outsideCoreValueCell,
+      Theorem21SetPartition.cellExceptionDefect, Finset.card_sdiff,
+      Finset.inter_comm]
+  have hdisjoint : Disjoint coreQ outsideQ :=
+    P.disjoint_quotientLayer_commonCore_outside H c
+  have hunion : coreQ ∪ outsideQ ⊆ quotientLayer H (P.valueCell c) := by
+    intro q hq
+    rcases Finset.mem_union.mp hq with hqcore | hqout
+    · exact P.quotientLayer_commonCore_subset_valueCell H c hqcore
+    · obtain ⟨x, hx, rfl⟩ :=
+        (mem_quotientLayer_iff H outside _).1 hqout
+      exact (mem_quotientLayer_iff H (P.valueCell c) _).2
+        ⟨x, (Finset.mem_sdiff.mp hx).1, rfl⟩
+  have hunionCard : coreQ.card + outsideQ.card = (coreQ ∪ outsideQ).card := by
+    exact (Finset.card_union_of_disjoint hdisjoint).symm
+  have hcardLe := Finset.card_le_card hunion
+  rw [← hunionCard, houtCard, houtDefect] at hcardLe
+  omega
+
+/-- Summing the preceding cellwise estimate gives the exact Theorem E
+incidence coefficient `N*n + e`. -/
+theorem Theorem21SetPartition.commonCosetCount_mul_add_exceptionDefect_le_incidence
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (H : AddSubgroup A)
+    (hno : ∀ x : A, ¬ P.IsHDoubledException H x) :
+    P.commonCosetCount H * n + P.exceptionDefect H ≤
+      P.quotientIncidenceAt H := by
+  classical
+  unfold Theorem21SetPartition.exceptionDefect
+    Theorem21SetPartition.quotientIncidenceAt
+  have hsum := Finset.sum_le_sum fun c (_ : c ∈ (Finset.univ : Finset (Fin n))) ↦
+    P.commonCosetCount_add_cellExceptionDefect_le H hno c
+  rw [Finset.sum_add_distrib] at hsum
+  simpa [Nat.mul_comm] using hsum
+
+omit [Fintype A] in
+/-- The arbitrary-subgroup incidence definition agrees, at the actual
+sumset stabilizer, with the specialized quotient-incidence expression used
+by the proved full-layer DGM theorem. -/
+theorem Theorem21SetPartition.quotientIncidenceAt_stabilizer_eq
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m) :
+    P.quotientIncidenceAt
+        (AddAction.stabilizer A (P.sumset : Set A)) =
+      P.stabilizerQuotientIncidence := by
+  classical
+  unfold Theorem21SetPartition.quotientIncidenceAt
+    Theorem21SetPartition.stabilizerQuotientIncidence
+  apply Finset.sum_congr rfl
+  intro c _
+  apply congrArg Finset.card
+  ext q
+  simp [quotientLayer, stabilizerQuotientLayer]
+
+omit [Fintype A] in
+/-- Nonempty cells make the full replacement sumset nonempty; this local
+version is placed next to the DGM bridge so it does not rely on later
+Theorem-2.1 case analysis. -/
+theorem Theorem21SetPartition.sumset_nonempty_for_dgm
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m) :
+    P.sumset.Nonempty := by
+  classical
+  unfold Theorem21SetPartition.sumset fullLayerSumSpectrum
+  exact layerSubsumSpectrum_nonempty P.valueCells P.valueCells_nonempty
+    P.valueCells.length le_rfl
+
+/-- Full-layer DGM converts elimination of doubled exceptions into the exact
+corrected Theorem E numerical bound.  This theorem discharges the entire
+`N/e` cardinality calculation; it does not assert that the extremal chain has
+already eliminated the exceptions. -/
+theorem Theorem21SetPartition.theoremE_card_lower_of_no_doubled
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (hno : ∀ x : A, ¬ P.IsHDoubledException
+      (AddAction.stabilizer A (P.sumset : Set A)) x) :
+    ((P.commonCosetCount
+          (AddAction.stabilizer A (P.sumset : Set A)) * n +
+        P.exceptionDefect
+          (AddAction.stabilizer A (P.sumset : Set A)) + 1) - n) *
+      Nat.card (AddAction.stabilizer A (P.sumset : Set A)) ≤
+        P.sumset.card := by
+  classical
+  let H : AddSubgroup A := AddAction.stabilizer A (P.sumset : Set A)
+  have hincLower :=
+    P.commonCosetCount_mul_add_exceptionDefect_le_incidence H hno
+  have hincEq : P.quotientIncidenceAt H =
+      P.stabilizerQuotientIncidence := by
+    simpa [H] using P.quotientIncidenceAt_stabilizer_eq
+  have hincPos : n ≤ P.quotientIncidenceAt H := by
+    have hlen := length_le_sum_quotientLayer_card H P.valueCells
+      P.valueCells_nonempty
+    rw [P.length_valueCells] at hlen
+    simp only [Theorem21SetPartition.valueCells, List.map_ofFn,
+      List.sum_ofFn] at hlen
+    exact hlen
+  have hdgm := fullLayer_dgm_lower_bound P.valueCells P.valueCells_nonempty
+  have hstabCard := card_addStab_eq_natCard_stabilizer
+    P.sumset P.sumset_nonempty_for_dgm
+  have hstabCardH : P.sumset.addStab.card = Nat.card H := by
+    simpa [H] using hstabCard
+  have hspec :
+      (P.valueCells.map fun B ↦
+        (stabilizerQuotientLayer P.sumset B).card).sum =
+        P.stabilizerQuotientIncidence := by
+    unfold Theorem21SetPartition.valueCells
+      Theorem21SetPartition.stabilizerQuotientIncidence
+    simp only [List.map_ofFn, List.sum_ofFn]
+    apply Finset.sum_congr rfl
+    intro c _
+    rfl
+  have hdgm' :
+      (P.quotientIncidenceAt H - n + 1) * Nat.card H ≤
+        P.sumset.card := by
+    change
+      ((P.valueCells.map fun B ↦
+          (stabilizerQuotientLayer P.sumset B).card).sum -
+          P.valueCells.length + 1) * P.sumset.addStab.card ≤
+        P.sumset.card at hdgm
+    rw [hspec, P.length_valueCells, hstabCardH] at hdgm
+    rw [hincEq]
+    exact hdgm
+  have hcoeff :
+      (P.commonCosetCount H * n + P.exceptionDefect H + 1) - n ≤
+        P.quotientIncidenceAt H - n + 1 := by
+    omega
+  simpa [H] using
+    (Nat.mul_le_mul_right (Nat.card H) hcoeff).trans hdgm'
+
 /-- Regression for the placement of natural subtraction in Theorem E.
 
 The source coefficient is `(N * n + e + 1) - n`.  Subtracting one from `N`

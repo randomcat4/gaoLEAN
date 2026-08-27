@@ -203,6 +203,243 @@ theorem sum_signed_prefixSelection_add_sum_signed_suffixSelection
   rw [hleft, hright]
   rw [← Finset.sum_union hdis, hunion]
 
+/-! ## Finite extraction for the signed Step 1 branch -/
+
+/-- Labelled zero occurrences.  This finset counts repetitions by source
+position and is the singleton-cell count in odd order. -/
+noncomputable def plusMinusZeroOccurrences (xs : List A) : Selection xs := by
+  classical
+  exact Finset.univ.filter fun i ↦ occurrenceValue xs i = 0
+
+@[simp]
+theorem mem_plusMinusZeroOccurrences_iff (xs : List A) (i : Occurrence xs) :
+    i ∈ plusMinusZeroOccurrences xs ↔ occurrenceValue xs i = 0 := by
+  classical
+  simp [plusMinusZeroOccurrences]
+
+/-- A possibly empty occurrence selection equipped with a signed sum zero.
+Unlike `HasNonemptyPlusMinusZeroSum`, this predicate is closed under disjoint
+union and therefore supports a maximal-cardinality argument. -/
+def IsPlusMinusZeroSelection (xs : List A) (I : Selection xs) : Prop :=
+  ∃ sign : Occurrence xs → PlusMinusSign,
+    ∑ i ∈ I, (sign i).act (occurrenceValue xs i) = 0
+
+theorem isPlusMinusZeroSelection_empty (xs : List A) :
+    IsPlusMinusZeroSelection xs ∅ := by
+  exact ⟨fun _ ↦ .positive, by simp⟩
+
+/-- Disjoint occurrence-level signed zero selections may be joined without
+identifying repeated source values. -/
+theorem IsPlusMinusZeroSelection.union
+    {xs : List A} {I J : Selection xs}
+    (hI : IsPlusMinusZeroSelection xs I)
+    (hJ : IsPlusMinusZeroSelection xs J) (hdis : Disjoint I J) :
+    IsPlusMinusZeroSelection xs (I ∪ J) := by
+  classical
+  obtain ⟨signI, hsumI⟩ := hI
+  obtain ⟨signJ, hsumJ⟩ := hJ
+  let sign : Occurrence xs → PlusMinusSign := fun i ↦
+    if i ∈ I then signI i else signJ i
+  refine ⟨sign, ?_⟩
+  rw [Finset.sum_union hdis]
+  have hleft : (∑ i ∈ I, (sign i).act (occurrenceValue xs i)) = 0 := by
+    calc
+      (∑ i ∈ I, (sign i).act (occurrenceValue xs i)) =
+          ∑ i ∈ I, (signI i).act (occurrenceValue xs i) := by
+            apply Finset.sum_congr rfl
+            intro i hi
+            simp [sign, hi]
+      _ = 0 := hsumI
+  have hright : (∑ i ∈ J, (sign i).act (occurrenceValue xs i)) = 0 := by
+    calc
+      (∑ i ∈ J, (sign i).act (occurrenceValue xs i)) =
+          ∑ i ∈ J, (signJ i).act (occurrenceValue xs i) := by
+            apply Finset.sum_congr rfl
+            intro i hi
+            have hiI : i ∉ I := by
+              intro hi'
+              exact Finset.disjoint_left.mp hdis hi' hi
+            simp [sign, hiI]
+      _ = 0 := hsumJ
+  rw [hleft, hright, add_zero]
+
+/-- Lift a signed zero sum from the value list of a labelled subselection
+back to its exact source positions. -/
+theorem exists_isPlusMinusZeroSelection_subset_of_occurrenceSubsequence
+    (xs : List A) (R : Selection xs)
+    (hzero : HasNonemptyPlusMinusZeroSum (occurrenceSubsequence xs R)) :
+    ∃ J : Selection xs,
+      J.Nonempty ∧ J ⊆ R ∧ J.card ≤ R.card ∧
+        IsPlusMinusZeroSelection xs J := by
+  classical
+  rcases hzero with ⟨I, hIne, sign, hsum⟩
+  let e : Occurrence (occurrenceSubsequence xs R) ↪ Occurrence xs :=
+    ⟨occurrenceSubsequenceSource xs R,
+      occurrenceSubsequenceSource_injective xs R⟩
+  let J : Selection xs := I.map e
+  letI : Nonempty (Occurrence (occurrenceSubsequence xs R)) :=
+    ⟨hIne.choose⟩
+  let sign' : Occurrence xs → PlusMinusSign := fun i ↦
+    sign (Function.invFun e i)
+  have hsign (i : Occurrence (occurrenceSubsequence xs R)) :
+      sign' (e i) = sign i := by
+    exact congrArg sign (Function.leftInverse_invFun e.injective i)
+  have hvalue (i : Occurrence (occurrenceSubsequence xs R)) :
+      occurrenceValue xs (e i) =
+        occurrenceValue (occurrenceSubsequence xs R) i := by
+    exact (occurrenceValue_occurrenceSubsequence xs R i).symm
+  refine ⟨J, ?_, ?_, ?_, ?_⟩
+  · simpa [J] using hIne
+  · intro j hj
+    rcases Finset.mem_map.mp hj with ⟨i, _hi, rfl⟩
+    exact occurrenceSubsequenceSource_mem xs R i
+  · rw [Finset.card_map]
+    calc
+      I.card ≤ (Finset.univ : Selection (occurrenceSubsequence xs R)).card :=
+        Finset.card_le_card (Finset.subset_univ I)
+      _ = (occurrenceSubsequence xs R).length := by simp
+      _ = R.card := by simp [occurrenceSubsequence]
+  · refine ⟨sign', ?_⟩
+    simpa [J, Finset.sum_map, hsign, hvalue] using hsum
+
+/-- A zero occurrence selection has signed sum zero with every sign positive. -/
+theorem isPlusMinusZeroSelection_of_subset_zeroOccurrences
+    {xs : List A} {I : Selection xs}
+    (hI : I ⊆ plusMinusZeroOccurrences xs) :
+    IsPlusMinusZeroSelection xs I := by
+  refine ⟨fun _ ↦ .positive, ?_⟩
+  apply Finset.sum_eq_zero
+  intro i hi
+  have hizero : occurrenceValue xs i = 0 :=
+    (mem_plusMinusZeroOccurrences_iff xs i).1 (hI hi)
+  simp [PlusMinusSign.act, hizero]
+
+/-- Convert a zero-sum selection of exact cardinality into the manuscript's
+positive/negative occurrence split via the already proved signed-block
+spectrum equivalence. -/
+theorem hasPlusMinusSumOfCard_zero_of_isPlusMinusZeroSelection
+    {xs : List A} {I : Selection xs} {n : ℕ}
+    (hI : IsPlusMinusZeroSelection xs I) (hcard : I.card = n) :
+    Nonempty (HasPlusMinusSumOfCard xs n 0) := by
+  classical
+  obtain ⟨sign, hsum⟩ := hI
+  let choice : PlusMinusSetpartitionChoice xs n 0 := {
+    selected := I
+    card_selected := hcard
+    chosenValue := fun i ↦ (sign i).act (occurrenceValue xs i)
+    chosenValue_mem := by
+      intro i _hi
+      cases sign i <;>
+        simp [plusMinusOccurrenceBlock, plusMinusValueBlock,
+          PlusMinusSign.act]
+    sum_chosen := hsum
+  }
+  have hmem : 0 ∈ plusMinusSetpartitionSpectrum xs n :=
+    (mem_plusMinusSetpartitionSpectrum_iff xs n 0).2 ⟨choice⟩
+  rw [plusMinusSetpartitionSpectrum_eq_plusMinusExactSpectrum] at hmem
+  exact (mem_plusMinusExactSpectrum_iff xs n 0).1 hmem
+
+/-- Signed Step 1 in the high-zero-multiplicity branch.  A maximum-cardinality
+signed zero selection among the nonzero occurrences must reach `n-z`: if it
+did not, `d` remaining occurrences would supply another nonempty Davenport
+block, and `z ≥ d` keeps the enlarged union below `n`.  Zero occurrences then
+pad the result to exactly `n`. -/
+theorem hasPlusMinusSumOfCard_zero_of_many_zeroOccurrences
+    (xs : List A) (n d : ℕ)
+    (hD : PlusMinusDavenportAtMost A d)
+    (hlen : n + d - 1 ≤ xs.length)
+    (hz : d ≤ (plusMinusZeroOccurrences xs).card) :
+    Nonempty (HasPlusMinusSumOfCard xs n 0) := by
+  classical
+  let Z : Selection xs := plusMinusZeroOccurrences xs
+  let N : Selection xs := Finset.univ \ Z
+  have hZcard : Z.card ≤ xs.length := by
+    simpa using Finset.card_le_card (Finset.subset_univ Z)
+  have hz' : d ≤ Z.card := by simpa [Z] using hz
+  have hNcard : N.card = xs.length - Z.card := by
+    dsimp only [N]
+    rw [Finset.card_sdiff]
+    simp
+  have hd : 1 ≤ d := by
+    by_contra hd0
+    have hdEq : d = 0 := Nat.eq_zero_of_not_pos hd0
+    have hempty := hD ([] : List A) (by simp [hdEq])
+    rcases hempty with ⟨I, ⟨i, _hi⟩, _sign, _hsum⟩
+    exact Fin.elim0 i
+  let good : Finset (Selection xs) := Finset.univ.filter fun I ↦
+    I ⊆ N ∧ I.card ≤ n ∧ IsPlusMinusZeroSelection xs I
+  have hemptyGood : (∅ : Selection xs) ∈ good := by
+    simp [good, isPlusMinusZeroSelection_empty]
+  obtain ⟨I, hIgood, hImax⟩ := Finset.exists_max_image good
+    (fun J ↦ J.card) ⟨∅, hemptyGood⟩
+  have hIsub : I ⊆ N := (Finset.mem_filter.mp hIgood).2.1
+  have hIcardN : I.card ≤ n := (Finset.mem_filter.mp hIgood).2.2.1
+  have hIzero : IsPlusMinusZeroSelection xs I :=
+    (Finset.mem_filter.mp hIgood).2.2.2
+  have hIlarge : n - Z.card ≤ I.card := by
+    by_contra hnot
+    have hIsmall : I.card < n - Z.card := Nat.lt_of_not_ge hnot
+    let R : Selection xs := N \ I
+    have hRcard : d ≤ R.card := by
+      have hcard : R.card = N.card - I.card := by
+        dsimp only [R]
+        rw [Finset.card_sdiff, Finset.inter_eq_left.mpr hIsub]
+      rw [hcard, hNcard]
+      omega
+    obtain ⟨Rd, hRdsub, hRdcard⟩ :=
+      Finset.exists_subset_card_eq (s := R) hRcard
+    have htlen : (occurrenceSubsequence xs Rd).length = d := by
+      simpa [occurrenceSubsequence] using hRdcard
+    have hzeroSub :
+        HasNonemptyPlusMinusZeroSum (occurrenceSubsequence xs Rd) :=
+      hD (occurrenceSubsequence xs Rd) htlen
+    obtain ⟨J, hJne, hJsubRd, hJcard, hJzero⟩ :=
+      exists_isPlusMinusZeroSelection_subset_of_occurrenceSubsequence
+        xs Rd hzeroSub
+    have hJsubR : J ⊆ R := hJsubRd.trans hRdsub
+    have hJsubN : J ⊆ N := by
+      intro j hj
+      exact (Finset.mem_sdiff.mp (hJsubR hj)).1
+    have hdis : Disjoint I J := by
+      rw [Finset.disjoint_left]
+      intro j hjI hjJ
+      exact (Finset.mem_sdiff.mp (hJsubR hjJ)).2 hjI
+    have hUnionSub : I ∪ J ⊆ N := Finset.union_subset hIsub hJsubN
+    have hJcardD : J.card ≤ d := hJcard.trans_eq hRdcard
+    have hUnionCard : (I ∪ J).card ≤ n := by
+      rw [Finset.card_union_of_disjoint hdis]
+      omega
+    have hUnionZero : IsPlusMinusZeroSelection xs (I ∪ J) :=
+      hIzero.union hJzero hdis
+    have hUnionGood : I ∪ J ∈ good := by
+      simp only [good, Finset.mem_filter, Finset.mem_univ, true_and]
+      exact ⟨hUnionSub, hUnionCard, hUnionZero⟩
+    have hmaxUnion : (I ∪ J).card ≤ I.card := hImax _ hUnionGood
+    rw [Finset.card_union_of_disjoint hdis] at hmaxUnion
+    have hJpos : 0 < J.card := Finset.card_pos.mpr hJne
+    omega
+  let k := n - I.card
+  have hkZ : k ≤ Z.card := by
+    dsimp only [k]
+    omega
+  obtain ⟨F, hFsub, hFcard⟩ :=
+    Finset.exists_subset_card_eq (s := Z) hkZ
+  have hdisIF : Disjoint I F := by
+    rw [Finset.disjoint_left]
+    intro i hiI hiF
+    have hiN := hIsub hiI
+    exact (Finset.mem_sdiff.mp hiN).2 (hFsub hiF)
+  have hFzero : IsPlusMinusZeroSelection xs F :=
+    isPlusMinusZeroSelection_of_subset_zeroOccurrences hFsub
+  have hUnionZero : IsPlusMinusZeroSelection xs (I ∪ F) :=
+    hIzero.union hFzero hdisIF
+  have hUnionCard : (I ∪ F).card = n := by
+    rw [Finset.card_union_of_disjoint hdisIF, hFcard]
+    dsimp only [k]
+    omega
+  exact hasPlusMinusSumOfCard_zero_of_isPlusMinusZeroSelection
+    hUnionZero hUnionCard
+
 /-- Canonical finite instances for subgroup carrier types used throughout the
 strict-subgroup scheduler. -/
 noncomputable local instance subgroupFintype (K : AddSubgroup A) : Fintype K :=
@@ -450,18 +687,6 @@ theorem plusMinusOccurrenceBlock_eq_singleton_iff_of_natCard_odd
   simpa [plusMinusOccurrenceBlock] using
     plusMinusValueBlock_eq_singleton_self_iff_of_natCard_odd
       hodd (occurrenceValue xs i)
-
-/-- Labelled zero occurrences.  This finset counts repetitions by source
-position and is the singleton-cell count in odd order. -/
-noncomputable def plusMinusZeroOccurrences (xs : List A) : Selection xs := by
-  classical
-  exact Finset.univ.filter fun i ↦ occurrenceValue xs i = 0
-
-@[simp]
-theorem mem_plusMinusZeroOccurrences_iff (xs : List A) (i : Occurrence xs) :
-    i ∈ plusMinusZeroOccurrences xs ↔ occurrenceValue xs i = 0 := by
-  classical
-  simp [plusMinusZeroOccurrences]
 
 /-- Convert paired-layer structural evidence to the exact occurrence-labelled
 concentration record used by the manuscript. -/
@@ -830,6 +1055,69 @@ theorem plusMinusCorollary13At_of_stabilizerQuotientSource
     obtain ⟨hgmoA⟩ := hpairedA.toGMOConcentration
     exact Or.inr
       (corollary13Concentration_of_plusMinusGMOConcentration hgmoA)
+
+/-- Step 5 for the prescribed target.  A quotient exact-`n` signed sum lifts
+to some ambient representative `y`.  Its difference from `n • z`, for a
+section lift `z` of the quotient target, lies in the spectrum stabilizer;
+translation invariance therefore replaces `y` by the literal target
+`n • z`. -/
+theorem plusMinusCorollary12At_of_stabilizerQuotientSource
+    (xs : List A) (n d : ℕ)
+    (hn : Nat.card A ≤ n)
+    (hD : PlusMinusDavenportAtMost A d)
+    (hlen : n + d - 1 ≤ xs.length)
+    (L : AddSubgroup A)
+    (hL : L = plusMinusSpectrumStabilizer xs n)
+    (hsourceQ : PlusMinusGMOCorollary12Source (A ⧸ L)) :
+    PlusMinusGMOCorollary12At xs n := by
+  classical
+  have hd : 1 ≤ d := by
+    by_contra hnot
+    have hd0 : d = 0 := by omega
+    subst d
+    rcases hD [] rfl with ⟨I, ⟨i, _hi⟩, _sign, _hsum⟩
+    exact Fin.elim0 i
+  have hnlen : n ≤ xs.length := by omega
+  have hQcard : Nat.card (A ⧸ L) ≤ Nat.card A :=
+    Nat.le_of_dvd Nat.card_pos L.card_quotient_dvd_card
+  have hQn : Nat.card (A ⧸ L) ≤ n := hQcard.trans hn
+  have hQD : PlusMinusDavenportAtMost (A ⧸ L) d :=
+    plusMinusDavenportAtMost_quotient L hD
+  have hQlen : n + d - 1 ≤
+      (xs.map (QuotientAddGroup.mk' L)).length := by simpa using hlen
+  obtain ⟨q0, hq0⟩ := hsourceQ
+    (xs.map (QuotientAddGroup.mk' L)) n d hQn hQD hQlen
+  have hqmem : n • q0 ∈ plusMinusExactSpectrum
+      (xs.map (QuotientAddGroup.mk' L)) n :=
+    (mem_plusMinusExactSpectrum_iff _ _ _).2 hq0
+  rw [← image_plusMinusExactSpectrum_quotient xs n L] at hqmem
+  obtain ⟨y, hy, hyq⟩ := Finset.mem_image.mp hqmem
+  let z : A := quotientAddSection L q0
+  have hqz : QuotientAddGroup.mk' L z = q0 := by
+    simpa [z] using quotientAddSection_mk L q0
+  have hdiffL : n • z - y ∈ L := by
+    apply QuotientAddGroup.eq_iff_sub_mem.mp
+    calc
+      QuotientAddGroup.mk' L (n • z) = n • QuotientAddGroup.mk' L z := by
+        rw [map_nsmul]
+      _ = n • q0 := by rw [hqz]
+      _ = QuotientAddGroup.mk' L y := hyq.symm
+  let S := plusMinusExactSpectrum xs n
+  have hSnonempty : S.Nonempty := by
+    simpa [S] using plusMinusExactSpectrum_nonempty xs n hnlen
+  have hdiffStab : n • z - y ∈ AddAction.stabilizer A (S : Set A) := by
+    simpa [S, hL, plusMinusSpectrumStabilizer] using hdiffL
+  have hdiffFin : n • z - y ∈ S.addStab := by
+    rw [← Finset.mem_coe, Finset.coe_addStab hSnonempty]
+    exact hdiffStab
+  have htranslate := (Finset.mem_addStab hSnonempty).mp hdiffFin
+  have htarget : n • z ∈ S := by
+    have hv : (n • z - y) +ᵥ y ∈ (n • z - y) +ᵥ S :=
+      Finset.vadd_mem_vadd_finset (by simpa [S] using hy)
+    rw [htranslate] at hv
+    simpa [vadd_eq_add, S] using hv
+  exact ⟨z, (mem_plusMinusExactSpectrum_iff xs n (n • z)).1
+    (by simpa [S] using htarget)⟩
 
 /-- The DGM inequality for the literal signed occurrence setpartition, with
 the canonical classical equality decision hidden in a proposition wrapper. -/
@@ -1474,6 +1762,77 @@ theorem oddSignedCappedMultiplicityEstimate
   simp only [z, r] at hpair
   omega
 
+/-- The small-zero half of odd Step 6 is literally the full-spectrum branch.
+This formulation is separated out because Corollary 1.2 consumes fullness,
+whereas Corollary 1.3 packages it in a disjunction. -/
+theorem plusMinusExactSpectrum_eq_univ_of_odd_trivialStab_smallZero
+    {B : Type u} [AddCommGroup B] [Fintype B]
+    (hDGM : FiniteDGMSetpartitionInput B)
+    (xs : List B) (n d : ℕ)
+    (hodd : Odd (Nat.card B))
+    (hn : Nat.card B ≤ n)
+    (hD : PlusMinusDavenportAtMost B d)
+    (hlen : n + d - 1 ≤ xs.length)
+    (hstab : plusMinusSpectrumStabilizer xs n = ⊥)
+    (hsmall : ¬ xs.length - Nat.card B + 2 ≤
+      (plusMinusZeroOccurrences xs).card) :
+    plusMinusExactSpectrum xs n = Finset.univ := by
+  classical
+  let P := plusMinusOccurrenceSetpartition xs
+  let T := layerSubsumSpectrum P n
+  have hd : 1 ≤ d := one_le_of_plusMinusDavenportAtMost hD
+  have hnlen : n ≤ xs.length := by omega
+  have hTstab : T.addStab = {0} := by
+    have hTeq : T = plusMinusExactSpectrum xs n := by
+      simpa [T, P] using
+        (plusMinusExactSpectrum_eq_layerSubsumSpectrum xs n).symm
+    rw [hTeq]
+    ext x
+    rw [← Finset.mem_coe,
+      Finset.coe_addStab (plusMinusExactSpectrum_nonempty xs n hnlen)]
+    change x ∈ AddAction.stabilizer B
+        (plusMinusExactSpectrum xs n : Set B) ↔ x ∈ ({0} : Finset B)
+    rw [← plusMinusSpectrumStabilizer, hstab]
+    simp
+  have hzsmall : (plusMinusZeroOccurrences xs).card ≤
+      xs.length - Nat.card B + 1 := by omega
+  have hcap := oddSignedCappedMultiplicityEstimate xs n hodd hTstab hnlen
+  have hE : n + Nat.card B - 1 ≤
+      min n (plusMinusZeroOccurrences xs).card +
+        2 * min n (xs.length - (plusMinusZeroOccurrences xs).card) := by
+    by_cases hzN : (plusMinusZeroOccurrences xs).card ≤ n
+    · rw [min_eq_right hzN]
+      by_cases hrN : xs.length - (plusMinusZeroOccurrences xs).card ≤ n
+      · rw [min_eq_right hrN]
+        omega
+      · rw [min_eq_left (Nat.le_of_not_ge hrN)]
+        omega
+    · rw [min_eq_left (Nat.le_of_not_ge hzN)]
+      by_cases hrN : xs.length - (plusMinusZeroOccurrences xs).card ≤ n
+      · rw [min_eq_right hrN]
+        omega
+      · rw [min_eq_left (Nat.le_of_not_ge hrN)]
+        omega
+  have hbound := dgmSetpartitionBound_plusMinusOccurrenceSetpartition
+    hDGM xs n (Nat.card_pos.trans_le hn) hnlen
+  unfold PlusMinusOccurrenceDGMSetpartitionBound at hbound
+  unfold DGMSetpartitionBound at hbound
+  dsimp only at hbound
+  have hstabCard :
+      (layerSubsumSpectrum (plusMinusOccurrenceSetpartition xs) n).addStab.card = 1 := by
+    rw [hTstab]
+    simp
+  rw [hstabCard, Nat.mul_one] at hbound
+  have hTcard : Nat.card B ≤ T.card := by
+    have hcapped : n + Nat.card B - 1 ≤
+        stabilizerDgmCappedMultiplicitySum T P n := hE.trans hcap
+    dsimp only [T, P]
+    dsimp only [T, P] at hcapped
+    omega
+  rw [plusMinusExactSpectrum_eq_layerSubsumSpectrum]
+  apply Finset.eq_of_subset_of_card_le (Finset.subset_univ _)
+  simpa [T, P, Nat.card_eq_fintype_card] using hTcard
+
 /-- General DGM plus the elementary odd signed-cell capped estimate closes
 the entire trivial-stabilizer Step 6.  If enough zero cells exist, `K = 0`
 is the required paired concentration.  Otherwise the DGM lower bound reaches
@@ -1573,6 +1932,13 @@ theorem oddPlusMinusTrivialStabilizerStep_of_cappedEstimate
       apply Finset.eq_of_subset_of_card_le (Finset.subset_univ _)
       simpa [Nat.card_eq_fintype_card] using hTcard
 
+/-- Odd-order Step 6 with its last capped-incidence boundary discharged. -/
+theorem oddPlusMinusTrivialStabilizerStep
+    {B : Type u} [AddCommGroup B] [Fintype B] :
+    OddPlusMinusTrivialStabilizerStep B :=
+  oddPlusMinusTrivialStabilizerStep_of_cappedEstimate
+    oddSignedCappedMultiplicityEstimate
+
 /-- Quotienting by a nontrivial finite subgroup strictly lowers cardinality.
 This is the well-founded measure needed for the Step 5 quotient call. -/
 theorem natCard_quotient_lt_of_bot_lt
@@ -1638,6 +2004,81 @@ theorem plusMinusCorollary13Source_of_oddStep6
                 xs n d hn hDC hlen L rfl hsourceQ
   exact outer (Nat.card B) B rfl hodd
 
+/-- Odd-order prescribed-target source theorem.  The same cardinal
+strong-induction handles proper stabilizers through quotient target lifting.
+At trivial stabilizer, small zero multiplicity forces fullness by DGM, while
+large zero multiplicity is the proved maximal signed-zero extraction plus
+zero padding. -/
+theorem plusMinusCorollary12Source_of_oddDGM
+    (hDGM : ∀ (C : Type u) [AddCommGroup C] [Fintype C],
+      FiniteDGMSetpartitionInput C)
+    (B : Type u) [AddCommGroup B] [Fintype B]
+    (hodd : Odd (Nat.card B)) :
+    PlusMinusGMOCorollary12Source B := by
+  have outer : ∀ m : ℕ,
+      ∀ (C : Type u) [AddCommGroup C] [Fintype C],
+        Nat.card C = m → Odd m → PlusMinusGMOCorollary12Source C := by
+    intro m
+    induction m using Nat.strong_induction_on with
+    | h m ih =>
+        intro C _instC _finC hcardC hoddm
+        have hoddC : Odd (Nat.card C) := by
+          rw [hcardC]
+          exact hoddm
+        intro xs n d hn hDC hlen
+        by_cases hsub : Subsingleton C
+        · exact (@plusMinusGMOSourcePackage_of_subsingleton
+            C _instC _finC hsub).1 xs n d hn hDC hlen
+        · let L : AddSubgroup C := plusMinusSpectrumStabilizer xs n
+          have hd : 1 ≤ d := one_le_of_plusMinusDavenportAtMost hDC
+          have hnlen : n ≤ xs.length := by omega
+          by_cases htop : L = ⊤
+          · have hfull := plusMinusExactSpectrum_eq_univ_of_stabilizer_eq_top
+                xs n hnlen (by simpa [L] using htop)
+            refine ⟨0, (mem_plusMinusExactSpectrum_iff xs n (n • (0 : C))).1 ?_⟩
+            rw [hfull]
+            simp
+          · by_cases hbot : L = ⊥
+            · by_cases hlarge : xs.length - Nat.card C + 2 ≤
+                  (plusMinusZeroOccurrences xs).card
+              · have hzD : d ≤ (plusMinusZeroOccurrences xs).card := by
+                  omega
+                have hzero := hasPlusMinusSumOfCard_zero_of_many_zeroOccurrences
+                  xs n d hDC hlen hzD
+                refine ⟨0, ?_⟩
+                simpa using hzero
+              · have hfull :=
+                  plusMinusExactSpectrum_eq_univ_of_odd_trivialStab_smallZero
+                    (hDGM C) xs n d hoddC hn hDC hlen
+                    (by simpa [L] using hbot) hlarge
+                refine ⟨0,
+                  (mem_plusMinusExactSpectrum_iff xs n (n • (0 : C))).1 ?_⟩
+                rw [hfull]
+                simp
+            · have hLpos : ⊥ < L := bot_lt_iff_ne_bot.mpr hbot
+              have hqcardlt : Nat.card (C ⧸ L) < m := by
+                rw [← hcardC]
+                exact natCard_quotient_lt_of_bot_lt L hLpos
+              have hqodd : Odd (Nat.card (C ⧸ L)) :=
+                odd_natCard_quotient_of_odd_natCard L hoddC
+              have hsourceQ : PlusMinusGMOCorollary12Source (C ⧸ L) :=
+                ih (Nat.card (C ⧸ L)) hqcardlt (C ⧸ L) rfl hqodd
+              exact plusMinusCorollary12At_of_stabilizerQuotientSource
+                xs n d hn hDC hlen L rfl hsourceQ
+  exact outer (Nat.card B) B rfl hodd
+
+/-- The exact odd-order `{±1}` source package needed by the 13-page draft,
+conditional only on the separately formalized General DGM input. -/
+theorem plusMinusGMOSourcePackage_of_oddDGM
+    (hDGM : ∀ (C : Type u) [AddCommGroup C] [Fintype C],
+      FiniteDGMSetpartitionInput C)
+    (B : Type u) [AddCommGroup B] [Fintype B]
+    (hodd : Odd (Nat.card B)) :
+    PlusMinusGMOSourcePackage B := by
+  exact ⟨plusMinusCorollary12Source_of_oddDGM hDGM B hodd,
+    plusMinusCorollary13Source_of_oddStep6 hDGM
+      (fun _C _group _finite ↦ oddPlusMinusTrivialStabilizerStep) B hodd⟩
+
 /-- The odd-order structural provider, with all subgroup instances obtained
 from the same cross-type induction rather than from the insufficient fixed
 ambient subgroup scheduler. -/
@@ -1659,6 +2100,37 @@ theorem oddPlusMinusStructuralProviders_of_step6
   exact plusMinusGMOStructuralProvider_of_corollary13Source
     (plusMinusCorollary13Source_of_oddStep6 hDGM hstep6 K hoddK)
 
+/-- For odd finite groups, General DGM now supplies the ambient and every
+subgroup structural GMO provider with no signed-Theorem-1.1 local interface
+left over.  Oddness passes to subgroups and quotients inside the proved
+cross-type scheduler. -/
+theorem oddPlusMinusStructuralProviders
+    (hDGM : ∀ (C : Type u) [AddCommGroup C] [Fintype C],
+      FiniteDGMSetpartitionInput C)
+    (B : Type u) [AddCommGroup B] [Fintype B]
+    (hodd : Odd (Nat.card B)) :
+    PlusMinusGMOStructuralProvider B ∧
+      ∀ K : AddSubgroup B, PlusMinusGMOStructuralProvider K :=
+  oddPlusMinusStructuralProviders_of_step6 hDGM
+    (fun _C _group _finite ↦ oddPlusMinusTrivialStabilizerStep)
+    B hodd
+
+/-- Final provider elimination for the odd-order specialization: prescribed
+signed target, ambient structural GMO, and structural GMO in every subgroup.
+No ordinary Davenport shortcut is used. -/
+theorem oddPlusMinusGMOProviders
+    (hDGM : ∀ (C : Type u) [AddCommGroup C] [Fintype C],
+      FiniteDGMSetpartitionInput C)
+    (B : Type u) [AddCommGroup B] [Fintype B]
+    (hodd : Odd (Nat.card B)) :
+    WeightedGMOPrescribedLengthProvider B ∧
+      PlusMinusGMOStructuralProvider B ∧
+      (∀ K : AddSubgroup B, PlusMinusGMOStructuralProvider K) := by
+  have hpackage := plusMinusGMOSourcePackage_of_oddDGM hDGM B hodd
+  have hstruct := oddPlusMinusStructuralProviders hDGM B hodd
+  exact ⟨weightedGMOPrescribedLengthProvider_of_corollary12Source hpackage.1,
+    hstruct.1, hstruct.2⟩
+
 end GaoLean
 
 #print axioms GaoLean.theorem11_singleLayer_membership_is_not_paired_containment
@@ -1675,3 +2147,12 @@ end GaoLean
 #print axioms GaoLean.plusMinusGMOSourcePackage_of_theorem11StepEndpoints
 #print axioms GaoLean.plusMinusGMOSources_of_theorem11Induction
 #print axioms GaoLean.plusMinusGMOProviders_of_theorem11Induction
+#print axioms GaoLean.hasPlusMinusSumOfCard_zero_of_many_zeroOccurrences
+#print axioms GaoLean.plusMinusCorollary12At_of_stabilizerQuotientSource
+#print axioms GaoLean.oddSignedCappedMultiplicityEstimate
+#print axioms GaoLean.plusMinusExactSpectrum_eq_univ_of_odd_trivialStab_smallZero
+#print axioms GaoLean.oddPlusMinusTrivialStabilizerStep
+#print axioms GaoLean.plusMinusCorollary12Source_of_oddDGM
+#print axioms GaoLean.plusMinusGMOSourcePackage_of_oddDGM
+#print axioms GaoLean.oddPlusMinusStructuralProviders
+#print axioms GaoLean.oddPlusMinusGMOProviders

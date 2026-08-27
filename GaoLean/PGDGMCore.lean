@@ -1814,6 +1814,208 @@ theorem dgmXiTwoGain_add_tail [Fintype A]
   exact Nat.sub_add_cancel
     (dgmCappedMultiplicitySum_tail_le_inter_union K B C P k)
 
+/-- The contribution of one quotient coset to the two-layer `Ξ` gain.  It is
+recorded pointwise because the source proof compares these contributions
+under a subgroup refinement before summing them. -/
+noncomputable def dgmXiLocalTwoGain
+    (K : AddSubgroup A) (B C : Finset A) (P : List (Finset A))
+    (k : ℕ) (q : A ⧸ K) : ℕ :=
+  min (k + 2)
+      (quotientLayerMultiplicity K (dgmInterUnionLayers B C P) q) -
+    min k (quotientLayerMultiplicity K P q)
+
+/-- Two additional layers raise a quotient-layer multiplicity by at most two.
+This deliberately passes through the original two leading layers: the
+intersection--union operation can only decrease their incidence count. -/
+theorem quotientLayerMultiplicity_inter_union_le_tail_add_two
+    (K : AddSubgroup A) (B C : Finset A) (P : List (Finset A))
+    (q : A ⧸ K) :
+    quotientLayerMultiplicity K (dgmInterUnionLayers B C P) q ≤
+      quotientLayerMultiplicity K P q + 2 := by
+  have htransform := quotientLayerMultiplicity_inter_union_le K B C P q
+  have hcons : quotientLayerMultiplicity K (B :: C :: P) q ≤
+      quotientLayerMultiplicity K P q + 2 := by
+    classical
+    by_cases hB : q ∈ quotientLayer K B
+    · rw [quotientLayerMultiplicity_cons_of_mem K B (C :: P) q hB]
+      by_cases hC : q ∈ quotientLayer K C
+      · rw [quotientLayerMultiplicity_cons_of_mem K C P q hC]
+        omega
+      · rw [quotientLayerMultiplicity_cons_of_not_mem K C P q hC]
+        omega
+    · rw [quotientLayerMultiplicity_cons_of_not_mem K B (C :: P) q hB]
+      by_cases hC : q ∈ quotientLayer K C
+      · rw [quotientLayerMultiplicity_cons_of_mem K C P q hC]
+        omega
+      · rw [quotientLayerMultiplicity_cons_of_not_mem K C P q hC]
+        omega
+  exact htransform.trans hcons
+
+/-- Every quotient coset contributes between zero and two to the two-layer
+gain.  This is the formal counterpart of the source observation that the
+coarse contribution is one of `0`, `|H|`, `2|H|`. -/
+theorem dgmXiLocalTwoGain_le_two
+    (K : AddSubgroup A) (B C : Finset A) (P : List (Finset A))
+    (k : ℕ) (q : A ⧸ K) :
+    dgmXiLocalTwoGain K B C P k q ≤ 2 := by
+  let t := quotientLayerMultiplicity K P q
+  let a := quotientLayerMultiplicity K (dgmInterUnionLayers B C P) q
+  have hat : a ≤ t + 2 := by
+    simpa [a, t] using
+      quotientLayerMultiplicity_inter_union_le_tail_add_two K B C P q
+  have hmin : min (k + 2) a ≤ min k t + 2 := by
+    rcases le_total t k with htk | hkt
+    · rw [min_eq_right htk]
+      exact (min_le_right (k + 2) a).trans hat
+    · rw [min_eq_left hkt]
+      exact min_le_left _ _
+  unfold dgmXiLocalTwoGain
+  change min (k + 2) a - min k t ≤ 2
+  omega
+
+/-- Expose the capped multiplicity sum using a caller-supplied quotient
+`Fintype`.  The definition intentionally manufactures this instance from
+finiteness, so this bridge removes an otherwise irrelevant instance mismatch
+in subsequent quotient-fiber sums. -/
+theorem dgmCappedMultiplicitySum_eq_fintype_sum
+    (K : AddSubgroup A) [Fintype (A ⧸ K)]
+    (P : List (Finset A)) (n : ℕ) :
+    dgmCappedMultiplicitySum K P n =
+      ∑ q : A ⧸ K, min n (quotientLayerMultiplicity K P q) := by
+  classical
+  rw [dgmCappedMultiplicitySum]
+  congr 1
+  ext q
+  simp
+
+/-- The aggregate two-layer gain is exactly the sum of its quotient-coset
+contributions; in particular, the subtraction in its definition loses no
+information. -/
+theorem dgmXiTwoGain_eq_sum_localGain [Fintype A]
+    (K : AddSubgroup A) [Fintype (A ⧸ K)] (B C : Finset A)
+    (P : List (Finset A)) (k : ℕ) :
+    dgmXiTwoGain K B C P k =
+      ∑ q : A ⧸ K, dgmXiLocalTwoGain K B C P k q := by
+  classical
+  have hsum :
+      (∑ q : A ⧸ K, dgmXiLocalTwoGain K B C P k q) +
+          dgmCappedMultiplicitySum K P k =
+        dgmCappedMultiplicitySum K (dgmInterUnionLayers B C P) (k + 2) := by
+    rw [dgmCappedMultiplicitySum_eq_fintype_sum,
+      dgmCappedMultiplicitySum_eq_fintype_sum]
+    rw [← Finset.sum_add_distrib]
+    apply Finset.sum_congr rfl
+    intro q _
+    unfold dgmXiLocalTwoGain
+    exact Nat.sub_add_cancel (min_le_min (by omega) (by
+      simpa [dgmInterUnionLayers] using
+        quotientLayerMultiplicity_le_cons_cons K (B ∩ C) (B ∪ C) P q))
+  have haggregate := dgmXiTwoGain_add_tail K B C P k
+  omega
+
+/-! ### Quotient refinement for the strict weighted `Ξ` claim -/
+
+/-- The canonical refinement map `A/L → A/H` for `L ≤ H`. -/
+def dgmQuotientRefinementMap (L H : AddSubgroup A) (hLH : L ≤ H) :
+    A ⧸ L →+ A ⧸ H :=
+  QuotientAddGroup.map L H (AddMonoidHom.id A) (by simpa using hLH)
+
+@[simp]
+theorem dgmQuotientRefinementMap_mk
+    (L H : AddSubgroup A) (hLH : L ≤ H) (x : A) :
+    dgmQuotientRefinementMap L H hLH (x : A ⧸ L) = (x : A ⧸ H) := by
+  rfl
+
+/-- A layer incidence modulo the finer subgroup maps to a layer incidence
+modulo the coarser subgroup. -/
+theorem quotientLayer_mem_map_of_le
+    (L H : AddSubgroup A) (hLH : L ≤ H) (D : Finset A)
+    {q : A ⧸ L} (hq : q ∈ quotientLayer L D) :
+    dgmQuotientRefinementMap L H hLH q ∈ quotientLayer H D := by
+  obtain ⟨x, hx, rfl⟩ := (mem_quotientLayer_iff L D q).1 hq
+  exact (mem_quotientLayer_iff H D _).2 ⟨x, hx, rfl⟩
+
+/-- Pointwise layer multiplicity cannot decrease after quotienting by the
+larger subgroup. -/
+theorem quotientLayerMultiplicity_le_map_of_le
+    (L H : AddSubgroup A) (hLH : L ≤ H) (P : List (Finset A))
+    (q : A ⧸ L) :
+    quotientLayerMultiplicity L P q ≤
+      quotientLayerMultiplicity H P (dgmQuotientRefinementMap L H hLH q) := by
+  classical
+  induction P with
+  | nil => simp [quotientLayerMultiplicity]
+  | cons D P ih =>
+      by_cases hqD : q ∈ quotientLayer L D
+      · have hmapD := quotientLayer_mem_map_of_le L H hLH D hqD
+        rw [quotientLayerMultiplicity_cons_of_mem L D P q hqD,
+          quotientLayerMultiplicity_cons_of_mem H D P _ hmapD]
+        omega
+      · rw [quotientLayerMultiplicity_cons_of_not_mem L D P q hqD]
+        by_cases hmapD : dgmQuotientRefinementMap L H hLH q ∈
+            quotientLayer H D
+        · rw [quotientLayerMultiplicity_cons_of_mem H D P _ hmapD]
+          omega
+        · rw [quotientLayerMultiplicity_cons_of_not_mem H D P _ hmapD]
+          exact ih
+
+/-- The exact local hypotheses isolated in the source proof for either
+exceptional `H`-coset: the intersection layer misses it, the tail contributes
+at most `k` incidences, and the union layer hits it.  These are later derived
+from infeasibility of the transformed pattern. -/
+def DGMXiExceptionalCoset
+    (H : AddSubgroup A) (B C : Finset A) (P : List (Finset A))
+    (k : ℕ) (b : A) : Prop :=
+  (b : A ⧸ H) ∉ quotientLayer H (B ∩ C) ∧
+    quotientLayerMultiplicity H P (b : A ⧸ H) ≤ k ∧
+      (b : A ⧸ H) ∈ quotientLayer H (B ∪ C)
+
+/-- Under the source's exceptional-coset hypotheses, the coarse local
+two-layer gain is exactly one. -/
+theorem dgmXiLocalTwoGain_eq_one_of_exceptional
+    (H : AddSubgroup A) (B C : Finset A) (P : List (Finset A))
+    (k : ℕ) (b : A)
+    (hex : DGMXiExceptionalCoset H B C P k b) :
+    dgmXiLocalTwoGain H B C P k (b : A ⧸ H) = 1 := by
+  rcases hex with ⟨hinter, htail, hunion⟩
+  unfold dgmXiLocalTwoGain dgmInterUnionLayers
+  rw [quotientLayerMultiplicity_cons_of_not_mem H (B ∩ C)
+      ((B ∪ C) :: P) _ hinter,
+    quotientLayerMultiplicity_cons_of_mem H (B ∪ C) P _ hunion]
+  omega
+
+/-- In a fine `L`-coset lying over an exceptional `H`-coset, the local gain
+is the indicator of whether that fine coset meets the union of the two
+leading layers.  This is the pointwise heart of the weighted `Ξ` claim. -/
+theorem dgmXiLocalTwoGain_eq_indicator_of_refines_exceptional
+    (L H : AddSubgroup A) [DecidableEq (A ⧸ L)] (hLH : L ≤ H)
+    (B C : Finset A) (P : List (Finset A)) (k : ℕ) (b : A)
+    (hex : DGMXiExceptionalCoset H B C P k b)
+    (q : A ⧸ L)
+    (hq : dgmQuotientRefinementMap L H hLH q = (b : A ⧸ H)) :
+    dgmXiLocalTwoGain L B C P k q =
+      if q ∈ quotientLayer L (B ∪ C) then 1 else 0 := by
+  rcases hex with ⟨hinterH, htailH, hunionH⟩
+  have hinterL : q ∉ quotientLayer L (B ∩ C) := by
+    intro hinterL
+    apply hinterH
+    have hmap := quotientLayer_mem_map_of_le L H hLH (B ∩ C) hinterL
+    rwa [hq] at hmap
+  have htailL : quotientLayerMultiplicity L P q ≤ k := by
+    have hrefine := quotientLayerMultiplicity_le_map_of_le L H hLH P q
+    rw [hq] at hrefine
+    exact hrefine.trans htailH
+  unfold dgmXiLocalTwoGain dgmInterUnionLayers
+  rw [quotientLayerMultiplicity_cons_of_not_mem L (B ∩ C)
+      ((B ∪ C) :: P) q hinterL]
+  by_cases hunionL : q ∈ quotientLayer L (B ∪ C)
+  · rw [quotientLayerMultiplicity_cons_of_mem L (B ∪ C) P q hunionL,
+      if_pos hunionL]
+    omega
+  · rw [quotientLayerMultiplicity_cons_of_not_mem L (B ∪ C) P q hunionL,
+      if_neg hunionL]
+    omega
+
 /-- Source occurrences counted in one quotient coset. -/
 noncomputable def occurrenceQuotientMultiplicity
     [Fintype A] (xs : List A) (K : AddSubgroup A)
@@ -2008,6 +2210,48 @@ theorem stabilizerDgmCappedMultiplicitySum_one
       rw [← Finset.card_eq_sum_ite
         (s := stabilizerQuotientLayer T (layerUnion P))
         (t := Finset.univ) (Finset.subset_univ _)]
+
+theorem quotientLayer_eq_stabilizerQuotientLayer
+    (T B : Finset A) :
+    quotientLayer (AddAction.stabilizer A (T : Set A)) B =
+      stabilizerQuotientLayer T B := by
+  classical
+  ext q
+  simp [quotientLayer, stabilizerQuotientLayer]
+
+theorem quotientLayerMultiplicity_stabilizer_eq
+    (T : Finset A) (P : List (Finset A))
+    (q : A ⧸ AddAction.stabilizer A (T : Set A)) :
+    quotientLayerMultiplicity (AddAction.stabilizer A (T : Set A)) P q =
+      stabilizerLayerMultiplicity T P q := by
+  classical
+  induction P with
+  | nil => simp [quotientLayerMultiplicity, stabilizerLayerMultiplicity]
+  | cons B P ih =>
+      by_cases hq : q ∈ quotientLayer
+          (AddAction.stabilizer A (T : Set A)) B
+      · have hq' : q ∈ stabilizerQuotientLayer T B := by
+          rwa [quotientLayer_eq_stabilizerQuotientLayer T B] at hq
+        rw [quotientLayerMultiplicity_cons_of_mem _ B P q hq,
+          stabilizerLayerMultiplicity_cons_of_mem T B P q hq', ih]
+      · have hq' : q ∉ stabilizerQuotientLayer T B := by
+          rwa [← quotientLayer_eq_stabilizerQuotientLayer T B]
+        rw [quotientLayerMultiplicity_cons_of_not_mem _ B P q hq,
+          stabilizerLayerMultiplicity_cons_of_not_mem T B P q hq', ih]
+
+theorem dgmCappedMultiplicitySum_stabilizer_eq
+    [Fintype A] (T : Finset A) (P : List (Finset A)) (n : ℕ) :
+    dgmCappedMultiplicitySum (AddAction.stabilizer A (T : Set A)) P n =
+      stabilizerDgmCappedMultiplicitySum T P n := by
+  classical
+  letI : Fintype
+      (A ⧸ AddAction.stabilizer A (T : Set A)) :=
+    Fintype.ofFinite (A ⧸ AddAction.stabilizer A (T : Set A))
+  rw [dgmCappedMultiplicitySum, stabilizerDgmCappedMultiplicitySum]
+  simp only [quotientLayerMultiplicity_stabilizer_eq]
+  congr 1
+  ext q
+  simp
 
 /-- Frozen general DGM finite-setpartition statement.  This is the exact
 remaining target for arbitrary positive `n ≤ P.length`; defining the target
