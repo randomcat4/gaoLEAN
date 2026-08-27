@@ -4553,6 +4553,184 @@ theorem dgmEquationThree_threeSummand
   rw [hstab, card_dgmSubgroupFinset] at hk
   omega
 
+/-- The crossed strict-`Ξ` estimate before any divisibility rounding.  This
+is the literal strict numerical gate supplied by the convergent inequality,
+paper equation (3), and the unified exceptional-fiber estimate.  Keeping the
+missing union in the conclusion is what rules out both a common coarse coset
+and an empty crossed second component. -/
+theorem dgmCrossedStrictSlicesMissing_lt_of_threeSummand
+    [Fintype A] (L H : AddSubgroup A)
+    [Fintype (A ⧸ L)] [DecidableEq (A ⧸ L)]
+    [Fintype (A ⧸ H)] [DecidableEq (A ⧸ H)]
+    (hLH : L ≤ H) (B C : Finset A) (P : List (Finset A)) {k : ℕ}
+    (ν : QuotientPattern H (k + 2)) {b₁ b₂ : A}
+    (hb₁ : b₁ ∈ B) (hb₂ : b₂ ∈ C)
+    (νtail : QuotientPattern H k)
+    (hext : ν.IsTwoStepExtension b₁ b₂ νtail)
+    (htail : (patternSubsumSpectrum P νtail).Nonempty)
+    (hinfeasible : patternSubsumSpectrum
+      (dgmInterUnionLayers B C P) ν = ∅)
+    (hP : IsNonemptySetPartition P)
+    (hInter : (B ∩ C).Nonempty)
+    (S₁ S₂ D : Finset A)
+    (hstrict : D.card + Nat.card H *
+        (dgmCappedMultiplicitySum H
+          (dgmInterUnionLayers B C P) (k + 2) - (k + 2) + 1) <
+      Nat.card L *
+        (dgmCappedMultiplicitySum L
+          (dgmInterUnionLayers B C P) (k + 2) - (k + 2) + 1))
+    (hthree :
+      (S₁ + dgmSubgroupFinset L).card +
+          (S₂ + dgmSubgroupFinset L).card + Nat.card L *
+            (dgmCappedMultiplicitySum L P k - k + 1) ≤
+        D.card + 2 * Nat.card L + Nat.card H *
+          (dgmCappedMultiplicitySum H P k - k)) :
+    (S₁ + dgmSubgroupFinset L).card +
+        (S₂ + dgmSubgroupFinset L).card +
+        (dgmMissingPairCoset H L B C b₁ ∪
+          dgmMissingPairCoset H L B C b₂).card < Nat.card H := by
+  have hklen : k ≤ P.length :=
+    patternSubsumSpectrum_nonempty_weight_le_length P νtail htail
+  have hP' : IsNonemptySetPartition (dgmInterUnionLayers B C P) :=
+    dgmInterUnionLayers_nonempty B C P hInter hP
+  have hn' : k + 2 ≤ (dgmInterUnionLayers B C P).length := by
+    simpa [dgmInterUnionLayers] using Nat.add_le_add_right hklen 2
+  have hkTL := le_dgmCappedMultiplicitySum L P hP k hklen
+  have hkTH := le_dgmCappedMultiplicitySum H P hP k hklen
+  have hweightL := le_dgmCappedMultiplicitySum L
+    (dgmInterUnionLayers B C P) hP' (k + 2) hn'
+  have hweightH := le_dgmCappedMultiplicitySum H
+    (dgmInterUnionLayers B C P) hP' (k + 2) hn'
+  have hTLAL := dgmCappedMultiplicitySum_tail_le_inter_union
+    L B C P k
+  have hTHAH := dgmCappedMultiplicitySum_tail_le_inter_union
+    H B C P k
+  have hxi :=
+    weighted_dgmXiTwoGain_add_missingUnion_le_of_twoStep_infeasible_unified
+      L H hLH B C P ν hb₁ hb₂ νtail hext htail hinfeasible
+  apply dgmStrictXiArithmetic_threeSummand
+    (Nat.card L) (Nat.card H)
+    ((S₁ + dgmSubgroupFinset L).card +
+      (S₂ + dgmSubgroupFinset L).card)
+    D.card
+    ((dgmMissingPairCoset H L B C b₁ ∪
+      dgmMissingPairCoset H L B C b₂).card)
+    (dgmCappedMultiplicitySum L (dgmInterUnionLayers B C P) (k + 2))
+    (dgmCappedMultiplicitySum L P k)
+    (dgmCappedMultiplicitySum H (dgmInterUnionLayers B C P) (k + 2))
+    (dgmCappedMultiplicitySum H P k) k hkTL hkTH hweightL hweightH
+      hTLAL hTHAH hstrict hthree
+  simpa [dgmXiTwoGain] using hxi
+
+/-- The strict pre-rounding estimate cannot hold when the two exceptional
+representatives lie in the same coarse `H`-coset: in that case the one
+missing set together with the two displayed saturated slices covers a full
+`H`-coset. -/
+theorem dgmStrictSlicesMissing_false_of_quotient_eq
+    [Fintype A] (H L : AddSubgroup A) (hLH : L ≤ H)
+    (B C : Finset A) (b₁ b₂ : A)
+    (hsame : (b₁ : A ⧸ H) = (b₂ : A ⧸ H))
+    (hstrict :
+      (dgmSingleSliceSaturation H L B b₁).card +
+          (dgmSingleSliceSaturation H L C b₂).card +
+          (dgmMissingPairCoset H L B C b₁ ∪
+            dgmMissingPairCoset H L B C b₂).card < Nat.card H) :
+    False := by
+  have hC : dgmSingleSliceSaturation H L C b₁ =
+      dgmSingleSliceSaturation H L C b₂ := by
+    unfold dgmSingleSliceSaturation
+    rw [dgmCosetSlice_eq_of_quotient_eq H C hsame]
+  have hpair :
+      (dgmPairSliceSaturation H L B C b₁).card ≤
+        (dgmSingleSliceSaturation H L B b₁).card +
+          (dgmSingleSliceSaturation H L C b₂).card := by
+    rw [dgmPairSliceSaturation_eq_union, hC]
+    exact Finset.card_union_le _ _
+  have hfull := card_missing_add_pairSaturation H L hLH B C b₁
+  rw [dgmMissingPairCoset_union_eq_of_quotient_eq
+    H L B C hsame] at hstrict
+  omega
+
+/-- If the crossed second pair-tail is empty, one of its two crossed slices
+is empty (the tail itself is nonempty).  The corresponding missing set and
+the remaining displayed slice then cover a full `H`-coset, contradicting the
+strict pre-rounding estimate. -/
+theorem dgmStrictSlicesMissing_false_of_pairTail2_eq_empty
+    [Fintype A] {H : AddSubgroup A} {k : ℕ}
+    [Fintype (A ⧸ H)] [DecidableEq (A ⧸ H)]
+    (L : AddSubgroup A) (hLH : L ≤ H)
+    (B C : Finset A) (P : List (Finset A)) (b₁ b₂ : A)
+    (νtail : QuotientPattern H k)
+    (htail : (patternSubsumSpectrum P νtail).Nonempty)
+    (hempty : dgmCrossedPairTail2 B C P b₁ b₂ νtail = ∅)
+    (hstrict :
+      (dgmSingleSliceSaturation H L B b₁).card +
+          (dgmSingleSliceSaturation H L C b₂).card +
+          (dgmMissingPairCoset H L B C b₁ ∪
+            dgmMissingPairCoset H L B C b₂).card < Nat.card H) :
+    False := by
+  have hemptySlices : dgmCosetSlice H B b₂ = ∅ ∨
+      dgmCosetSlice H C b₁ = ∅ := by
+    by_contra h
+    push Not at h
+    have hB : (dgmCosetSlice H B b₂).Nonempty := h.1
+    have hC : (dgmCosetSlice H C b₁).Nonempty := h.2
+    have hpair :
+        (dgmCrossedPairTail2 B C P b₁ b₂ νtail).Nonempty :=
+      (hB.add hC).add htail
+    rw [hempty] at hpair
+    simpa using hpair
+  rcases hemptySlices with hB | hC
+  · have hpair : dgmPairSliceSaturation H L B C b₂ =
+        dgmSingleSliceSaturation H L C b₂ := by
+      rw [dgmPairSliceSaturation_eq_union]
+      simp [dgmSingleSliceSaturation, hB]
+    have hfull := card_missing_add_pairSaturation H L hLH B C b₂
+    rw [hpair] at hfull
+    have hmissing : (dgmMissingPairCoset H L B C b₂).card ≤
+        (dgmMissingPairCoset H L B C b₁ ∪
+          dgmMissingPairCoset H L B C b₂).card :=
+      Finset.card_le_card Finset.subset_union_right
+    omega
+  · have hpair : dgmPairSliceSaturation H L B C b₁ =
+        dgmSingleSliceSaturation H L B b₁ := by
+      rw [dgmPairSliceSaturation_eq_union]
+      simp [dgmSingleSliceSaturation, hC]
+    have hfull := card_missing_add_pairSaturation H L hLH B C b₁
+    rw [hpair] at hfull
+    have hmissing : (dgmMissingPairCoset H L B C b₁).card ≤
+        (dgmMissingPairCoset H L B C b₁ ∪
+          dgmMissingPairCoset H L B C b₂).card :=
+      Finset.card_le_card Finset.subset_union_left
+    omega
+
+/-- The two structural gates required after strict equation (3): the crossed
+second component is genuinely nonempty, and the two exceptional coarse
+cosets are distinct. -/
+theorem dgmCrossedNumericGates_of_strictSlicesMissing
+    [Fintype A] {H : AddSubgroup A} {k : ℕ}
+    [Fintype (A ⧸ H)] [DecidableEq (A ⧸ H)]
+    (L : AddSubgroup A) (hLH : L ≤ H)
+    (B C : Finset A) (P : List (Finset A)) (b₁ b₂ : A)
+    (νtail : QuotientPattern H k)
+    (htail : (patternSubsumSpectrum P νtail).Nonempty)
+    (hstrict :
+      (dgmSingleSliceSaturation H L B b₁).card +
+          (dgmSingleSliceSaturation H L C b₂).card +
+          (dgmMissingPairCoset H L B C b₁ ∪
+            dgmMissingPairCoset H L B C b₂).card < Nat.card H) :
+    (dgmCrossedPairTail2 B C P b₁ b₂ νtail).Nonempty ∧
+      (b₁ : A ⧸ H) ≠ (b₂ : A ⧸ H) := by
+  constructor
+  · by_contra hpair
+    have hempty : dgmCrossedPairTail2 B C P b₁ b₂ νtail = ∅ :=
+      Finset.not_nonempty_iff_eq_empty.1 hpair
+    exact dgmStrictSlicesMissing_false_of_pairTail2_eq_empty
+      L hLH B C P b₁ b₂ νtail htail hempty hstrict
+  · intro hsame
+    exact dgmStrictSlicesMissing_false_of_quotient_eq
+      H L hLH B C b₁ b₂ hsame hstrict
+
 /-- Concrete paper equation (4) assembler.  Pattern feasibility supplies
 all cap lower bounds, the exceptional-coset theorem supplies the weighted
 Xi inequality, and literal saturations supply every divisibility premise.
