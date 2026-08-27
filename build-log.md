@@ -825,3 +825,23 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
   supplies those inequalities; this milestone does not assume or claim it.
 - Full server build: 8746 jobs, exit 0. All new declarations audit to
   `propext`, `Classical.choice`, and `Quot.sound` only.
+
+## 2026-08-27: Independent M53--M57 audit and clean-clone reproduction (M58)
+
+- Reviewer A independently checked M53--M55 theorem signatures and proof
+  bodies: Olson/Proposition 3.1, GJM, and the conditional homocyclic display
+  all pass without conclusion-shaped assumptions.
+- Reviewer B independently checked M56/M57 and passed their source semantics,
+  occurrence quantifiers, forbidden-token scan, and the fact that no GMO
+  provider is claimed. Its initial reproducibility gate failed because the
+  older Windows checkout had not received the new manifest entry.
+- Re-cloned public branch `work/gao0824-pr7-gmo-spectrum-m57` into a fresh
+  directory. The committed manifest resolved MiscYD to full revision
+  `3c3f6d2ef31dd82c82ea90fb0fef8508c976afb7`.
+- After obtaining the official Mathlib cache, the clean Windows checkout built
+  `GaoLean.PGGMOFoundations` and `GaoLean.PGGMOSpectrum` successfully: 8684
+  jobs, exit 0. Their printed axioms are only `propext`, `Classical.choice`,
+  and `Quot.sound`.
+- The server's complete project build remains 8746 jobs, exit 0. The exact
+  unresolved obligations are the five visible GMO prescribed/structural
+  providers in `PGGaoStructuralUpperInputs`.

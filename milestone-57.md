@@ -22,5 +22,7 @@ boundary.
 
 All audited declarations use only `propext`, `Classical.choice`, and
 `Quot.sound`. The unresolved step remains the substantive DGM/setpartition
-large-coset theorem itself; no provider is claimed at M57. The full server
-build completed 8746 jobs with exit 0.
+argument and its prescribed-length consequences, i.e. the complete GMO
+source-theorem family needed to discharge all five visible providers; no
+provider is claimed at M57. The full server build completed 8746 jobs with
+exit 0.

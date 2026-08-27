@@ -270,3 +270,10 @@ full-spectrum 量词逐字等价；非 full 时，谱的平移稳定子由 Lean 
 subgroup。普通与带权 concentration 的 source/weight coset occurrence 过滤及基数
 输出也已闭合。剩余边界因此进一步定位为产生大陪集计数的 DGM/集合分拆结构核心，
 而不是 spectrum 或 consumer 的编码问题。
+
+M58 完成双审计与独立复现：审计 A 确认 M53--M55 已实质消除 Olson、
+Proposition 3.1、GJM 与 Corollary 6.1 的旧缺口；审计 B 对 M56/M57 的源码量词、
+occurrence 与无逃逸项全部通过，但发现旧 Windows checkout 未同步新增依赖锁。
+随后从公库 M57 分支重新干净克隆，解析 MiscYD 完整 SHA，并在 Windows/Lean 4.32
+独立构建 8684 个目标成功。服务器全构建 8746 项成功。剩余五个 obligation 仍是
+GMO 的 prescribed-length/structural provider 家族，未被改名或隐藏。
