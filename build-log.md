@@ -809,3 +809,19 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
   the DeVos--Goddyn--Mohar and setpartition structure layers remain.
 - Full server build: 8745 jobs, exit 0. The imported Kneser proof and all new
   occurrence theorems audit to the same three standard Mathlib axioms.
+
+## 2026-08-27: Finite GMO spectra and stabilizer boundary (M57)
+
+- Added `GaoLean.PGGMOSpectrum`, defining literal finite ordinary and signed
+  exact-`n` spectra from labelled source occurrences.
+- Proved both full-spectrum interfaces equivalent to equality of the finite
+  spectrum with the ambient universe.
+- Proved nonemptiness when `n ≤ |S|` and that a non-full spectrum has a proper
+  additive stabilizer.
+- Constructed occurrence filters and verified the complete ordinary and
+  signed source/weight-coset concentration records from the corresponding
+  large-coset cardinal inequalities.
+- The remaining unproved content is exactly the DGM/setpartition theorem that
+  supplies those inequalities; this milestone does not assume or claim it.
+- Full server build: 8746 jobs, exit 0. All new declarations audit to
+  `propext`, `Classical.choice`, and `Quot.sound` only.

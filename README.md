@@ -264,3 +264,9 @@ M56 开始打开最后的 GMO 文献边界：仓库固定到与 Lean/Mathlib 4.3
 source occurrence 的选择定理；还证明了循环群上任意整数倍群阶的迭代精确零和
 选择。它们均为无新公理的 GMO 基础，但 DeVos--Goddyn--Mohar 与集合分拆结构
 定理尚未形式化，因此总状态暂不升级。
+
+M57 把 GMO 的 exact-`n` 普通与 `±1` 谱做成有限集合，证明它们与原 provider 的
+full-spectrum 量词逐字等价；非 full 时，谱的平移稳定子由 Lean 自动证明为 proper
+subgroup。普通与带权 concentration 的 source/weight coset occurrence 过滤及基数
+输出也已闭合。剩余边界因此进一步定位为产生大陪集计数的 DGM/集合分拆结构核心，
+而不是 spectrum 或 consumer 的编码问题。
