@@ -1286,7 +1286,7 @@ theorem WeakFactorForm.exists_prefix
     {xs : List A} {seed : Selection xs} {n rho : ℕ}
     {I : GMOTheoremEInput xs seed n}
     (W : WeakFactorForm I rho) {j : ℕ} (hj : j < rho) :
-    Nonempty (WeakFactorForm I j) := by
+    ∃ Wj : WeakFactorForm I j, Wj.partition = W.partition := by
   have hPfinal : W.partition ∈ W.previous.upsilon :=
     W.partition_inLambda.1
   obtain ⟨previous, next, F, prior, step, hPinLambda⟩ :=
@@ -1305,7 +1305,7 @@ theorem WeakFactorForm.exists_prefix
     partition_inLambda := hPinLambda
     tail_actual := ?_
     leading_exception := ?_
-  }⟩
+  }, rfl⟩
   · intro s hs
     exact W.tail_actual s (hs.trans (Nat.le_of_lt hj))
   · intro c hc
@@ -3518,6 +3518,49 @@ theorem WeakFactorForm.periodic_tailSumsetAfterErase_of_source_lt
   exact hperiodNest.trans happend
 
 omit [Fintype A] in
+/-- The same earlier-source periodicity argument only needs the erased cell
+to remain nonempty.  This form is used in Lemma 4, where duplication is known
+modulo the earlier period `H_{k_j}` rather than modulo the final `H_k`. -/
+theorem WeakFactorForm.periodic_tailSumsetAfterErase_of_source_lt_of_duplicate
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (W : WeakFactorForm I rho)
+    (q : Fin n) (x y : A)
+    (hy : y ∈ W.partition.valueCell q) (hyx : y ≠ x)
+    (hqrho : q.val < rho) :
+    W.partition.tailPeriod rho ≤
+      AddAction.stabilizer A
+        (W.partition.tailSumsetAfterErase q x q.val : Set A) := by
+  classical
+  have hsucc : q.val + 1 ≤ rho := by omega
+  have hperiodNest : W.partition.tailPeriod rho ≤
+      W.partition.tailPeriod (q.val + 1) :=
+    W.partition.stabilizer_tailSumset_antitone hsucc
+  have hleft : IsNonemptySetPartition
+      [eraseValue (W.partition.valueCell q) x] := by
+    intro B hB
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hB
+    subst B
+    unfold eraseValue
+    exact ⟨y, Finset.mem_erase.mpr ⟨hyx, hy⟩⟩
+  have hright : IsNonemptySetPartition
+      (W.partition.valueCells.drop (q.val + 1)) :=
+    W.partition.valueCells_nonempty.drop (q.val + 1)
+  have happend : W.partition.tailPeriod (q.val + 1) ≤
+      AddAction.stabilizer A
+        (W.partition.tailSumsetAfterErase q x q.val : Set A) := by
+    unfold Theorem21SetPartition.tailPeriod
+      Theorem21SetPartition.tailSumset
+      Theorem21SetPartition.tailSumsetAfterErase
+      Theorem21SetPartition.tailValueCells
+    rw [W.partition.tailValueCellsAfterErase_decompose q x le_rfl]
+    simp only [Nat.sub_self, List.take_zero, List.nil_append]
+    exact stabilizer_fullLayer_append_right_mono
+      [eraseValue (W.partition.valueCell q) x]
+      (W.partition.valueCells.drop (q.val + 1)) hleft hright
+  exact hperiodNest.trans happend
+
+omit [Fintype A] in
 /-- Full constructive form of dissertation Lemma 1.  It implements the
 source's harmless renaming of a doubled representative away from the anchor,
 then proves both `rho ≤ q` and nonperiodicity of the erased `rho`-tail. -/
@@ -3888,6 +3931,52 @@ theorem card_eq_natCard_mul_card_quotientLayer_of_le_stabilizer
       card_add_dgmSubgroupFinset_eq H B
 
 omit [Fintype A] in
+/-- In an `H`-periodic finite set, meeting the quotient image is equivalent
+to literal membership: the entire represented `H`-coset is present. -/
+theorem mem_quotientLayer_iff_of_le_stabilizer
+    [DecidableEq A] (H : AddSubgroup A) (B : Finset A)
+    (hperiodic : H ≤ AddAction.stabilizer A (B : Set A)) (z : A) :
+    QuotientAddGroup.mk' H z ∈ quotientLayer H B ↔ z ∈ B := by
+  constructor
+  · intro hz
+    obtain ⟨b, hb, hbz⟩ :=
+      (mem_quotientLayer_iff H B _).1 hz
+    have hbzH : b - z ∈ H := QuotientAddGroup.eq_iff_sub_mem.mp hbz
+    have hzbH : z - b ∈ H := by
+      simpa only [neg_sub] using H.neg_mem hbzH
+    have hstab := hperiodic hzbH
+    rw [AddAction.mem_stabilizer_set] at hstab
+    have htranslated := (hstab b).2 hb
+    change (z - b) + b ∈ B at htranslated
+    simpa [sub_eq_add_neg, add_assoc] using htranslated
+  · intro hz
+    exact (mem_quotientLayer_iff H B _).2 ⟨z, hz, rfl⟩
+
+omit [Fintype A] in
+/-- A translation stabilizing the quotient image of an `H`-periodic set
+lifts to a literal translation stabilizing the original set. -/
+theorem sub_mem_stabilizer_of_quotient_sub_mem_stabilizer
+    [DecidableEq A] (H : AddSubgroup A) (B : Finset A)
+    (hperiodic : H ≤ AddAction.stabilizer A (B : Set A))
+    {x y : A}
+    (hxy : QuotientAddGroup.mk' H y - QuotientAddGroup.mk' H x ∈
+      AddAction.stabilizer (A ⧸ H) (quotientLayer H B : Set (A ⧸ H))) :
+    y - x ∈ AddAction.stabilizer A (B : Set A) := by
+  rw [AddAction.mem_stabilizer_set]
+  intro z
+  change (y - x) + z ∈ B ↔ z ∈ B
+  rw [← mem_quotientLayer_iff_of_le_stabilizer H B hperiodic
+      ((y - x) + z),
+    ← mem_quotientLayer_iff_of_le_stabilizer H B hperiodic z]
+  have hstab := hxy
+  rw [AddAction.mem_stabilizer_set] at hstab
+  have hz := hstab (QuotientAddGroup.mk' H z)
+  change ((QuotientAddGroup.mk' H y - QuotientAddGroup.mk' H x) +
+      QuotientAddGroup.mk' H z ∈ quotientLayer H B ↔
+    QuotientAddGroup.mk' H z ∈ quotientLayer H B)
+  exact hz
+
+omit [Fintype A] in
 /-- The final tail period also stabilizes the full factor-form sumset. -/
 theorem WeakFactorForm.tailPeriod_le_sumset_stabilizer
     {xs : List A} {seed : Selection xs} {n rho : ℕ}
@@ -3942,6 +4031,26 @@ theorem Theorem21SetPartition.tailSumset_eq_valueCell_add_succ
     fullLayerSumSpectrum_cons]
   apply Finset.ext
   intro x
+  simp only [Finset.mem_add]
+
+omit [Fintype A] in
+/-- The tail beginning at an erased cell splits into that erased cell and
+the unchanged following tail. -/
+theorem Theorem21SetPartition.tailSumsetAfterErase_eq_eraseValue_add_succ
+    [DecidableEq A] {xs : List A} {n m : ℕ}
+    (P : Theorem21SetPartition xs n m) (q : Fin n) (x : A) :
+    P.tailSumsetAfterErase q x q.val =
+      eraseValue (P.valueCell q) x + P.tailSumset (q.val + 1) := by
+  have hdecomp := P.tailValueCellsAfterErase_decompose q x
+    (r := q.val) le_rfl
+  unfold Theorem21SetPartition.tailSumsetAfterErase
+  rw [hdecomp]
+  unfold Theorem21SetPartition.tailSumset
+    Theorem21SetPartition.tailValueCells
+  simp only [Nat.sub_self, List.take_zero, List.nil_append,
+    fullLayerSumSpectrum_cons]
+  apply Finset.ext
+  intro z
   simp only [Finset.mem_add]
 
 omit [Fintype A] in
@@ -4140,6 +4249,322 @@ theorem card_add_natCard_sub_one_le_mul_quotientLayer_of_unique
         simp [Nat.mul_add]
   have hHpos : 1 ≤ Nat.card H := Nat.card_pos
   omega
+
+/-- Kneser's theorem with one singleton stabilizer fiber.  A single element
+of `C` that is unique in its coset modulo the actual stabilizer of `B+C`
+recovers the Cauchy--Davenport one-step bound.  This is the exact counting
+engine in the non-doubled branch of dissertation Lemma 4. -/
+theorem card_add_sub_one_le_of_unique_addStab_fiber
+    [DecidableEq A] (B C : Finset A)
+    (hB : B.Nonempty) (hC : C.Nonempty)
+    {x : A} (hx : x ∈ C)
+    (hunique : ∀ y ∈ C,
+      y - x ∈ AddAction.stabilizer A ((B + C : Finset A) : Set A) →
+        y = x) :
+    B.card + C.card - 1 ≤ (B + C).card := by
+  classical
+  let K : AddSubgroup A :=
+    AddAction.stabilizer A ((B + C : Finset A) : Set A)
+  have hS : (B + C).Nonempty := hB.add hC
+  have hKfin : (B + C).addStab = dgmSubgroupFinset K := by
+    ext a
+    rw [← Finset.mem_coe, Finset.coe_addStab hS]
+    exact (mem_dgmSubgroupFinset_iff K a).symm
+  have huniqueQ : ∀ y ∈ C,
+      QuotientAddGroup.mk' K y = QuotientAddGroup.mk' K x → y = x := by
+    intro y hy hyq
+    exact hunique y hy (QuotientAddGroup.eq_iff_sub_mem.mp hyq)
+  have hCholes :=
+    card_add_natCard_sub_one_le_mul_quotientLayer_of_unique
+      K C hx huniqueQ
+  have hCsat : C.card + (Nat.card K - 1) ≤
+      (C + dgmSubgroupFinset K).card := by
+    simpa [card_add_dgmSubgroupFinset_eq] using hCholes
+  have hBsat : B.card ≤ (B + dgmSubgroupFinset K).card := by
+    apply Finset.card_le_card
+    intro b hb
+    exact Finset.mem_add.mpr
+      ⟨b, hb, 0, (mem_dgmSubgroupFinset_iff K 0).2 K.zero_mem,
+        add_zero b⟩
+  have hkneser := Finset.add_kneser B C
+  rw [hKfin] at hkneser
+  rw [card_dgmSubgroupFinset] at hkneser
+  have hKpos : 1 ≤ Nat.card K := Nat.card_pos
+  omega
+
+/-- The non-doubled branch of equation (3.4).  It applies the preceding
+singleton-fiber Kneser bound in `A/H_k`; quotient stabilizer membership is
+lifted back to the actual earlier tail stabilizer `H_{k_j}`, where the
+chosen representative is known to be unique. -/
+theorem WeakFactorForm.lemma4_step_of_not_doubled
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (W : WeakFactorForm I rho) (c : Fin n) (hc : c.val < rho)
+    (x : A) (hx : x ∈ W.partition.valueCell c)
+    (hnot : ¬ W.partition.IsHDoubledInCell
+      (W.partition.tailPeriod c.val) c x) :
+    (quotientLayer (W.partition.tailPeriod rho)
+          (W.partition.tailSumset (c.val + 1))).card +
+        (quotientLayer (W.partition.tailPeriod rho)
+          (W.partition.valueCell c)).card - 1 ≤
+      (quotientLayer (W.partition.tailPeriod rho)
+        (W.partition.tailSumset c.val)).card := by
+  classical
+  let H : AddSubgroup A := W.partition.tailPeriod rho
+  let K : AddSubgroup A := W.partition.tailPeriod c.val
+  let Bq : Finset (A ⧸ H) :=
+    quotientLayer H (W.partition.tailSumset (c.val + 1))
+  let Cq : Finset (A ⧸ H) :=
+    quotientLayer H (W.partition.valueCell c)
+  have hHK : H ≤ K :=
+    W.partition.stabilizer_tailSumset_antitone (Nat.le_of_lt hc)
+  have hperiodic : H ≤ AddAction.stabilizer A
+      (W.partition.tailSumset c.val : Set A) := by
+    simpa [K, Theorem21SetPartition.tailPeriod] using hHK
+  have hsumQ : Bq + Cq =
+      quotientLayer H (W.partition.tailSumset c.val) := by
+    rw [add_comm]
+    simpa [Bq, Cq] using
+      (W.partition.quotientLayer_tailSumset_eq_add_succ H c).symm
+  have hBq : Bq.Nonempty :=
+    quotientLayer_nonempty H _ (W.partition.tailSumset_nonempty (c.val + 1))
+  have hCq : Cq.Nonempty :=
+    quotientLayer_nonempty H _ (W.partition.valueCells_nonempty
+      (W.partition.valueCell c) (by
+        simp [Theorem21SetPartition.valueCells]))
+  have hxq : QuotientAddGroup.mk' H x ∈ Cq := by
+    exact (mem_quotientLayer_iff H (W.partition.valueCell c) _).2
+      ⟨x, hx, rfl⟩
+  have hunique : ∀ qy ∈ Cq,
+      qy - QuotientAddGroup.mk' H x ∈
+        AddAction.stabilizer (A ⧸ H) ((Bq + Cq : Finset (A ⧸ H)) : Set (A ⧸ H)) →
+      qy = QuotientAddGroup.mk' H x := by
+    intro qy hqy hqstab
+    obtain ⟨y, hy, hyq⟩ :=
+      (mem_quotientLayer_iff H (W.partition.valueCell c) qy).1 hqy
+    have hqstab' : QuotientAddGroup.mk' H y -
+        QuotientAddGroup.mk' H x ∈
+        AddAction.stabilizer (A ⧸ H)
+          (quotientLayer H (W.partition.tailSumset c.val) : Set (A ⧸ H)) := by
+      simpa [hyq, hsumQ]
+        using hqstab
+    have hystab : y - x ∈ AddAction.stabilizer A
+        (W.partition.tailSumset c.val : Set A) :=
+      sub_mem_stabilizer_of_quotient_sub_mem_stabilizer H
+        (W.partition.tailSumset c.val) hperiodic hqstab'
+    have hyK : QuotientAddGroup.mk' K y = QuotientAddGroup.mk' K x := by
+      apply QuotientAddGroup.eq_iff_sub_mem.mpr
+      simpa [K, Theorem21SetPartition.tailPeriod] using hystab
+    have hyx : y = x := by
+      by_contra hyx
+      exact hnot ⟨hx, y, hy, hyx, hyK⟩
+    subst y
+    exact hyq.symm
+  have hstep := card_add_sub_one_le_of_unique_addStab_fiber
+    Bq Cq hBq hCq hxq hunique
+  rw [hsumQ] at hstep
+  simpa [H, Bq, Cq] using hstep
+
+omit [Fintype A] in
+/-- In the doubled branch at an earlier stage `j`, equality after deleting
+the final-quotient class would make the erased literal `j`-tail periodic by
+`H_{k_j}`.  The true prefix transition and Lemma 1 rule this out.  The key
+lifting step is valid because the unchanged final tail already makes the
+erased sumset `H_k`-periodic. -/
+theorem WeakFactorForm.quotient_erase_ne_of_doubled_at_prefix
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (W : WeakFactorForm I rho)
+    [DecidableEq (A ⧸ W.partition.tailPeriod rho)]
+    (c : Fin n) (hc : c.val < rho) (x : A)
+    (hexception : W.partition.IsHException
+      (W.partition.tailPeriod c.val) x)
+    (hdouble : W.partition.IsHDoubledInCell
+      (W.partition.tailPeriod c.val) c x)
+    (hanchor : occurrenceValue xs (I.anchor c) ≠ x) :
+    quotientLayer (W.partition.tailPeriod rho)
+          (W.partition.tailSumset (c.val + 1)) +
+          quotientLayer (W.partition.tailPeriod rho)
+            (W.partition.valueCell c) ≠
+        quotientLayer (W.partition.tailPeriod rho)
+            (W.partition.tailSumset (c.val + 1)) +
+          (quotientLayer (W.partition.tailPeriod rho)
+            (W.partition.valueCell c)).erase
+              (QuotientAddGroup.mk'
+                (W.partition.tailPeriod rho) x) := by
+  classical
+  intro heq
+  let H : AddSubgroup A := W.partition.tailPeriod rho
+  let K : AddSubgroup A := W.partition.tailPeriod c.val
+  have hHK : H ≤ K :=
+    W.partition.stabilizer_tailSumset_antitone (Nat.le_of_lt hc)
+  obtain ⟨Wc, hWc⟩ := W.exists_prefix hc
+  have hexception' : Wc.partition.IsHException
+      (Wc.partition.tailPeriod c.val) x := by
+    simpa [hWc] using hexception
+  have hdouble' : Wc.partition.IsHDoubledInCell
+      (Wc.partition.tailPeriod c.val) c x := by
+    simpa [hWc] using hdouble
+  have hanchor' : occurrenceValue xs (I.anchor c) ≠ x := hanchor
+  have hnotK := Wc.lemma1_minTail_of_anchor_ne c x
+    hexception' hdouble' hanchor'
+  have hnotPeriodic : ¬ K ≤ AddAction.stabilizer A
+      (W.partition.tailSumsetAfterErase c x c.val : Set A) := by
+    simpa [hWc, K, Nat.min_self] using hnotK
+  have hexFinal : W.partition.IsHException H x :=
+    W.partition.isHException_of_le hHK hexception
+  have hnotFinalDouble : ¬ W.partition.IsHDoubledInCell H c x := by
+    intro hd
+    obtain ⟨_z, _hzquot, _hzException, _hzDouble, _hzAnchor,
+        hrhoc, _hzNotPeriodic⟩ :=
+      W.exists_lemma1_representative c x hexFinal hd
+    omega
+  have huniqueH : ∀ y ∈ W.partition.valueCell c,
+      QuotientAddGroup.mk' H y = QuotientAddGroup.mk' H x → y = x := by
+    intro y hy hyq
+    by_contra hyx
+    exact hnotFinalDouble ⟨hdouble.1, y, hy, hyx, hyq⟩
+  have hqerase : quotientLayer H
+        (eraseValue (W.partition.valueCell c) x) =
+      (quotientLayer H (W.partition.valueCell c)).erase
+        (QuotientAddGroup.mk' H x) := by
+    unfold eraseValue
+    exact quotientLayer_erase_eq_erase_of_unique H
+      (W.partition.valueCell c) huniqueH
+  obtain ⟨_hx, y, hy, hyx, _hyquot⟩ := hdouble
+  have hperiodicErased : H ≤ AddAction.stabilizer A
+      (W.partition.tailSumsetAfterErase c x c.val : Set A) :=
+    W.periodic_tailSumsetAfterErase_of_source_lt_of_duplicate
+      c x y hy hyx hc
+  have hperiodicFull : H ≤ AddAction.stabilizer A
+      (W.partition.tailSumset c.val : Set A) := by
+    simpa [K, Theorem21SetPartition.tailPeriod] using hHK
+  have hqE : quotientLayer H
+        (W.partition.tailSumsetAfterErase c x c.val) =
+      quotientLayer H (W.partition.tailSumset c.val) := by
+    calc
+      quotientLayer H
+          (W.partition.tailSumsetAfterErase c x c.val) =
+          quotientLayer H (eraseValue (W.partition.valueCell c) x) +
+            quotientLayer H (W.partition.tailSumset (c.val + 1)) := by
+              rw [W.partition.tailSumsetAfterErase_eq_eraseValue_add_succ,
+                quotientLayer_add]
+      _ = (quotientLayer H (W.partition.valueCell c)).erase
+            (QuotientAddGroup.mk' H x) +
+          quotientLayer H (W.partition.tailSumset (c.val + 1)) := by
+            rw [hqerase]
+      _ = quotientLayer H (W.partition.tailSumset (c.val + 1)) +
+          (quotientLayer H (W.partition.valueCell c)).erase
+            (QuotientAddGroup.mk' H x) := by rw [add_comm]
+      _ = quotientLayer H (W.partition.tailSumset (c.val + 1)) +
+          quotientLayer H (W.partition.valueCell c) := by
+            simpa [H] using heq.symm
+      _ = quotientLayer H (W.partition.valueCell c) +
+          quotientLayer H (W.partition.tailSumset (c.val + 1)) := by
+            rw [add_comm]
+      _ = quotientLayer H (W.partition.tailSumset c.val) :=
+        (W.partition.quotientLayer_tailSumset_eq_add_succ H c).symm
+  have hactualEq : W.partition.tailSumsetAfterErase c x c.val =
+      W.partition.tailSumset c.val := by
+    ext z
+    rw [← mem_quotientLayer_iff_of_le_stabilizer H
+      (W.partition.tailSumsetAfterErase c x c.val) hperiodicErased z]
+    rw [hqE]
+    exact mem_quotientLayer_iff_of_le_stabilizer H
+      (W.partition.tailSumset c.val) hperiodicFull z
+  apply hnotPeriodic
+  rw [hactualEq]
+  exact le_rfl
+
+omit [Fintype A] in
+/-- The Scherk branch of equation (3.4): if deleting the distinguished
+`H_k` quotient value changes the projected pair sumset, Proposition 1.3
+gives the required one-step inequality immediately. -/
+theorem WeakFactorForm.lemma4_step_of_quotient_erase_ne
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (W : WeakFactorForm I rho)
+    [DecidableEq (A ⧸ W.partition.tailPeriod rho)] (c : Fin n)
+    (x : A) (hx : x ∈ W.partition.valueCell c)
+    (hne :
+      quotientLayer (W.partition.tailPeriod rho)
+          (W.partition.tailSumset (c.val + 1)) +
+          quotientLayer (W.partition.tailPeriod rho)
+            (W.partition.valueCell c) ≠
+        quotientLayer (W.partition.tailPeriod rho)
+            (W.partition.tailSumset (c.val + 1)) +
+          (quotientLayer (W.partition.tailPeriod rho)
+            (W.partition.valueCell c)).erase
+              (QuotientAddGroup.mk'
+                (W.partition.tailPeriod rho) x)) :
+    (quotientLayer (W.partition.tailPeriod rho)
+          (W.partition.tailSumset (c.val + 1))).card +
+        (quotientLayer (W.partition.tailPeriod rho)
+          (W.partition.valueCell c)).card - 1 ≤
+      (quotientLayer (W.partition.tailPeriod rho)
+        (W.partition.tailSumset c.val)).card := by
+  classical
+  let H : AddSubgroup A := W.partition.tailPeriod rho
+  let Bq : Finset (A ⧸ H) :=
+    quotientLayer H (W.partition.tailSumset (c.val + 1))
+  let Cq : Finset (A ⧸ H) :=
+    quotientLayer H (W.partition.valueCell c)
+  have hBq : Bq.Nonempty :=
+    quotientLayer_nonempty H _ (W.partition.tailSumset_nonempty (c.val + 1))
+  have hxq : QuotientAddGroup.mk' H x ∈ Cq :=
+    (mem_quotientLayer_iff H (W.partition.valueCell c) _).2
+      ⟨x, hx, rfl⟩
+  have hstep := card_add_sub_one_le_of_add_ne_add_erase
+    Bq Cq hBq hxq (by simpa [H, Bq, Cq] using hne)
+  have hsumQ : Bq + Cq =
+      quotientLayer H (W.partition.tailSumset c.val) := by
+    rw [add_comm]
+    simpa [Bq, Cq] using
+      (W.partition.quotientLayer_tailSumset_eq_add_succ H c).symm
+  rw [hsumQ] at hstep
+  simpa [H, Bq, Cq] using hstep
+
+/-- Complete one-cell equation (3.4) for every leading cell.  Condition (IV)
+supplies an earlier-period exception.  The non-doubled case is Kneser in the
+final quotient; the doubled case first chooses an anchor-safe representative,
+uses the true prefix transition to rule out erase equality, and then invokes
+Scherk's Proposition 1.3. -/
+theorem WeakFactorForm.lemma4_step
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (W : WeakFactorForm I rho) (c : Fin n) (hc : c.val < rho) :
+    (quotientLayer (W.partition.tailPeriod rho)
+          (W.partition.tailSumset (c.val + 1))).card +
+        (quotientLayer (W.partition.tailPeriod rho)
+          (W.partition.valueCell c)).card - 1 ≤
+      (quotientLayer (W.partition.tailPeriod rho)
+        (W.partition.tailSumset c.val)).card := by
+  classical
+  obtain ⟨x, hx, hexception⟩ := W.leading_exception c hc
+  by_cases hdouble : W.partition.IsHDoubledInCell
+      (W.partition.tailPeriod c.val) c x
+  · by_cases hanchor : occurrenceValue xs (I.anchor c) ≠ x
+    · have hne := W.quotient_erase_ne_of_doubled_at_prefix
+        c hc x hexception hdouble hanchor
+      exact W.lemma4_step_of_quotient_erase_ne c x hx hne
+    · have hanchorEq : occurrenceValue xs (I.anchor c) = x :=
+        Classical.not_not.mp hanchor
+      rcases hdouble with ⟨_hx, y, hy, hyx, hyquot⟩
+      have hyException : W.partition.IsHException
+          (W.partition.tailPeriod c.val) y := by
+        rcases hexception with ⟨d, hd⟩
+        refine ⟨d, ?_⟩
+        simpa [hyquot] using hd
+      have hyDouble : W.partition.IsHDoubledInCell
+          (W.partition.tailPeriod c.val) c y :=
+        ⟨hy, x, hx, fun hxy ↦ hyx hxy.symm, hyquot.symm⟩
+      have hyAnchor : occurrenceValue xs (I.anchor c) ≠ y := by
+        rw [hanchorEq]
+        exact fun hxy ↦ hyx hxy.symm
+      have hne := W.quotient_erase_ne_of_doubled_at_prefix
+        c hc y hyException hyDouble hyAnchor
+      exact W.lemma4_step_of_quotient_erase_ne c y hy hne
+  · exact W.lemma4_step_of_not_doubled c hc x hx hdouble
 
 /-- Summed leading-cell holes estimate in dissertation Lemma 3. -/
 theorem WeakFactorForm.leading_holes_le
@@ -4667,6 +5092,90 @@ theorem nat_card_telescope_sub
       rw [Finset.sum_range_succ]
       omega
 
+/-- Dissertation Lemma 4's telescoped condition (II).  Each leading index
+uses `lemma4_step` at its own true prefix transition; the finite reindexing
+below identifies `0, ..., rho-1` exactly with `leadingIndices n rho`. -/
+theorem WeakFactorForm.lemma4_quotient_growth
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (W : WeakFactorForm I rho) :
+    ((quotientLayer (W.partition.tailPeriod rho)
+          (W.partition.tailSumset rho)).card +
+        (∑ c ∈ leadingIndices n rho,
+          (quotientLayer (W.partition.tailPeriod rho)
+            (W.partition.valueCell c)).card) - (rho + 1) + 1) ≤
+      (quotientLayer (W.partition.tailPeriod rho)
+        W.partition.sumset).card := by
+  classical
+  let H : AddSubgroup A := W.partition.tailPeriod rho
+  have hrange : rho ≤ n := by
+    have := W.range
+    omega
+  have hnpos : 0 < n := by
+    have := W.range
+    omega
+  let idx : ℕ → Fin n := fun j ↦ ⟨j % n, Nat.mod_lt j hnpos⟩
+  let tail : ℕ → ℕ := fun j ↦
+    (quotientLayer H (W.partition.tailSumset j)).card
+  let cell : ℕ → ℕ := fun j ↦
+    (quotientLayer H (W.partition.valueCell (idx j))).card
+  have hidx {j : ℕ} (hj : j < rho) : (idx j).val = j := by
+    have hjn : j < n := hj.trans_le hrange
+    simp [idx, Nat.mod_eq_of_lt hjn]
+  have hstep : ∀ j < rho,
+      tail (j + 1) + cell j - 1 ≤ tail j := by
+    intro j hj
+    have hc : (idx j).val < rho := by simpa [hidx hj] using hj
+    have hs := W.lemma4_step (idx j) hc
+    simpa [tail, cell, H, hidx hj] using hs
+  have hcell : ∀ j < rho, 1 ≤ cell j := by
+    intro j hj
+    apply Finset.card_pos.mpr
+    exact quotientLayer_nonempty H _ (W.partition.valueCells_nonempty
+      (W.partition.valueCell (idx j)) (by
+        simp [Theorem21SetPartition.valueCells]))
+  have htelescope := nat_card_telescope_sub tail cell rho hstep hcell
+  have hsum : (∑ j ∈ Finset.range rho, cell j) =
+      ∑ c ∈ leadingIndices n rho,
+        (quotientLayer H (W.partition.valueCell c)).card := by
+    refine Finset.sum_bij (fun j _ ↦ idx j) ?_ ?_ ?_ ?_
+    · intro j hj
+      have hjrho : j < rho := Finset.mem_range.mp hj
+      simpa [leadingIndices, hidx hjrho]
+    · intro i hi j hj hij
+      have hi' : i < rho := Finset.mem_range.mp hi
+      have hj' : j < rho := Finset.mem_range.mp hj
+      have hv := congrArg Fin.val hij
+      simpa [hidx hi', hidx hj'] using hv
+    · intro c hc
+      have hc' : c.val < rho := by simpa [leadingIndices] using hc
+      refine ⟨c.val, Finset.mem_range.mpr hc', ?_⟩
+      apply Fin.ext
+      exact hidx hc'
+    · intro j hj
+      rfl
+  rw [hsum] at htelescope
+  have htailZero : tail 0 =
+      (quotientLayer H W.partition.sumset).card := by
+    simp [tail, Theorem21SetPartition.tailSumset,
+      Theorem21SetPartition.tailValueCells,
+      Theorem21SetPartition.sumset]
+  rw [htailZero] at htelescope
+  have hbase := W.quotient_growth_base_le
+  change rho + 1 ≤ tail rho +
+    ∑ c ∈ leadingIndices n rho,
+      (quotientLayer H (W.partition.valueCell c)).card at hbase
+  change tail rho +
+      (∑ c ∈ leadingIndices n rho,
+        (quotientLayer H (W.partition.valueCell c)).card) - rho ≤
+    (quotientLayer H W.partition.sumset).card at htelescope
+  change tail rho +
+      (∑ c ∈ leadingIndices n rho,
+        (quotientLayer H (W.partition.valueCell c)).card) -
+          (rho + 1) + 1 ≤
+    (quotientLayer H W.partition.sumset).card
+  omega
+
 /-- Dissertation Lemma 3 in its source-faithful disjunctive form.  Condition
 (II) forces either the missing condition (III), or an admissible replacement
 already satisfying the ordinary Cauchy--Davenport bound.  The second branch
@@ -4792,6 +5301,17 @@ noncomputable def WeakFactorForm.toFactorForm_of_quotient_growth
   toWeakFactorForm := W
   quotient_growth := hII
   tail_deficit := W.tail_deficit_of_quotient_growth hII hfail
+
+/-- Complete dissertation Lemma 4 under the standing contradiction
+hypothesis of Theorem 3.1: Lemma 4 supplies (II), and the source-faithful
+Lemma 3 dichotomy supplies (III) after excluding the trivial/CDT branch. -/
+noncomputable def WeakFactorForm.toFactorForm
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (W : WeakFactorForm I rho)
+    (hfail : ¬ Nonempty (GMOTheoremETrivialConclusion I)) :
+    FactorForm I rho :=
+  W.toFactorForm_of_quotient_growth W.lemma4_quotient_growth hfail
 
 /-- Within one cell, value injectivity identifies the occurrence defect with
 the corresponding value-set defect used in Theorem E. -/
