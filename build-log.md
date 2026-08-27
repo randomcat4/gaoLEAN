@@ -794,3 +794,18 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
   no new source theorem, numerical assumption, or hidden axiom is introduced.
 - Full server build: 8741 jobs, exit 0. The three new audited declarations use
   only `propext`, `Classical.choice`, and `Quot.sound`.
+
+## 2026-08-27: GMO foundations, Kneser and occurrence EGZ (M56)
+
+- Pinned `YaelDillies/misc-yd` at its Lean/Mathlib 4.32 compatibility commit
+  `3c3f6d2`, gaining a kernel-checked Kneser addition theorem without changing
+  the project's toolchain.
+- Added `GaoLean.PGGMOFoundations`, re-exporting Kneser at the required finite
+  sumset boundary and transporting Mathlib's Erdős--Ginzburg--Ziv theorem to
+  occurrence-labelled list selections.
+- Proved an iterated EGZ theorem selecting exactly `t*n` labelled terms of
+  zero sum from `(t+1)*n-1` terms over `ZMod n`.
+- This is a genuine foundation milestone, not a claim that GMO is closed:
+  the DeVos--Goddyn--Mohar and setpartition structure layers remain.
+- Full server build: 8745 jobs, exit 0. The imported Kneser proof and all new
+  occurrence theorems audit to the same three standard Mathlib axioms.

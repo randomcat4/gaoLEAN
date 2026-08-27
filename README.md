@@ -258,3 +258,9 @@ GMO existence/structural 定理。M55 又把 Corollary 6.1 的同循环群与初
 展示式逐字封装：Lean 内部核验群阶、Olson 数值及最终阈值，且只继承主定理已有
 的 GMO 输入包，没有新增外部前提。见 `milestone-55.md` 和
 `pr7-13-page-map.md`。
+
+M56 开始打开最后的 GMO 文献边界：仓库固定到与 Lean/Mathlib 4.32 同版的
+`MiscYD` Kneser 形式化，并把 Mathlib 的 Erdős--Ginzburg--Ziv 定理转换为保持
+source occurrence 的选择定理；还证明了循环群上任意整数倍群阶的迭代精确零和
+选择。它们均为无新公理的 GMO 基础，但 DeVos--Goddyn--Mohar 与集合分拆结构
+定理尚未形式化，因此总状态暂不升级。
