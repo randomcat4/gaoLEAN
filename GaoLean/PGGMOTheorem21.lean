@@ -1518,6 +1518,163 @@ theorem Theorem21SetPartition.exists_moveOccurrence
     rfl
   · exact hsupport
 
+/-- Cell family obtained by deleting a used labelled occurrence y from
+cell q and inserting a genuinely unused labelled occurrence x into the
+distinct cell d.  Unlike moveOccurrenceCells, this changes the selected
+replacement subsequence while preserving its cardinality. -/
+def Theorem21SetPartition.replaceUsedWithUnusedCells
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (q d : Fin n) (y x : Occurrence xs) (c : Fin n) : Selection xs :=
+  if c = q then (P.cells c).erase y
+  else if c = d then insert x (P.cells c)
+  else P.cells c
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Exact membership formula for cross-support replacement.  It records
+that x is present only in the target cell, while every old occurrence
+except y remains in its old cell. -/
+theorem Theorem21SetPartition.mem_replaceUsedWithUnusedCells_iff
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    {q d : Fin n} {y x z : Occurrence xs} (c : Fin n)
+    (hqd : q ≠ d) (hyq : y ∈ P.cells q) (hxunused : x ∉ P.support) :
+    z ∈ P.replaceUsedWithUnusedCells q d y x c ↔
+      (c = d ∧ z = x) ∨ (z ∈ P.cells c ∧ z ≠ y) := by
+  classical
+  have hxnot (e : Fin n) : x ∉ P.cells e := by
+    intro hxe
+    apply hxunused
+    exact Finset.mem_biUnion.mpr ⟨e, Finset.mem_univ e, hxe⟩
+  by_cases hcq : c = q
+  · subst c
+    simp only [Theorem21SetPartition.replaceUsedWithUnusedCells, if_pos,
+      hqd, false_and, false_or, Finset.mem_erase]
+    exact and_comm
+  · by_cases hcd : c = d
+    · subst c
+      have hynot : y ∉ P.cells d :=
+        P.not_mem_cell_of_mem_of_ne hyq hqd.symm
+      simp only [Theorem21SetPartition.replaceUsedWithUnusedCells,
+        if_neg hqd.symm, if_pos, Finset.mem_insert, true_and]
+      constructor
+      · intro hz
+        rcases hz with hzx | hzOld
+        · exact Or.inl hzx
+        · exact Or.inr ⟨hzOld, fun hzy ↦ hynot (hzy ▸ hzOld)⟩
+      · rintro (hzx | hzOld)
+        · exact Or.inl hzx
+        · exact Or.inr hzOld.1
+    · have hynot : y ∉ P.cells c :=
+        P.not_mem_cell_of_mem_of_ne hyq hcq
+      simp only [Theorem21SetPartition.replaceUsedWithUnusedCells,
+        if_neg hcq, hcd, false_and, false_or]
+      exact ⟨fun hz ↦ ⟨hz, fun hzy ↦ hynot (hzy ▸ hz)⟩, And.left⟩
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Honest occurrence-level cross-support replacement.  The resulting
+support is exactly (P.support.erase y).insert x, so its cardinality is
+unchanged; no occurrence or multiplicity is silently forgotten. -/
+theorem Theorem21SetPartition.exists_replaceUsedWithUnused
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    {q d : Fin n} {y x : Occurrence xs}
+    (hqd : q ≠ d) (hyq : y ∈ P.cells q)
+    (hsource : ∃ j ∈ P.cells q, j ≠ y)
+    (hxunused : x ∉ P.support)
+    (htarget : ∀ j ∈ P.cells d,
+      occurrenceValue xs j ≠ occurrenceValue xs x) :
+    ∃ Q : Theorem21SetPartition xs n m,
+      (∀ c, Q.cells c = P.replaceUsedWithUnusedCells q d y x c) ∧
+      Q.support = insert x (P.support.erase y) := by
+  classical
+  let replaced : Fin n → Selection xs :=
+    P.replaceUsedWithUnusedCells q d y x
+  have hmem (z : Occurrence xs) (c : Fin n) :
+      z ∈ replaced c ↔
+        (c = d ∧ z = x) ∨ (z ∈ P.cells c ∧ z ≠ y) := by
+    exact P.mem_replaceUsedWithUnusedCells_iff c hqd hyq hxunused
+  have hreplacedNonempty : ∀ c, (replaced c).Nonempty := by
+    intro c
+    by_cases hcq : c = q
+    · subst c
+      obtain ⟨j, hj, hjy⟩ := hsource
+      exact ⟨j, (hmem j q).2 (Or.inr ⟨hj, hjy⟩)⟩
+    · by_cases hcd : c = d
+      · exact ⟨x, (hmem x c).2 (Or.inl ⟨hcd, rfl⟩)⟩
+      · obtain ⟨j, hj⟩ := P.cells_nonempty c
+        have hjy : j ≠ y := by
+          intro hjyeq
+          subst j
+          exact (P.not_mem_cell_of_mem_of_ne hyq hcq) hj
+        exact ⟨j, (hmem j c).2 (Or.inr ⟨hj, hjy⟩)⟩
+  have hreplacedDisjoint : ∀ {c e}, c ≠ e →
+      Disjoint (replaced c) (replaced e) := by
+    intro c e hce
+    rw [Finset.disjoint_left]
+    intro z hzc hze
+    rcases (hmem z c).1 hzc with hxc | hzcOld
+    · rcases (hmem z e).1 hze with hxe | hzeOld
+      · exact hce (hxc.1.trans hxe.1.symm)
+      · rcases hxc with ⟨hcd, hzx⟩
+        subst z
+        subst c
+        exact hxunused (Finset.mem_biUnion.mpr
+          ⟨e, Finset.mem_univ e, hzeOld.1⟩)
+    · rcases (hmem z e).1 hze with hxe | hzeOld
+      · rcases hxe with ⟨hed, hzx⟩
+        subst z
+        subst e
+        exact hxunused (Finset.mem_biUnion.mpr
+          ⟨c, Finset.mem_univ c, hzcOld.1⟩)
+      · exact (Finset.disjoint_left.mp
+          (P.cells_pairwise_disjoint hce)) hzcOld.1 hzeOld.1
+  have hreplacedInjective : ∀ c,
+      Set.InjOn (occurrenceValue xs) (replaced c : Set (Occurrence xs)) := by
+    intro c a ha b hb hab
+    rcases (hmem a c).1 ha with hax | haOld
+    · rcases (hmem b c).1 hb with hbx | hbOld
+      · exact hax.2.trans hbx.2.symm
+      · rcases hax with ⟨hcd, hax⟩
+        subst c
+        subst a
+        exact False.elim ((htarget b hbOld.1) hab.symm)
+    · rcases (hmem b c).1 hb with hbx | hbOld
+      · rcases hbx with ⟨hcd, hbx⟩
+        subst c
+        subst b
+        exact False.elim ((htarget a haOld.1) hab)
+      · exact P.value_injective c haOld.1 hbOld.1 hab
+  have hsupport : Finset.univ.biUnion replaced =
+      insert x (P.support.erase y) := by
+    ext z
+    simp only [Finset.mem_biUnion, Finset.mem_univ, true_and,
+      Finset.mem_insert, Finset.mem_erase, Theorem21SetPartition.support]
+    constructor
+    · rintro ⟨c, hzc⟩
+      rcases (hmem z c).1 hzc with hzx | hzOld
+      · exact Or.inl hzx.2
+      · exact Or.inr ⟨hzOld.2, ⟨c, hzOld.1⟩⟩
+    · rintro (hzx | ⟨hzy, c, hzc⟩)
+      · exact ⟨d, (hmem z d).2 (Or.inl ⟨rfl, hzx⟩)⟩
+      · exact ⟨c, (hmem z c).2 (Or.inr ⟨hzc, hzy⟩)⟩
+  have hySupport : y ∈ P.support :=
+    Finset.mem_biUnion.mpr ⟨q, Finset.mem_univ q, hyq⟩
+  have hxErase : x ∉ P.support.erase y := by
+    exact fun hx ↦ hxunused (Finset.mem_of_mem_erase hx)
+  let Q : Theorem21SetPartition xs n m := {
+    cells := replaced
+    cells_nonempty := hreplacedNonempty
+    cells_pairwise_disjoint := hreplacedDisjoint
+    value_injective := hreplacedInjective
+    card_support := by
+      rw [hsupport, Finset.card_insert_of_notMem hxErase,
+        Finset.card_erase_of_mem hySupport,
+        Nat.sub_add_cancel (Finset.card_pos.mpr ⟨y, hySupport⟩)]
+      exact P.card_support
+  }
+  refine ⟨Q, ?_, ?_⟩
+  · intro c
+    rfl
+  · exact hsupport
+
 omit [Fintype A] in
 /-- A doubled exception supplies all occurrence-level hypotheses needed for
 an honest move to a cell missing its quotient class.  In particular, the
@@ -1672,6 +1829,75 @@ theorem Theorem21SetPartition.valueCell_eq_of_moveOccurrence_of_ne
     if_neg hcd]
   rfl
 
+omit [AddCommGroup A] [Fintype A] in
+/-- Cross-support replacement erases exactly the used occurrence's value
+from its source cell. -/
+theorem Theorem21SetPartition.valueCell_eq_erase_of_replaceUsedWithUnused
+    {xs : List A} {n m : ℕ} {P Q : Theorem21SetPartition xs n m}
+    {q d : Fin n} {y x : Occurrence xs}
+    (hyq : y ∈ P.cells q)
+    (hQcells : ∀ c,
+      Q.cells c = P.replaceUsedWithUnusedCells q d y x c) :
+    Q.valueCell q = eraseValue (P.valueCell q) (occurrenceValue xs y) := by
+  classical
+  unfold eraseValue
+  rw [Theorem21SetPartition.valueCell, hQcells q]
+  simp only [Theorem21SetPartition.replaceUsedWithUnusedCells, if_pos]
+  ext a
+  constructor
+  · intro ha
+    rcases Finset.mem_image.mp ha with ⟨j, hj, hja⟩
+    have hjy : j ≠ y := (Finset.mem_erase.mp hj).1
+    apply Finset.mem_erase.mpr
+    constructor
+    · intro hay
+      apply hjy
+      apply P.value_injective q (Finset.mem_of_mem_erase hj) hyq
+      rw [hja, hay]
+    · exact Finset.mem_image.mpr
+        ⟨j, Finset.mem_of_mem_erase hj, hja⟩
+  · intro ha
+    have ha' := Finset.mem_erase.mp ha
+    rcases Finset.mem_image.mp ha'.2 with ⟨j, hj, hja⟩
+    apply Finset.mem_image.mpr
+    refine ⟨j, Finset.mem_erase.mpr ⟨?_, hj⟩, hja⟩
+    intro hjy
+    subst j
+    exact ha'.1 hja.symm
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Cross-support replacement inserts exactly the unused occurrence's value
+in its target cell. -/
+theorem Theorem21SetPartition.valueCell_eq_insert_of_replaceUsedWithUnused
+    {xs : List A} {n m : ℕ} {P Q : Theorem21SetPartition xs n m}
+    {q d : Fin n} {y x : Occurrence xs} (hqd : q ≠ d)
+    (hQcells : ∀ c,
+      Q.cells c = P.replaceUsedWithUnusedCells q d y x c) :
+    Q.valueCell d = insertValue (occurrenceValue xs x) (P.valueCell d) := by
+  classical
+  unfold insertValue
+  rw [Theorem21SetPartition.valueCell, hQcells d]
+  simp only [Theorem21SetPartition.replaceUsedWithUnusedCells,
+    if_neg hqd.symm, if_pos]
+  ext a
+  simp [Theorem21SetPartition.valueCell, eq_comm]
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Every cell other than the source and target is unchanged by
+cross-support replacement. -/
+theorem Theorem21SetPartition.valueCell_eq_of_replaceUsedWithUnused_of_ne
+    {xs : List A} {n m : ℕ} {P Q : Theorem21SetPartition xs n m}
+    {q d : Fin n} {y x : Occurrence xs}
+    (hQcells : ∀ c,
+      Q.cells c = P.replaceUsedWithUnusedCells q d y x c)
+    {c : Fin n} (hcq : c ≠ q) (hcd : c ≠ d) :
+    Q.valueCell c = P.valueCell c := by
+  classical
+  rw [Theorem21SetPartition.valueCell, hQcells c]
+  simp only [Theorem21SetPartition.replaceUsedWithUnusedCells,
+    if_neg hcq, if_neg hcd]
+  rfl
+
 omit [Fintype A] in
 /-- A same-support occurrence move stays in the literal source `Lambda_0`
 family when it enlarges the full sumset and does not erase the distinguished
@@ -1703,6 +1929,40 @@ theorem GMOReplacementAdmissible.moveOccurrence
         unfold insertValue
         exact Finset.mem_insert_of_mem (hP.2 d)
       · rw [P.valueCell_eq_of_moveOccurrence_of_ne hQcells hcq hcd]
+        exact hP.2 c
+
+omit [Fintype A] in
+/-- Cross-support replacement remains in the literal source family once
+the full sumset is monotone and the erased value is not the distinguished
+anchor value of its source cell. -/
+theorem GMOReplacementAdmissible.replaceUsedWithUnused
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    {P Q : Theorem21SetPartition xs n seed.card}
+    {q d : Fin n} {y x : Occurrence xs}
+    (hP : GMOReplacementAdmissible I P)
+    (hqd : q ≠ d)
+    (hyq : y ∈ P.cells q)
+    (hanchor : occurrenceValue xs (I.anchor q) ≠ occurrenceValue xs y)
+    (hQcells : ∀ c,
+      Q.cells c = P.replaceUsedWithUnusedCells q d y x c)
+    (hsumset : P.sumset ⊆ Q.sumset) :
+    GMOReplacementAdmissible I Q := by
+  classical
+  constructor
+  · exact hP.1.trans hsumset
+  · intro c
+    by_cases hcq : c = q
+    · subst c
+      rw [P.valueCell_eq_erase_of_replaceUsedWithUnused hyq hQcells]
+      unfold eraseValue
+      exact Finset.mem_erase.mpr ⟨hanchor, hP.2 q⟩
+    · by_cases hcd : c = d
+      · subst c
+        rw [P.valueCell_eq_insert_of_replaceUsedWithUnused hqd hQcells]
+        unfold insertValue
+        exact Finset.mem_insert_of_mem (hP.2 d)
+      · rw [P.valueCell_eq_of_replaceUsedWithUnused_of_ne hQcells hcq hcd]
         exact hP.2 c
 
 omit [Fintype A] in
