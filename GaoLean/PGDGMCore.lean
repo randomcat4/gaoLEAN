@@ -7325,6 +7325,56 @@ theorem exists_dgmPatternConvergent_min_nontrivial_with_extension_hnot
       B C P μ hTargetStab hfailure E hE,
     hmin, hext⟩
 
+/-- The fully prepared general branch of the source minimal-counterexample
+classification.  Incomparable overlapping leading layers with feasible
+intersection--union transform cannot be a counterexample: the transform is
+strictly smaller, hence gives the initial convergent, and the complete
+crossed contradiction eliminates its minimum nontrivial extension. -/
+theorem dgmPatternBound_of_preparedCrossed_strongIH
+    [Fintype A] (M : DGMPatternInnerMeasure)
+    (ih : ∀ M', DGMPatternInnerLt M' M → DGMPatternAtMeasure (A := A) M')
+    {K : AddSubgroup A} {k : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (B C : Finset A) (P : List (Finset A))
+    (hP : IsNonemptySetPartition P) (hInter : (B ∩ C).Nonempty)
+    (hBC : ¬B ⊆ C) (hCB : ¬C ⊆ B)
+    (μ : QuotientPattern K (k + 2))
+    (hmeasure : dgmPatternInnerMeasure (B :: C :: P) μ = M)
+    (hTarget : (patternSubsumSpectrum (B :: C :: P) μ).Nonempty)
+    (hTargetStab :
+      (patternSubsumSpectrum (B :: C :: P) μ).addStab = {0})
+    (hTransformed :
+      (patternSubsumSpectrum (dgmInterUnionLayers B C P) μ).Nonempty) :
+    DGMPatternBound (B :: C :: P) μ := by
+  classical
+  have hlt := dgmPatternInnerMeasure_inter_union_lt
+    B C P μ hBC hCB
+  have hltM : DGMPatternInnerLt
+      (dgmPatternInnerMeasure (dgmInterUnionLayers B C P) μ) M := by
+    rw [← hmeasure]
+    exact hlt
+  have hsmall := ih
+    (dgmPatternInnerMeasure (dgmInterUnionLayers B C P) μ) hltM
+  have hboundTransformed :
+      DGMPatternBound (dgmInterUnionLayers B C P) μ :=
+    hsmall K (k + 2) inferInstance inferInstance
+      (dgmInterUnionLayers B C P) μ rfl hTransformed
+  have hD₀ : DGMPatternConvergent B C P μ
+      (patternSubsumSpectrum (dgmInterUnionLayers B C P) μ) :=
+    patternSubsumSpectrum_inter_union_isConvergent
+      B C P μ hTransformed hboundTransformed
+  by_contra hfailure
+  obtain ⟨E, hE, hEnontrivial, hmin, hextension⟩ :=
+    exists_dgmPatternConvergent_min_nontrivial_with_extension_hnot
+      B C P μ hD₀ hTargetStab hfailure
+  obtain ⟨y, base, hbase, hescape, b₁, hb₁, hb₁C,
+      b₂, hb₂, hb₂B, νtail, hext, htail, hD12, hpair1⟩ :=
+    exists_initialCrossedData_of_nontrivial_convergent
+      B C P μ hTargetStab E hE hEnontrivial
+  exact dgmCrossedContradiction_of_minimalConvergent_strongIH
+    M ih B C P hP hInter μ E hE hmin hmeasure base hbase hb₁ hb₂
+      νtail hext htail hD12 hpair1 hescape
+
 /-- Double counting raw layer-value incidences. -/
 theorem sum_rawLayerMultiplicity
     [Fintype A] (P : List (Finset A)) :

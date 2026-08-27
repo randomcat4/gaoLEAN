@@ -5179,6 +5179,83 @@ theorem Theorem21SetPartition.tailSumsetAfterErase_eq_eraseValue_add_succ
   simp only [Finset.mem_add]
 
 omit [Fintype A] in
+/-- The local strict deficit in dissertation Lemma 5 is exactly the
+contrapositive of Scherk's one-erasure bound: deleting any chosen value from
+the current cell leaves the corresponding tail sumset unchanged. -/
+theorem Theorem21SetPartition.tailSumset_eq_afterErase_of_local_deficit
+    {xs : List A} {n m : ℕ}
+    (P : Theorem21SetPartition xs n m) (q : Fin n) {z : A}
+    (hz : z ∈ P.valueCell q)
+    (hdeficit :
+      (P.tailSumset q.val).card <
+        (P.tailSumset (q.val + 1)).card + (P.valueCell q).card - 1) :
+    P.tailSumset q.val = P.tailSumsetAfterErase q z q.val := by
+  classical
+  by_contra hne
+  have hsumne :
+      P.tailSumset (q.val + 1) + P.valueCell q ≠
+        P.tailSumset (q.val + 1) + (P.valueCell q).erase z := by
+    intro heq
+    apply hne
+    rw [P.tailSumset_eq_valueCell_add_succ q,
+      P.tailSumsetAfterErase_eq_eraseValue_add_succ q z]
+    simpa [eraseValue, add_comm] using heq
+  have hscherk := card_add_sub_one_le_of_add_ne_add_erase
+    (P.tailSumset (q.val + 1)) (P.valueCell q)
+    (P.tailSumset_nonempty (q.val + 1)) hz hsumne
+  have hbound :
+      (P.tailSumset (q.val + 1)).card + (P.valueCell q).card - 1 ≤
+        (P.tailSumset q.val).card := by
+    simpa [P.tailSumset_eq_valueCell_add_succ q, add_comm] using hscherk
+  omega
+
+omit [Fintype A] in
+/-- Once deletion is invisible at its own cell, it is invisible in every
+earlier tail as well: the earlier cells contribute the same left summand. -/
+theorem Theorem21SetPartition.tailSumset_eq_afterErase_of_le
+    {xs : List A} {n m r : ℕ}
+    (P : Theorem21SetPartition xs n m) (q : Fin n) (z : A)
+    (hrq : r ≤ q.val)
+    (hlocal : P.tailSumset q.val =
+      P.tailSumsetAfterErase q z q.val) :
+    P.tailSumset r = P.tailSumsetAfterErase q z r := by
+  classical
+  have hmiddle :
+      P.valueCell q + P.tailSumset (q.val + 1) =
+        eraseValue (P.valueCell q) z + P.tailSumset (q.val + 1) := by
+    simpa [P.tailSumset_eq_valueCell_add_succ q,
+      P.tailSumsetAfterErase_eq_eraseValue_add_succ q z] using hlocal
+  unfold Theorem21SetPartition.tailSumset
+    Theorem21SetPartition.tailSumsetAfterErase
+  rw [P.tailValueCells_decompose q hrq,
+    P.tailValueCellsAfterErase_decompose q z hrq,
+    fullLayerSumSpectrum_append, fullLayerSumSpectrum_append,
+    fullLayerSumSpectrum_cons, fullLayerSumSpectrum_cons]
+  unfold Theorem21SetPartition.tailSumset
+    Theorem21SetPartition.tailValueCells at hmiddle
+  rw [hmiddle]
+
+omit [Fintype A] in
+/-- Lemma 5's condition (III) supplies a nonterminal tail cell from which
+every chosen value may be erased without changing any Definition 1 tail up
+to the current factor stage. -/
+theorem FactorForm.exists_local_tail_erasure
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n} (F : FactorForm I rho) :
+    ∃ q : Fin n,
+      rho ≤ q.val ∧ q.val + 1 < n ∧
+        ∀ z ∈ F.partition.valueCell q, ∀ s, s ≤ rho →
+          F.partition.tailSumset s =
+            F.partition.tailSumsetAfterErase q z s := by
+  classical
+  obtain ⟨q, hrhoq, hqLast, hdeficit⟩ := F.exists_local_tail_deficit
+  refine ⟨q, hrhoq, hqLast, ?_⟩
+  intro z hz s hsrho
+  apply F.partition.tailSumset_eq_afterErase_of_le q z
+    (hsrho.trans hrhoq)
+  exact F.partition.tailSumset_eq_afterErase_of_local_deficit q hz hdeficit
+
+omit [Fintype A] in
 /-- The preceding tail recursion after projection to an arbitrary quotient.
 -/
 theorem Theorem21SetPartition.quotientLayer_tailSumset_eq_add_succ
@@ -5415,6 +5492,44 @@ theorem card_add_sub_one_le_of_unique_addStab_fiber
   rw [hKfin] at hkneser
   rw [card_dgmSubgroupFinset] at hkneser
   have hKpos : 1 ≤ Nat.card K := Nat.card_pos
+  omega
+
+/-- Kneser's theorem at a strict local-deficit step: no value of the current
+cell is alone modulo the actual stabilizer of that local tail. -/
+theorem Theorem21SetPartition.exists_duplicate_tailPeriod_of_local_deficit
+    {xs : List A} {n m : ℕ}
+    (P : Theorem21SetPartition xs n m) (q : Fin n) {z : A}
+    (hz : z ∈ P.valueCell q)
+    (hdeficit :
+      (P.tailSumset q.val).card <
+        (P.tailSumset (q.val + 1)).card + (P.valueCell q).card - 1) :
+    ∃ y ∈ P.valueCell q, y ≠ z ∧
+      QuotientAddGroup.mk' (P.tailPeriod q.val) y =
+        QuotientAddGroup.mk' (P.tailPeriod q.val) z := by
+  classical
+  by_contra hnone
+  have hunique : ∀ y ∈ P.valueCell q,
+      y - z ∈ AddAction.stabilizer A
+        (((P.tailSumset (q.val + 1)) + P.valueCell q : Finset A) : Set A) →
+      y = z := by
+    intro y hy hyperiod
+    by_contra hyz
+    apply hnone
+    refine ⟨y, hy, hyz, ?_⟩
+    apply QuotientAddGroup.eq_iff_sub_mem.mpr
+    unfold Theorem21SetPartition.tailPeriod
+    rw [P.tailSumset_eq_valueCell_add_succ q]
+    simpa [add_comm] using hyperiod
+  have hbound := card_add_sub_one_le_of_unique_addStab_fiber
+    (P.tailSumset (q.val + 1)) (P.valueCell q)
+    (P.tailSumset_nonempty (q.val + 1))
+    (P.valueCells_nonempty (P.valueCell q) (by
+      simp [Theorem21SetPartition.valueCells]))
+    hz hunique
+  have hbound' :
+      (P.tailSumset (q.val + 1)).card + (P.valueCell q).card - 1 ≤
+        (P.tailSumset q.val).card := by
+    simpa [P.tailSumset_eq_valueCell_add_succ q, add_comm] using hbound
   omega
 
 /-- The non-doubled branch of equation (3.4).  It applies the preceding
