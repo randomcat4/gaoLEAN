@@ -30,13 +30,14 @@ lake build GaoFormal.AxiomAudit
 ```
 
 工具链固定为 Lean `v4.32.0`，Mathlib 固定为公开标签 `v4.32.0`。
-最新验收点见 `milestone-61.md`：DGM 商群 pattern 的四坐标下降度量、普通 GMO
-Theorem E 的有限极大化骨架，以及奇数阶 `±1` 分支的忠实 occurrence/subgroup
-桥接均已在服务器验证。顶层仍为 `LEAN_CONDITIONAL`；M61 明列 generalized
-pattern theorem、Theorem E 的完整迭代与 signed Davenport/强归纳三处未证数学承重点。
+最新验收点见 `milestone-62.md`：DGM crossed `D12` 基础、普通 GMO 的完整
+Definition 1 有限极值链，以及 signed Step 5 的 quotient concentration 无损回拉均已
+在服务器验证。M62 还公开修正了 Theorem E 在 `N=0` 时的自然数截断误编码，并以
+机械回归锁定差异。顶层仍为 `LEAN_CONDITIONAL`；DGM 的 D1/D2/D12 矛盾、
+Theorem E 的 exchange/factor-form Lemmas 1--5 与 signed Step 1/5/6 尚未闭合。
 
 下文保留各历史里程碑当时的边界描述；其中写有“仍缺”“partial”或
-“NOT_FORMALIZED”的段落是过程记录，应以 M61 的最新缺口账为准。
+“NOT_FORMALIZED”的段落是过程记录，应以 M62 的最新缺口账为准。
 
 PG 分支的真实覆盖与外部阻塞见 `pg-coverage.md`。冻结 PG-GAO 陈述已编译，
 但陈述定义不计作证明；当前 PG-PM 仅为显式外部参数下的条件结论。PG-O3

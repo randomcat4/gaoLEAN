@@ -907,3 +907,23 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
 - The manuscript theorem remains conditional.  The generalized DGM pattern
   theorem, the full Theorem E iteration/Theorem 2.4--2.5 induction, and the
   signed Davenport convolution/cardinality induction are still open.
+
+## 2026-08-27: Crossed DGM sets, Definition 1, and signed quotient lifting (M62)
+
+- Added source-shaped crossed coset slices, two-step quotient-pattern
+  extensions and the nonempty `D12` subset of the exact pattern spectrum.
+- Formalized the complete finite recursive skeleton of dissertation
+  Definition 1, including independently selected extremal states at every
+  `Lambda/F/Upsilon/G/H_k` stage.
+- Corrected Theorem E's natural-number encoding from the false
+  `(N - 1) * n + e + 1` to `(N * n + e + 1) - n`.  A checked regression fixes
+  the `N=0,n=2,e=2` values at `1` versus the old `3`; dependent endpoint
+  lemmas were reproved.
+- Proved the odd-order singleton signed-cell characterization and the full
+  occurrence-labelled pullback of a quotient paired-coset certificate,
+  including exact preservation of the quotient-cardinality exception bound.
+- Joint target build: 8707 jobs, exit 0.  Full `GaoLean` server build: 8753
+  jobs, exit 0.  Forbidden declarations are absent and printed dependencies
+  use only `propext`, `Classical.choice`, and `Quot.sound`.
+- This remains a conditional checkpoint.  DGM's `D1/D2/D12` contradiction,
+  Theorem E exchange Lemmas 1--5, and the signed Step 1/5/6 closure remain.

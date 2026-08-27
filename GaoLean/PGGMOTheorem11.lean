@@ -100,6 +100,52 @@ theorem plusMinusDavenportConstant_pos
   rcases hempty with ⟨I, ⟨i, _hi⟩, _sign, _hsum⟩
   exact Fin.elim0 i
 
+/-- Split a signed sum on an appended source into its labelled prefix and
+suffix selections.  The signs are pulled back along the two canonical
+occurrence embeddings. -/
+theorem sum_signed_prefixSelection_add_sum_signed_suffixSelection
+    (left right : List A) (I : Selection (left ++ right))
+    (sign : Occurrence (left ++ right) → PlusMinusSign) :
+    let IL := prefixSelection left right I
+    let IR := suffixSelection left right I
+    let signL : Occurrence left → PlusMinusSign := fun i ↦
+      sign (appendLeftOccurrenceEmbedding left right i)
+    let signR : Occurrence right → PlusMinusSign := fun i ↦
+      sign (appendRightOccurrenceEmbedding left right i)
+    (∑ i ∈ IL, (signL i).act (occurrenceValue left i)) +
+        (∑ i ∈ IR, (signR i).act (occurrenceValue right i)) =
+      ∑ i ∈ I, (sign i).act (occurrenceValue (left ++ right) i) := by
+  classical
+  dsimp only
+  have hleft :
+      (∑ i ∈ prefixSelection left right I,
+          (sign (appendLeftOccurrenceEmbedding left right i)).act
+            (occurrenceValue left i)) =
+        ∑ i ∈ I ∩ prefixOccurrences left right,
+          (sign i).act (occurrenceValue (left ++ right) i) := by
+    rw [← map_prefixSelection_eq_inter left right I]
+    simp [Finset.sum_map, occurrenceValue_appendLeftOccurrenceEmbedding]
+  have hright :
+      (∑ i ∈ suffixSelection left right I,
+          (sign (appendRightOccurrenceEmbedding left right i)).act
+            (occurrenceValue right i)) =
+        ∑ i ∈ I \ prefixOccurrences left right,
+          (sign i).act (occurrenceValue (left ++ right) i) := by
+    rw [← map_suffixSelection_eq_sdiff left right I]
+    simp [Finset.sum_map, occurrenceValue_appendRightOccurrenceEmbedding]
+  let P := prefixOccurrences left right
+  have hdis : Disjoint (I ∩ P) (I \ P) := by
+    exact Finset.disjoint_left.mpr (by
+      intro x hxinter hxsdiff
+      exact (Finset.mem_sdiff.mp hxsdiff).2
+        (Finset.mem_inter.mp hxinter).2)
+  have hunion : (I ∩ P) ∪ (I \ P) = I := by
+    ext x
+    simp only [Finset.mem_union, Finset.mem_inter, Finset.mem_sdiff]
+    tauto
+  rw [hleft, hright]
+  rw [← Finset.sum_union hdis, hunion]
+
 /-- Canonical finite instances for subgroup carrier types used throughout the
 strict-subgroup scheduler. -/
 noncomputable local instance subgroupFintype (K : AddSubgroup A) : Fintype K :=
@@ -309,6 +355,45 @@ theorem PlusMinusPairedCosetCertificate.map_coe_selectedSubtypeListOfOdd
   classical
   simp [PlusMinusPairedCosetCertificate.selectedSubtypeListOfOdd]
 
+/-! ## Odd-order collapse of singleton signed cells -/
+
+/-- An odd-order finite additive group has no nonzero self-negative element,
+expressed using the manuscript's `Nat.card` convention. -/
+theorem eq_zero_of_neg_eq_self_of_natCard_odd
+    (hodd : Odd (Nat.card A)) {x : A} (hx : -x = x) : x = 0 := by
+  have hcard : Odd (Fintype.card A) := by
+    simpa [Nat.card_eq_fintype_card] using hodd
+  apply eq_zero_of_two_nsmul_eq_zero_of_card_odd hcard
+  rw [two_nsmul]
+  calc
+    x + x = x + (-x) := by rw [hx]
+    _ = 0 := add_neg_cancel x
+
+/-- For the `{+1,-1}` weight set in odd order, a signed cell is a singleton
+exactly at the zero source value.  This is the formal `d = gcd(2, exp G)=1`
+collapse used to shorten Step 6 in the 13-page specialization. -/
+theorem plusMinusValueBlock_eq_singleton_self_iff_of_natCard_odd
+    (hodd : Odd (Nat.card A)) (x : A) :
+    plusMinusValueBlock x = {x} ↔ x = 0 := by
+  constructor
+  · intro hsingle
+    have hnegmem : -x ∈ plusMinusValueBlock x := by
+      simp [plusMinusValueBlock]
+    rw [hsingle] at hnegmem
+    have hneg : -x = x := by simpa using hnegmem
+    exact eq_zero_of_neg_eq_self_of_natCard_odd hodd hneg
+  · rintro rfl
+    simp [plusMinusValueBlock]
+
+/-- The same singleton criterion for a labelled occurrence block. -/
+theorem plusMinusOccurrenceBlock_eq_singleton_iff_of_natCard_odd
+    (hodd : Odd (Nat.card A)) (xs : List A) (i : Occurrence xs) :
+    plusMinusOccurrenceBlock xs i = {occurrenceValue xs i} ↔
+      occurrenceValue xs i = 0 := by
+  simpa [plusMinusOccurrenceBlock] using
+    plusMinusValueBlock_eq_singleton_self_iff_of_natCard_odd
+      hodd (occurrenceValue xs i)
+
 /-- Convert paired-layer structural evidence to the exact occurrence-labelled
 concentration record used by the manuscript. -/
 theorem PlusMinusPairedCosetCertificate.toGMOConcentration
@@ -471,6 +556,98 @@ theorem image_plusMinusExactSpectrum_quotient
       plusMinusExactSpectrum (xs.map (QuotientAddGroup.mk' K)) n :=
   image_plusMinusExactSpectrum_addMonoidHom
     (QuotientAddGroup.mk' K) xs n
+
+/-- Lift a paired concentration certificate from `A/L` to `A`.  The lifted
+subgroup is the comap of the quotient subgroup, the center is an arbitrary
+section lift, and the selected occurrence set is transported through the
+canonical position equivalence.  Crucially, whole signed-block containment
+is pulled back; no one-sign membership shortcut is used. -/
+theorem plusMinusPairedCosetCertificate_of_quotient
+    (xs : List A) (L : AddSubgroup A)
+    (hQ : PlusMinusPairedCosetCertificate
+      (xs.map (QuotientAddGroup.mk' L))) :
+    Nonempty (PlusMinusPairedCosetCertificate xs) := by
+  classical
+  let q : A →+ A ⧸ L := QuotientAddGroup.mk' L
+  let e : Occurrence xs ≃
+      Occurrence (xs.map (QuotientAddGroup.mk' L)) :=
+    ConcreteGDihedral.mapOccurrenceEquiv (QuotientAddGroup.mk' L) xs
+  let K : AddSubgroup A := hQ.K.comap q
+  let beta : A := quotientAddSection L hQ.beta
+  let selected : Selection xs := hQ.selected.map e.symm.toEmbedding
+  have hmapK : K.map q = hQ.K := by
+    simpa [K, q] using
+      AddSubgroup.map_comap_eq_self_of_surjective
+        (QuotientAddGroup.mk'_surjective L) hQ.K
+  have hLK : L ≤ K := by
+    intro x hx
+    change q x ∈ hQ.K
+    have hqx : q x = 0 := (QuotientAddGroup.eq_zero_iff x).2 hx
+    rw [hqx]
+    exact hQ.K.zero_mem
+  have hcardQuot : Nat.card ((A ⧸ L) ⧸ hQ.K) = Nat.card (A ⧸ K) := by
+    have hcard := Nat.card_congr
+      (QuotientAddGroup.quotientQuotientEquivQuotient L K hLK).toEquiv
+    rw [hmapK] at hcard
+    simpa [Nat.card_eq_fintype_card] using hcard
+  have hstrictK : K < ⊤ := by
+    rw [lt_top_iff_ne_top]
+    intro htop
+    apply (ne_of_lt hQ.strict)
+    apply top_unique
+    intro z _hz
+    obtain ⟨x, rfl⟩ := QuotientAddGroup.mk'_surjective L z
+    have hxK : x ∈ K := by
+      rw [htop]
+      trivial
+    exact hxK
+  refine ⟨{
+    K := K
+    strict := hstrictK
+    beta := beta
+    selected := selected
+    signedBlockCoset := ?_
+    card_lower := ?_
+  }⟩
+  · intro i hi y hy
+    have hei : e i ∈ hQ.selected := by
+      obtain ⟨j, hj, hji⟩ := Finset.mem_map.mp hi
+      have hje : j = e i := by
+        exact e.symm_apply_eq.mp hji
+      simpa [hje] using hj
+    have hqy : q y ∈ plusMinusOccurrenceBlock
+        (xs.map (QuotientAddGroup.mk' L)) (e i) := by
+      rw [mem_plusMinusOccurrenceBlock_iff] at hy ⊢
+      rcases hy with hy | hy
+      · left
+        rw [hy]
+        simpa [e, q] using
+          (ConcreteGDihedral.occurrenceValue_mapOccurrenceEquiv
+            (QuotientAddGroup.mk' L) xs i).symm
+      · right
+        rw [hy, map_neg]
+        congr 1
+        simpa [e, q] using
+          (ConcreteGDihedral.occurrenceValue_mapOccurrenceEquiv
+            (QuotientAddGroup.mk' L) xs i).symm
+    have hmem := hQ.signedBlockCoset (e i) hei (q y) hqy
+    change q (y - beta) ∈ hQ.K
+    have hqbeta : q beta = hQ.beta := by
+      simpa [q, beta] using quotientAddSection_mk L hQ.beta
+    rw [map_sub, hqbeta]
+    exact hmem
+  · change xs.length - Nat.card (A ⧸ K) + 2 ≤ selected.card
+    have hlenmap : (xs.map (QuotientAddGroup.mk' L)).length = xs.length :=
+      by simp
+    have hselcard : selected.card = hQ.selected.card := by
+      simpa [selected]
+    calc
+      xs.length - Nat.card (A ⧸ K) + 2 =
+          (xs.map (QuotientAddGroup.mk' L)).length -
+            Nat.card ((A ⧸ L) ⧸ hQ.K) + 2 := by
+              rw [hlenmap, hcardQuot]
+      _ ≤ hQ.selected.card := hQ.card_lower
+      _ = selected.card := hselcard.symm
 
 /-- The DGM inequality for the literal signed occurrence setpartition, with
 the canonical classical equality decision hidden in a proposition wrapper. -/

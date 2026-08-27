@@ -629,6 +629,35 @@ noncomputable def Theorem21SetPartition.capturedOutsideCommonCore
   exact (P.support.filter fun i ↦
     occurrenceValue xs i ∉ P.commonCore H).card
 
+/-- The ordered tail `A_{r+1}, ..., A_n` of value cells (with zero-based
+Lean index `r`). -/
+noncomputable def Theorem21SetPartition.tailValueCells
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (r : ℕ) : List (Finset A) :=
+  P.valueCells.drop r
+
+/-- The tail sumset used at stage `r` of Definition 1. -/
+noncomputable def Theorem21SetPartition.tailSumset
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (r : ℕ) : Finset A := by
+  classical
+  exact fullLayerSumSpectrum (P.tailValueCells r)
+
+/-- Sum of the cardinalities of all cell images modulo a fixed subgroup.
+This is Definition 1's first maximized quantity at each positive stage. -/
+noncomputable def Theorem21SetPartition.quotientIncidenceAt
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (H : AddSubgroup A) : ℕ := by
+  classical
+  exact ∑ c : Fin n, (quotientLayer H (P.valueCell c)).card
+
+/-- The cellwise quotient-image constraint in Definition 1's `Υ_r` stage. -/
+def Theorem21SetPartition.quotientImagesIncluded
+    {xs : List A} {n m : ℕ} (F P : Theorem21SetPartition xs n m)
+    (H : AddSubgroup A) : Prop :=
+  ∀ c : Fin n, quotientLayer H (F.valueCell c) ⊆
+    quotientLayer H (P.valueCell c)
+
 /-- The first three finite lexicographic stages of Definition 1 in the
 source Partition Theorem, specialized to ordinary weights and with no fixed
 distinguished elements: maximize the full sumset, then quotient incidence
@@ -708,6 +737,215 @@ theorem exists_theoremEMaximalReplacement
       exact ⟨Finset.mem_univ Z, hZsumset.trans hRsumsetP⟩
     · exact hZincidence.trans hRincidence
 
+/-! ### The full finite extremal chain of dissertation Definition 1 -/
+
+/-- One finite `Υ_r` state: its candidate family and the chosen `G_r`.
+The candidate family is retained explicitly, so later stages may and usually
+do choose a different replacement partition. -/
+structure Definition1ExtremalState
+    (xs : List A) (seed : Selection xs) (n : ℕ) where
+  upsilon : Finset (Theorem21SetPartition xs n seed.card)
+  chosen : Theorem21SetPartition xs n seed.card
+  chosen_mem : chosen ∈ upsilon
+
+/-- Exact validity condition for `Υ_0`: the family of all replacements with
+maximum full-sumset cardinality. -/
+structure Definition1InitialValid
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    (state : Definition1ExtremalState xs seed n) : Prop where
+  maximal : ∀ P : Theorem21SetPartition xs n seed.card,
+    P.sumset.card ≤ state.chosen.sumset.card
+  mem_upsilon_iff : ∀ P : Theorem21SetPartition xs n seed.card,
+    P ∈ state.upsilon ↔ P.sumset.card = state.chosen.sumset.card
+
+/-- One positive-stage transition of Definition 1.  At zero-based stage
+`r`, `H` is the maximal period of the previous chosen tail beginning at
+`r`.  The intermediate witness `F` is chosen after maximizing total quotient
+incidence subject to fixing that tail sumset.  The next `Υ` family then fixes
+those maximum data, imposes the cellwise quotient-image inclusion from `F`,
+and maximizes the following tail beginning at `r+1`. -/
+structure Definition1Transition
+    {xs : List A} {seed : Selection xs} {n : ℕ} (r : ℕ)
+    (previous next : Definition1ExtremalState xs seed n)
+    (F : Theorem21SetPartition xs n seed.card) : Prop where
+  F_mem_previous : F ∈ previous.upsilon
+  F_tail_fixed : F.tailSumset r = previous.chosen.tailSumset r
+  incidence_maximal :
+    ∀ P : Theorem21SetPartition xs n seed.card,
+      P ∈ previous.upsilon →
+      P.tailSumset r = previous.chosen.tailSumset r →
+      P.quotientIncidenceAt
+          (AddAction.stabilizer A
+            (previous.chosen.tailSumset r : Set A)) ≤
+        F.quotientIncidenceAt
+          (AddAction.stabilizer A
+            (previous.chosen.tailSumset r : Set A))
+  tail_maximal :
+    ∀ P : Theorem21SetPartition xs n seed.card,
+      P ∈ previous.upsilon →
+      P.tailSumset r = previous.chosen.tailSumset r →
+      P.quotientIncidenceAt
+          (AddAction.stabilizer A
+            (previous.chosen.tailSumset r : Set A)) =
+        F.quotientIncidenceAt
+          (AddAction.stabilizer A
+            (previous.chosen.tailSumset r : Set A)) →
+      F.quotientImagesIncluded P
+          (AddAction.stabilizer A
+            (previous.chosen.tailSumset r : Set A)) →
+      (P.tailSumset (r + 1)).card ≤
+        (next.chosen.tailSumset (r + 1)).card
+  mem_next_upsilon_iff :
+    ∀ P : Theorem21SetPartition xs n seed.card,
+      P ∈ next.upsilon ↔
+        P ∈ previous.upsilon ∧
+        P.tailSumset r = previous.chosen.tailSumset r ∧
+        P.quotientIncidenceAt
+            (AddAction.stabilizer A
+              (previous.chosen.tailSumset r : Set A)) =
+          F.quotientIncidenceAt
+            (AddAction.stabilizer A
+              (previous.chosen.tailSumset r : Set A)) ∧
+        F.quotientImagesIncluded P
+            (AddAction.stabilizer A
+              (previous.chosen.tailSumset r : Set A)) ∧
+        (P.tailSumset (r + 1)).card =
+          (next.chosen.tailSumset (r + 1)).card
+
+omit [Fintype A] in
+/-- The initial `Υ_0/G_0` state exists by a genuine finite argmax. -/
+theorem exists_definition1InitialState
+    (xs : List A) (seed : Selection xs) (n : ℕ)
+    (hcap : SelectionMultiplicityAtMost xs seed n)
+    (hlen : n ≤ seed.card) :
+    ∃ state : Definition1ExtremalState xs seed n,
+      Definition1InitialValid state := by
+  classical
+  letI : Fintype (Theorem21SetPartition xs n seed.card) := Fintype.ofFinite _
+  obtain ⟨initial⟩ :=
+    exists_selected_theorem21SetPartition xs seed n hcap hlen
+  let all : Finset (Theorem21SetPartition xs n seed.card) := Finset.univ
+  obtain ⟨G, _hGall, hGmax⟩ := Finset.exists_max_image all
+    (fun P ↦ P.sumset.card) ⟨initial, Finset.mem_univ _⟩
+  let upsilon := all.filter fun P ↦ P.sumset.card = G.sumset.card
+  have hGmem : G ∈ upsilon := by simp [upsilon, all]
+  refine ⟨{
+    upsilon := upsilon
+    chosen := G
+    chosen_mem := hGmem
+  }, ?_⟩
+  refine {
+    maximal := ?_
+    mem_upsilon_iff := ?_
+  }
+  · intro P
+    exact hGmax P (Finset.mem_univ P)
+  · intro P
+    simp [upsilon, all]
+
+omit [Fintype A] in
+/-- Every valid finite `Υ_r/G_r` state admits the next
+`Λ_{r+1}/F_{r+1}/Υ_{r+1}/G_{r+1}` stage. -/
+theorem exists_definition1Transition
+    {xs : List A} {seed : Selection xs} {n : ℕ} (r : ℕ)
+    (previous : Definition1ExtremalState xs seed n) :
+    ∃ (next : Definition1ExtremalState xs seed n)
+      (F : Theorem21SetPartition xs n seed.card),
+      Definition1Transition r previous next F := by
+  classical
+  let H : AddSubgroup A := AddAction.stabilizer A
+    (previous.chosen.tailSumset r : Set A)
+  let lambdaBase := previous.upsilon.filter fun P ↦
+    P.tailSumset r = previous.chosen.tailSumset r
+  have hchosenBase : previous.chosen ∈ lambdaBase := by
+    simp [lambdaBase, previous.chosen_mem]
+  obtain ⟨F, hFbase, hFmax⟩ := Finset.exists_max_image lambdaBase
+    (fun P ↦ P.quotientIncidenceAt H) ⟨previous.chosen, hchosenBase⟩
+  let lambda := lambdaBase.filter fun P ↦
+    P.quotientIncidenceAt H = F.quotientIncidenceAt H
+  have hFlambda : F ∈ lambda := by simp [lambda, hFbase]
+  let upsilonBase := lambda.filter fun P ↦ F.quotientImagesIncluded P H
+  have hFupsilonBase : F ∈ upsilonBase := by
+    simp only [upsilonBase, Finset.mem_filter, hFlambda, true_and]
+    intro c
+    exact Finset.Subset.rfl
+  obtain ⟨G, hGbase, hGmax⟩ := Finset.exists_max_image upsilonBase
+    (fun P ↦ (P.tailSumset (r + 1)).card) ⟨F, hFupsilonBase⟩
+  let nextUpsilon := upsilonBase.filter fun P ↦
+    (P.tailSumset (r + 1)).card = (G.tailSumset (r + 1)).card
+  have hGnext : G ∈ nextUpsilon := by simp [nextUpsilon, hGbase]
+  let next : Definition1ExtremalState xs seed n := {
+    upsilon := nextUpsilon
+    chosen := G
+    chosen_mem := hGnext
+  }
+  refine ⟨next, F, {
+    F_mem_previous := ?_
+    F_tail_fixed := ?_
+    incidence_maximal := ?_
+    tail_maximal := ?_
+    mem_next_upsilon_iff := ?_
+  }⟩
+  · exact (Finset.mem_filter.mp hFbase).1
+  · exact (Finset.mem_filter.mp hFbase).2
+  · intro P hPprev hPtail
+    exact hFmax P (Finset.mem_filter.mpr ⟨hPprev, hPtail⟩)
+  · intro P hPprev hPtail hPinc hPimages
+    apply hGmax P
+    apply Finset.mem_filter.mpr
+    constructor
+    · apply Finset.mem_filter.mpr
+      exact ⟨Finset.mem_filter.mpr ⟨hPprev, hPtail⟩, hPinc⟩
+    · exact hPimages
+  · intro P
+    simp only [next, nextUpsilon, Finset.mem_filter, upsilonBase,
+      lambda, lambdaBase]
+    tauto
+
+/-- The full finite chain, indexed by its last stage.  The indexed inductive
+type prevents any accidental reuse of a fixed partition: every successor
+stores a fresh state connected only by the exact Definition 1 transition. -/
+inductive Definition1ExtremalChain
+    (xs : List A) (seed : Selection xs) (n : ℕ) :
+    ℕ → Definition1ExtremalState xs seed n → Type (u + 1)
+  | initial (state) (valid : Definition1InitialValid state) :
+      Definition1ExtremalChain xs seed n 0 state
+  | next {r previous}
+      (chain : Definition1ExtremalChain xs seed n r previous)
+      (state) (F : Theorem21SetPartition xs n seed.card)
+      (valid : Definition1Transition r previous state F) :
+      Definition1ExtremalChain xs seed n (r + 1) state
+
+omit [Fintype A] in
+/-- Definition 1's iterated extremal chain exists to every finite depth. -/
+theorem exists_definition1ExtremalChain
+    (xs : List A) (seed : Selection xs) (n r : ℕ)
+    (hcap : SelectionMultiplicityAtMost xs seed n)
+    (hlen : n ≤ seed.card) :
+    ∃ state : Definition1ExtremalState xs seed n,
+      Nonempty (Definition1ExtremalChain xs seed n r state) := by
+  induction r with
+  | zero =>
+      obtain ⟨state, hstate⟩ :=
+        exists_definition1InitialState xs seed n hcap hlen
+      exact ⟨state, ⟨Definition1ExtremalChain.initial state hstate⟩⟩
+  | succ r ih =>
+      obtain ⟨previous, ⟨chain⟩⟩ := ih
+      obtain ⟨state, F, htransition⟩ :=
+        exists_definition1Transition r previous
+      exact ⟨state,
+        ⟨Definition1ExtremalChain.next chain state F htransition⟩⟩
+
+/-- Regression for the placement of natural subtraction in Theorem E.
+
+The source coefficient is `(N * n + e + 1) - n`.  Subtracting one from `N`
+first is not equivalent over `Nat`: at `N = 0`, `n = 2`, `e = 2`, the faithful
+coefficient is `1`, whereas the prematurely truncated expression is `3`. -/
+theorem theoremE_natSub_regression :
+    (((0 : ℕ) * 2 + 2 + 1) - 2 = 1) ∧
+      ((0 - 1) * 2 + 2 + 1 = 3) := by
+  norm_num
+
 /-- Exact ordinary specialization of the stronger replacement theorem called
 Theorem E in the source of Theorems 2.4 and 2.5. -/
 structure GMOTheoremEOutput
@@ -716,8 +954,8 @@ structure GMOTheoremEOutput
   H : AddSubgroup A
   periodic : H ≤ AddAction.stabilizer A (partition.sumset : Set A)
   card_lower :
-    ((partition.commonCosetCount H - 1) * n +
-        partition.exceptionDefect H + 1) * Nat.card H ≤
+    ((partition.commonCosetCount H * n +
+        partition.exceptionDefect H + 1) - n) * Nat.card H ≤
       partition.sumset.card
   nontrivial_data : H ≠ ⊥ →
     1 ≤ partition.commonCosetCount H ∧
@@ -1040,7 +1278,12 @@ theorem GMOTheoremEOutput.nonempty_periodicAlternative_of_terminal
   }⟩
   · have hbound := h.card_lower
     rw [hN] at hbound
-    simpa using hbound
+    have hcoeff :
+        ((1 * n + h.partition.exceptionDefect h.H + 1) - n) =
+          h.partition.exceptionDefect h.H + 1 := by
+      omega
+    rw [hcoeff] at hbound
+    exact hbound
   · have houtside := h.card_outsideCommonCore hnontrivial
     have hoccurrences :
         h.partition.occurrencesInCommonCore h.H =
@@ -1068,8 +1311,11 @@ theorem GMOTheoremEOutput.exceptionDefect_le_quotient_sub_two_of_count_eq_one
     exact hnotLarge ((min_le_left _ _).trans hambient)
   have hbound := h.card_lower
   rw [hN] at hbound
-  have hone : (1 : ℕ) - 1 = 0 := by omega
-  rw [hone, zero_mul, zero_add] at hbound
+  have hcoeff :
+      ((1 * n + h.partition.exceptionDefect h.H + 1) - n) =
+        h.partition.exceptionDefect h.H + 1 := by
+    omega
+  rw [hcoeff] at hbound
   have hcard := AddSubgroup.card_eq_card_quotient_mul_card_addSubgroup h.H
   have hprodLt :
       (h.partition.exceptionDefect h.H + 1) * Nat.card h.H <
@@ -1182,8 +1428,9 @@ theorem Theorem21SetPartition.exceptionDefect_bot_add_core_incidence
     P.sum_card_valueCell, Nat.mul_comm] using hsum
 
 /-- The trivial-period specialization of Theorem E's numerical bound is at
-least the large-branch threshold `|S'| - n + 1`.  The empty-common-core case
-is kept separate because natural subtraction makes `N - 1` truncate. -/
+least the large-branch threshold `|S'| - n + 1`.  Encoding the source
+coefficient by subtracting `n` only after the full incidence sum makes this
+uniform, including the empty-common-core case. -/
 theorem GMOTheoremEOutput.card_lower_of_H_eq_bot
     {xs : List A} {seed : Selection xs} {n : ℕ}
     (h : GMOTheoremEOutput xs seed n) (hH : h.H = ⊥)
@@ -1193,18 +1440,9 @@ theorem GMOTheoremEOutput.card_lower_of_H_eq_bot
   rw [hH] at hbound
   simp only [h.partition.commonCosetCount_bot, Nat.card_unique, mul_one] at hbound
   have hincidence := h.partition.exceptionDefect_bot_add_core_incidence
-  cases hcore : (h.partition.commonCore (⊥ : AddSubgroup A)).card with
-  | zero =>
-      rw [hcore, mul_zero, add_zero] at hincidence
-      rw [hcore] at hbound
-      simp only [Nat.zero_sub, zero_mul, zero_add] at hbound
-      omega
-  | succ k =>
-      rw [hcore] at hbound hincidence
-      simp only [Nat.succ_sub_one] at hbound
-      simp only [Nat.mul_succ] at hincidence
-      rw [Nat.mul_comm n k] at hincidence
-      omega
+  rw [Nat.mul_comm n
+    (h.partition.commonCore (⊥ : AddSubgroup A)).card] at hincidence
+  omega
 
 /-- Thus the trivial-period output of Theorem E is already branch (i) of
 Theorem 2.1, with no change to its numerical threshold. -/

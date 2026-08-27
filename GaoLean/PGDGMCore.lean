@@ -631,6 +631,135 @@ theorem dgmPatternInnerMeasure_inter_union_lt_of_spectrum_eq
   rw [hspectrum, htotal]
   exact Prod.Lex.right _ (Prod.Lex.right _ (Prod.Lex.left _ _ hdefect))
 
+/-! ## The crossed two-layer objects in the general pattern proof -/
+
+/-- The part of a layer lying in the additive `H`-coset represented by `b`.
+This is the finite-set version of the source paper's `Aᵢʲ` notation. -/
+noncomputable def dgmCosetSlice (H : AddSubgroup A)
+    (B : Finset A) (b : A) : Finset A := by
+  classical
+  exact B.filter fun x ↦ (x : A ⧸ H) = (b : A ⧸ H)
+
+@[simp]
+theorem mem_dgmCosetSlice_iff (H : AddSubgroup A)
+    (B : Finset A) (b x : A) :
+    x ∈ dgmCosetSlice H B b ↔
+      x ∈ B ∧ (x : A ⧸ H) = (b : A ⧸ H) := by
+  classical
+  simp [dgmCosetSlice]
+
+theorem dgmCosetSlice_subset (H : AddSubgroup A)
+    (B : Finset A) (b : A) :
+    dgmCosetSlice H B b ⊆ B := by
+  intro x hx
+  exact (mem_dgmCosetSlice_iff H B b x).1 hx |>.1
+
+theorem mem_dgmCosetSlice_self (H : AddSubgroup A)
+    (B : Finset A) {b : A} (hb : b ∈ B) :
+    b ∈ dgmCosetSlice H B b := by
+  exact (mem_dgmCosetSlice_iff H B b b).2 ⟨hb, rfl⟩
+
+/-- A weight-`k+2` pattern is obtained from a weight-`k` tail pattern by
+adjoining one selected layer in each of the two prescribed `H`-cosets.
+This proof-relevant equation remains correct when the two cosets coincide. -/
+def QuotientPattern.IsTwoStepExtension
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (ν : QuotientPattern H (k + 2))
+    (b₁ b₂ : A) (νtail : QuotientPattern H k) : Prop :=
+  ∀ q : A ⧸ H,
+    ν q = (if (b₁ : A ⧸ H) = q then 1 else 0) +
+      (if (b₂ : A ⧸ H) = q then 1 else 0) + νtail q
+
+/-- Adding two chosen elements in the prescribed cosets to a tail sum
+realizing `νtail` produces a sum realizing the two-step extension `ν`.
+This is the basic feasibility bridge used by each of `D₁`, `D₂`, `D₁₂`. -/
+theorem mem_patternSubsumSpectrum_cons_cons_of_twoStep
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (ν : QuotientPattern H (k + 2)) (b₁ b₂ : A)
+    (νtail : QuotientPattern H k)
+    (hext : ν.IsTwoStepExtension b₁ b₂ νtail)
+    {x₁ x₂ t : A}
+    (hx₁ : x₁ ∈ dgmCosetSlice H B b₁)
+    (hx₂ : x₂ ∈ dgmCosetSlice H C b₂)
+    (ht : t ∈ patternSubsumSpectrum P νtail) :
+    x₁ + (x₂ + t) ∈ patternSubsumSpectrum (B :: C :: P) ν := by
+  obtain ⟨⟨htail, htailPattern⟩⟩ :=
+    (mem_patternSubsumSpectrum_iff P νtail t).1 ht
+  have hx₁B := (mem_dgmCosetSlice_iff H B b₁ x₁).1 hx₁
+  have hx₂C := (mem_dgmCosetSlice_iff H C b₂ x₂).1 hx₂
+  let hout : LayerSubsumChoice (B :: C :: P) (k + 2)
+      (x₁ + (x₂ + t)) :=
+    LayerSubsumChoice.take hx₁B.1
+      (LayerSubsumChoice.take hx₂C.1 htail)
+  refine (mem_patternSubsumSpectrum_iff _ ν _).2 ⟨⟨hout, ?_⟩⟩
+  intro q
+  change (if (x₁ : A ⧸ H) = q then 1 else 0) +
+      ((if (x₂ : A ⧸ H) = q then 1 else 0) +
+        LayerSubsumChoice.quotientMultiplicity H htail q) = ν q
+  rw [hx₁B.2, hx₂C.2, htailPattern q, hext q]
+  omega
+
+/-- The crossed pair base
+`(A₁¹+A₁²) ∪ (A₂¹+A₂²)` from the source proof. -/
+noncomputable def dgmCrossedPairBase (H : AddSubgroup A)
+    (B C : Finset A) (b₁ b₂ : A) : Finset A :=
+  (dgmCosetSlice H B b₁ + dgmCosetSlice H C b₂) ∪
+    (dgmCosetSlice H B b₂ + dgmCosetSlice H C b₁)
+
+/-- The source proof's `D₁₂`: the crossed pair base plus the fixed
+weight-`k` tail-pattern spectrum. -/
+noncomputable def dgmCrossedD12
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (b₁ b₂ : A) (νtail : QuotientPattern H k) : Finset A :=
+  dgmCrossedPairBase H B C b₁ b₂ + patternSubsumSpectrum P νtail
+
+/-- `D₁₂` creates no new sums: under the exact two-step pattern equation it
+is contained in `Σν(B,C,P)`. -/
+theorem dgmCrossedD12_subset_patternSubsumSpectrum
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (ν : QuotientPattern H (k + 2)) (b₁ b₂ : A)
+    (νtail : QuotientPattern H k)
+    (hext : ν.IsTwoStepExtension b₁ b₂ νtail) :
+    dgmCrossedD12 B C P b₁ b₂ νtail ⊆
+      patternSubsumSpectrum (B :: C :: P) ν := by
+  intro y hy
+  obtain ⟨u, hu, t, ht, rfl⟩ := Finset.mem_add.mp hy
+  rcases Finset.mem_union.mp hu with hu | hu
+  · obtain ⟨x₁, hx₁, x₂, hx₂, rfl⟩ := Finset.mem_add.mp hu
+    have hmem := mem_patternSubsumSpectrum_cons_cons_of_twoStep
+      B C P ν b₁ b₂ νtail hext hx₁ hx₂ ht
+    simpa [add_assoc] using hmem
+  · obtain ⟨x₁, hx₁, x₂, hx₂, rfl⟩ := Finset.mem_add.mp hu
+    have hext' : ν.IsTwoStepExtension b₂ b₁ νtail := by
+      intro q
+      rw [hext q] <;> omega
+    have hmem := mem_patternSubsumSpectrum_cons_cons_of_twoStep
+      B C P ν b₂ b₁ νtail hext' hx₁ hx₂ ht
+    simpa [add_assoc] using hmem
+
+/-- The crossed `D₁₂` is nonempty as soon as the selected representatives
+belong to the two leading layers and the tail pattern is feasible. -/
+theorem dgmCrossedD12_nonempty
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    {b₁ b₂ : A} (hb₁ : b₁ ∈ B) (hb₂ : b₂ ∈ C)
+    (νtail : QuotientPattern H k)
+    (htail : (patternSubsumSpectrum P νtail).Nonempty) :
+    (dgmCrossedD12 B C P b₁ b₂ νtail).Nonempty := by
+  have hslice₁ : (dgmCosetSlice H B b₁).Nonempty :=
+    ⟨b₁, mem_dgmCosetSlice_self H B hb₁⟩
+  have hslice₂ : (dgmCosetSlice H C b₂).Nonempty :=
+    ⟨b₂, mem_dgmCosetSlice_self H C hb₂⟩
+  exact ((hslice₁.add hslice₂).mono (Finset.subset_union_left)).add htail
+
 /-- A translation outside the stabilizer of a nonempty finite set moves
 some member of the set outside it. -/
 theorem exists_mem_add_not_mem_of_not_mem_addStab
