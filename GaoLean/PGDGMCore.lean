@@ -243,6 +243,77 @@ theorem quotientMultiplicity_cast
   subst e
   rfl
 
+/-- A permutation of the labelled layer list transports every exact-layer
+choice without changing either its sum or any quotient-coset multiplicity.
+This is proof-relevant: the selected layers are permuted, never collapsed to
+an unlabelled union. -/
+theorem exists_of_perm
+    {P Q : List (Finset A)} (hPQ : P.Perm Q)
+    {n : ℕ} {y : A} (h : LayerSubsumChoice P n y)
+    (K : AddSubgroup A) [DecidableEq (A ⧸ K)] :
+    ∃ h' : LayerSubsumChoice Q n y,
+      ∀ q : A ⧸ K,
+        quotientMultiplicity K h' q = quotientMultiplicity K h q := by
+  induction hPQ generalizing n y with
+  | nil =>
+      cases h
+      exact ⟨LayerSubsumChoice.zero [], by simp [quotientMultiplicity]⟩
+  | @cons B P Q hPQ ih =>
+      cases h with
+      | zero =>
+          exact ⟨LayerSubsumChoice.zero (B :: Q), by
+            simp [quotientMultiplicity]⟩
+      | skip htail =>
+          obtain ⟨h', h'mult⟩ := ih htail
+          exact ⟨LayerSubsumChoice.skip h', by
+            intro q
+            simpa [quotientMultiplicity] using h'mult q⟩
+      | @take _ _ n b z hb htail =>
+          obtain ⟨h', h'mult⟩ := ih htail
+          exact ⟨LayerSubsumChoice.take hb h', by
+            intro q
+            simp only [quotientMultiplicity]
+            rw [h'mult q]⟩
+  | @swap B C P =>
+      cases h with
+      | zero =>
+          exact ⟨LayerSubsumChoice.zero (B :: C :: P), by
+            simp [quotientMultiplicity]⟩
+      | skip htail =>
+          cases htail with
+          | zero =>
+              exact ⟨LayerSubsumChoice.zero (B :: C :: P), by
+                simp [quotientMultiplicity]⟩
+          | skip hrest =>
+              exact ⟨LayerSubsumChoice.skip (LayerSubsumChoice.skip hrest), by
+                simp [quotientMultiplicity]⟩
+          | @take _ _ n c z hc hrest =>
+              exact ⟨LayerSubsumChoice.take hc (LayerSubsumChoice.skip hrest), by
+                simp [quotientMultiplicity]⟩
+      | @take _ _ n b z hb htail =>
+          cases htail with
+          | zero =>
+              exact ⟨LayerSubsumChoice.skip
+                (LayerSubsumChoice.take hb (LayerSubsumChoice.zero P)), by
+                simp [quotientMultiplicity]⟩
+          | skip hrest =>
+              exact ⟨LayerSubsumChoice.skip (LayerSubsumChoice.take hb hrest), by
+                simp [quotientMultiplicity]⟩
+          | @take _ _ m c z hc hrest =>
+              have hsum : b + (c + z) = c + (b + z) := by ac_rfl
+              let h' : LayerSubsumChoice (B :: C :: P) (m + 1 + 1)
+                  (c + (b + z)) :=
+                LayerSubsumChoice.take hc (LayerSubsumChoice.take hb hrest)
+              refine ⟨hsum ▸ h', ?_⟩
+              intro q
+              rw [quotientMultiplicity_cast]
+              simp only [h', quotientMultiplicity]
+              omega
+  | @trans P Q R hPQ hQR ihPQ ihQR =>
+      obtain ⟨hQ, hQmult⟩ := ihPQ h
+      obtain ⟨hR, hRmult⟩ := ihQR hQ
+      exact ⟨hR, fun q ↦ (hRmult q).trans (hQmult q)⟩
+
 end LayerSubsumChoice
 
 /-- A quotient-coset pattern of total weight `n`. -/
@@ -311,6 +382,29 @@ theorem mem_patternSubsumSpectrum_iff
     refine Finset.mem_filter.mpr ⟨?_, hy⟩
     obtain ⟨⟨h, _⟩⟩ := hy
     exact h.mem_layerSubsumSpectrum
+
+/-- Reordering the labelled layers does not change a prescribed-pattern
+spectrum.  The proof transports the proof-relevant choice, so repeated equal
+layers remain distinct occurrences throughout. -/
+theorem patternSubsumSpectrum_eq_of_perm
+    {K : AddSubgroup A} {n : ℕ} [Fintype (A ⧸ K)]
+    [DecidableEq (A ⧸ K)] {P Q : List (Finset A)}
+    (hPQ : P.Perm Q) (μ : QuotientPattern K n) :
+    patternSubsumSpectrum P μ = patternSubsumSpectrum Q μ := by
+  ext y
+  constructor
+  · intro hy
+    obtain ⟨⟨h, hμ⟩⟩ := (mem_patternSubsumSpectrum_iff P μ y).1 hy
+    obtain ⟨h', hmult⟩ :=
+      LayerSubsumChoice.exists_of_perm hPQ h K
+    exact (mem_patternSubsumSpectrum_iff Q μ y).2
+      ⟨⟨h', fun q ↦ (hmult q).trans (hμ q)⟩⟩
+  · intro hy
+    obtain ⟨⟨h, hμ⟩⟩ := (mem_patternSubsumSpectrum_iff Q μ y).1 hy
+    obtain ⟨h', hmult⟩ :=
+      LayerSubsumChoice.exists_of_perm hPQ.symm h K
+    exact (mem_patternSubsumSpectrum_iff P μ y).2
+      ⟨⟨h', fun q ↦ (hmult q).trans (hμ q)⟩⟩
 
 theorem patternSubsumSpectrum_nonempty_weight_le_length
     {K : AddSubgroup A} {n : ℕ} [Fintype (A ⧸ K)]
@@ -675,6 +769,45 @@ noncomputable def dgmPatternInnerMeasure
     DGMPatternInnerMeasure :=
   ((patternSubsumSpectrum P μ).card,
     (dgmTotalLayerCard P, (dgmLayerSquareDefect P, P.length)))
+
+/-- The remaining three coordinates of the inner measure are also invariant
+under permutation of labelled layers. -/
+theorem dgmTotalLayerCard_eq_of_perm
+    {P Q : List (Finset A)} (hPQ : P.Perm Q) :
+    dgmTotalLayerCard P = dgmTotalLayerCard Q := by
+  induction hPQ with
+  | nil => rfl
+  | cons B h ih => simpa [dgmTotalLayerCard] using ih
+  | swap B C P => simp [dgmTotalLayerCard, Nat.add_comm, Nat.add_left_comm]
+  | trans hPQ hQR ihPQ ihQR => exact ihPQ.trans ihQR
+
+theorem dgmLayerSquareSum_eq_of_perm
+    {P Q : List (Finset A)} (hPQ : P.Perm Q) :
+    dgmLayerSquareSum P = dgmLayerSquareSum Q := by
+  induction hPQ with
+  | nil => rfl
+  | cons B h ih => simpa [dgmLayerSquareSum] using ih
+  | swap B C P => simp [dgmLayerSquareSum, Nat.add_comm, Nat.add_left_comm]
+  | trans hPQ hQR ihPQ ihQR => exact ihPQ.trans ihQR
+
+theorem dgmLayerSquareDefect_eq_of_perm [Fintype A]
+    {P Q : List (Finset A)} (hPQ : P.Perm Q) :
+    dgmLayerSquareDefect P = dgmLayerSquareDefect Q := by
+  unfold dgmLayerSquareDefect
+  rw [hPQ.length_eq, dgmLayerSquareSum_eq_of_perm hPQ]
+
+/-- Consequently a permutation represents literally the same inner
+minimal-counterexample instance. -/
+theorem dgmPatternInnerMeasure_eq_of_perm
+    [Fintype A] {K : AddSubgroup A} {n : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    {P Q : List (Finset A)} (hPQ : P.Perm Q)
+    (μ : QuotientPattern K n) :
+    dgmPatternInnerMeasure P μ = dgmPatternInnerMeasure Q μ := by
+  unfold dgmPatternInnerMeasure
+  rw [patternSubsumSpectrum_eq_of_perm hPQ μ,
+    dgmTotalLayerCard_eq_of_perm hPQ,
+    dgmLayerSquareDefect_eq_of_perm hPQ, hPQ.length_eq]
 
 theorem dgmPatternInnerMeasure_inter_union_lt_of_card_lt
     [Fintype A] {K : AddSubgroup A} {n : ℕ}
@@ -2273,6 +2406,43 @@ theorem quotientLayerMultiplicity_cons_of_not_mem
     simpa only [mem_quotientLayer_iff] using hq
   simp [quotientLayerMultiplicity, hq']
 
+/-- Quotient-layer incidence multiplicity depends on the multiset of
+labelled layers, not their order. -/
+theorem quotientLayerMultiplicity_eq_of_perm
+    (K : AddSubgroup A) {P Q : List (Finset A)}
+    (hPQ : P.Perm Q) (q : A ⧸ K) :
+    quotientLayerMultiplicity K P q = quotientLayerMultiplicity K Q q := by
+  classical
+  induction hPQ with
+  | nil => simp [quotientLayerMultiplicity]
+  | @cons B P Q hPQ ih =>
+      by_cases hB : q ∈ quotientLayer K B
+      · rw [quotientLayerMultiplicity_cons_of_mem K B P q hB,
+          quotientLayerMultiplicity_cons_of_mem K B Q q hB, ih]
+      · rw [quotientLayerMultiplicity_cons_of_not_mem K B P q hB,
+          quotientLayerMultiplicity_cons_of_not_mem K B Q q hB, ih]
+  | @swap B C P =>
+      by_cases hB : q ∈ quotientLayer K B
+      · by_cases hC : q ∈ quotientLayer K C
+        · rw [quotientLayerMultiplicity_cons_of_mem K C (B :: P) q hC,
+            quotientLayerMultiplicity_cons_of_mem K B P q hB,
+            quotientLayerMultiplicity_cons_of_mem K B (C :: P) q hB,
+            quotientLayerMultiplicity_cons_of_mem K C P q hC]
+        · rw [quotientLayerMultiplicity_cons_of_not_mem K C (B :: P) q hC,
+            quotientLayerMultiplicity_cons_of_mem K B P q hB,
+            quotientLayerMultiplicity_cons_of_mem K B (C :: P) q hB,
+            quotientLayerMultiplicity_cons_of_not_mem K C P q hC]
+      · by_cases hC : q ∈ quotientLayer K C
+        · rw [quotientLayerMultiplicity_cons_of_mem K C (B :: P) q hC,
+            quotientLayerMultiplicity_cons_of_not_mem K B P q hB,
+            quotientLayerMultiplicity_cons_of_not_mem K B (C :: P) q hB,
+            quotientLayerMultiplicity_cons_of_mem K C P q hC]
+        · rw [quotientLayerMultiplicity_cons_of_not_mem K C (B :: P) q hC,
+            quotientLayerMultiplicity_cons_of_not_mem K B P q hB,
+            quotientLayerMultiplicity_cons_of_not_mem K B (C :: P) q hB,
+            quotientLayerMultiplicity_cons_of_not_mem K C P q hC]
+  | @trans P Q R hPQ hQR ihPQ ihQR => exact ihPQ.trans ihQR
+
 /-- If at least one layer meets `q`, there is a one-layer proof-relevant
 choice in `q`.  The statement records the complete quotient multiplicity of
 the new choice, so it can be inserted into a prescribed pattern. -/
@@ -2484,6 +2654,19 @@ noncomputable def dgmCappedMultiplicitySum
   classical
   letI : Fintype (A ⧸ K) := Fintype.ofFinite (A ⧸ K)
   exact ∑ q : A ⧸ K, min n (quotientLayerMultiplicity K P q)
+
+/-- The capped DGM incidence count is invariant under permutation of the
+labelled layer list. -/
+theorem dgmCappedMultiplicitySum_eq_of_perm
+    (K : AddSubgroup A) [Finite (A ⧸ K)]
+    {P Q : List (Finset A)} (hPQ : P.Perm Q) (n : ℕ) :
+    dgmCappedMultiplicitySum K P n = dgmCappedMultiplicitySum K Q n := by
+  classical
+  letI : Fintype (A ⧸ K) := Fintype.ofFinite (A ⧸ K)
+  unfold dgmCappedMultiplicitySum
+  apply Finset.sum_congr rfl
+  intro q _
+  rw [quotientLayerMultiplicity_eq_of_perm K hPQ q]
 
 /-- At the full-layer endpoint the cap is inactive. -/
 theorem dgmCappedMultiplicitySum_length
@@ -4321,6 +4504,17 @@ theorem dgmCappedMultiplicitySum_stabilizer_eq
   ext q
   simp
 
+/-- The target-stabilizer capped term is order-independent as well. -/
+theorem stabilizerDgmCappedMultiplicitySum_eq_of_perm
+    [Fintype A] (T : Finset A) {P Q : List (Finset A)}
+    (hPQ : P.Perm Q) (n : ℕ) :
+    stabilizerDgmCappedMultiplicitySum T P n =
+      stabilizerDgmCappedMultiplicitySum T Q n := by
+  rw [← dgmCappedMultiplicitySum_stabilizer_eq T P n,
+    ← dgmCappedMultiplicitySum_stabilizer_eq T Q n]
+  exact dgmCappedMultiplicitySum_eq_of_perm
+    (AddAction.stabilizer A (T : Set A)) hPQ n
+
 /-- Frozen general DGM finite-setpartition statement.  This is the exact
 remaining target for arbitrary positive `n ≤ P.length`; defining the target
 does not assume it. -/
@@ -4349,6 +4543,21 @@ def DGMPatternBound [Fintype A]
   let J := AddAction.stabilizer A (T : Set A)
   Nat.card J * (stabilizerDgmCappedMultiplicitySum T P n - n + 1) ≤
     T.card + Nat.card K * (dgmCappedMultiplicitySum K P n - n)
+
+/-- The generalized DGM conclusion is invariant under permutation of the
+labelled layers. -/
+theorem dgmPatternBound_iff_of_perm
+    [Fintype A] {K : AddSubgroup A} {n : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    {P Q : List (Finset A)} (hPQ : P.Perm Q)
+    (μ : QuotientPattern K n) :
+    DGMPatternBound P μ ↔ DGMPatternBound Q μ := by
+  unfold DGMPatternBound
+  rw [patternSubsumSpectrum_eq_of_perm hPQ μ]
+  simp only
+  rw [stabilizerDgmCappedMultiplicitySum_eq_of_perm
+      (patternSubsumSpectrum Q μ) hPQ n,
+    dgmCappedMultiplicitySum_eq_of_perm K hPQ n]
 
 /-- Fully quantified generalized pattern theorem used by the faithful
 minimal-counterexample proof. -/

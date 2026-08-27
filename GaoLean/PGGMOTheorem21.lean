@@ -5532,6 +5532,91 @@ theorem Theorem21SetPartition.exists_duplicate_tailPeriod_of_local_deficit
     simpa [P.tailSumset_eq_valueCell_add_succ q, add_comm] using hbound
   omega
 
+/-- The local-deficit cell contains a labelled occurrence whose value is
+different from the fixed anchor, whose final-period quotient class survives
+its deletion, and whose deletion is invisible in every tail already fixed by
+the factor form.  The duplicate of the anchor value supplies the choice. -/
+theorem FactorForm.exists_anchorSafe_local_tail_replacement
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n} (F : FactorForm I rho) :
+    ∃ q : Fin n, ∃ y : Occurrence xs,
+      rho ≤ q.val ∧ q.val + 1 < n ∧ y ∈ F.partition.cells q ∧
+        occurrenceValue xs y ≠ occurrenceValue xs (I.anchor q) ∧
+        (∃ z ∈ F.partition.valueCell q,
+          z ≠ occurrenceValue xs y ∧
+          QuotientAddGroup.mk' (F.partition.tailPeriod rho) z =
+            QuotientAddGroup.mk' (F.partition.tailPeriod rho)
+              (occurrenceValue xs y)) ∧
+        ∀ s, s ≤ rho →
+          F.partition.tailSumset s =
+            F.partition.tailSumsetAfterErase q
+              (occurrenceValue xs y) s := by
+  classical
+  obtain ⟨q, hrhoq, hqLast, hdeficit⟩ := F.exists_local_tail_deficit
+  let a : A := occurrenceValue xs (I.anchor q)
+  have ha : a ∈ F.partition.valueCell q := F.admissible.2 q
+  obtain ⟨z, hz, hza, hzquotLocal⟩ :=
+    F.partition.exists_duplicate_tailPeriod_of_local_deficit q ha hdeficit
+  have hlocalFinal : F.partition.tailPeriod q.val ≤
+      F.partition.tailPeriod rho :=
+    F.partition.stabilizer_tailSumset_antitone hrhoq
+  have hzquotFinal :
+      QuotientAddGroup.mk' (F.partition.tailPeriod rho) z =
+        QuotientAddGroup.mk' (F.partition.tailPeriod rho) a := by
+    apply QuotientAddGroup.eq_iff_sub_mem.mpr
+    exact hlocalFinal (QuotientAddGroup.eq_iff_sub_mem.mp hzquotLocal)
+  have hzImage := hz
+  unfold Theorem21SetPartition.valueCell at hzImage
+  obtain ⟨y, hyCell, hyValue⟩ := Finset.mem_image.mp hzImage
+  refine ⟨q, y, hrhoq, hqLast, hyCell, ?_, ?_, ?_⟩
+  · simpa [a, hyValue] using hza
+  · refine ⟨a, ha, ?_, ?_⟩
+    · simpa [hyValue] using hza.symm
+    · simpa [hyValue] using hzquotFinal.symm
+  · intro s hsrho
+    have hlocal :=
+      F.partition.tailSumset_eq_afterErase_of_local_deficit q hz hdeficit
+    simpa [hyValue] using
+      F.partition.tailSumset_eq_afterErase_of_le q z
+        (hsrho.trans hrhoq) hlocal
+
+omit [Fintype A] in
+/-- Any source-chain-preserving replacement that keeps the current factor
+tail monotone cannot raise the current quotient-incidence objective: stage
+membership fixes the tail cardinality, hence monotonicity fixes the tail
+itself, and the literal transition maximality applies. -/
+theorem WeakFactorForm.not_incidence_add_one_of_sourceMonotone
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n} (W : WeakFactorForm I rho)
+    (Q : Theorem21SetPartition xs n seed.card)
+    (hmono : Definition1SourceChain.MonotoneReplacement
+      W.partition Q W.chain)
+    (htail : W.partition.tailSumset rho ⊆ Q.tailSumset rho)
+    (hinc : Q.quotientIncidenceAt (W.partition.tailPeriod rho) =
+      W.partition.quotientIncidenceAt (W.partition.tailPeriod rho) + 1) :
+    False := by
+  have hQprevious : Q ∈ W.previous.upsilon :=
+    W.chain.mem_final_of_monotoneReplacement hmono
+  have hQcard : (Q.tailSumset rho).card =
+      (W.previous.chosen.tailSumset rho).card :=
+    W.chain.tail_card_eq_chosen_of_mem hQprevious
+  have hPtail : W.partition.tailSumset rho =
+      W.previous.chosen.tailSumset rho := W.inLambda.2.1
+  have hQeqP : Q.tailSumset rho = W.partition.tailSumset rho :=
+    (Finset.eq_of_subset_of_card_le htail (by
+      rw [hQcard, hPtail])).symm
+  have hQtail : Q.tailSumset rho =
+      W.previous.chosen.tailSumset rho := hQeqP.trans hPtail
+  have hH : W.partition.tailPeriod rho = AddAction.stabilizer A
+      (W.previous.chosen.tailSumset rho : Set A) := by
+    unfold Theorem21SetPartition.tailPeriod
+    rw [hPtail]
+  have hQmax := W.transition.incidence_maximal Q hQprevious hQtail
+  have hPinc := W.inLambda.2.2
+  rw [← hH] at hQmax hPinc
+  rw [hinc, hPinc] at hQmax
+  omega
+
 /-- The non-doubled branch of equation (3.4).  It applies the preceding
 singleton-fiber Kneser bound in `A/H_k`; quotient stabilizer membership is
 lifted back to the actual earlier tail stabilizer `H_{k_j}`, where the
@@ -6130,6 +6215,114 @@ theorem FactorForm.exists_unused_outside_commonCore_of_no_sourceOutput
     card_lower := hcard
     unused_mem_commonCore := fun _ i hi ↦ hall i hi
   }⟩
+
+/-- The complete no-doubled-side replacement contradiction in dissertation
+Lemma 5, isolated from the numerical derivation of the Theorem E bound.  If
+that bound already holds but the source output is assumed not to exist, an
+unused occurrence outside the common core enters a missing cell.  The local
+Scherk step supplies an anchor-safe used occurrence whose quotient class
+survives deletion.  Both the distinct-cell and same-cell cases are handled,
+so no illicit `q ≠ d` assumption is made. -/
+theorem FactorForm.false_of_card_lower_of_no_sourceOutput
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (F : FactorForm I rho)
+    (hfail : ¬ Nonempty (GMOTheoremESourceOutput I))
+    (hcard :
+      ((F.partition.commonCosetCount (F.partition.tailPeriod rho) * n +
+          F.partition.exceptionDefect (F.partition.tailPeriod rho) + 1) -
+          n) * Nat.card (F.partition.tailPeriod rho) ≤
+        F.partition.sumset.card) : False := by
+  classical
+  obtain ⟨x, hxUnused, hxOutside⟩ :=
+    F.exists_unused_outside_commonCore_of_no_sourceOutput hfail hcard
+  have hxException : F.partition.IsHException
+      (F.partition.tailPeriod rho) (occurrenceValue xs x) :=
+    (F.partition.isHException_iff_not_mem_commonCore
+      (F.partition.tailPeriod rho) (occurrenceValue xs x)).2 hxOutside
+  obtain ⟨d, hmissing⟩ := hxException
+  obtain ⟨q, y, hrhoq, _hqLast, hyq, hyAnchor, hduplicate, herase⟩ :=
+    F.exists_anchorSafe_local_tail_replacement
+  have hsource : ∃ j ∈ F.partition.cells q, j ≠ y := by
+    obtain ⟨z, hz, hzy, _hzquot⟩ := hduplicate
+    have hzImage := hz
+    unfold Theorem21SetPartition.valueCell at hzImage
+    obtain ⟨j, hjq, hjValue⟩ := Finset.mem_image.mp hzImage
+    refine ⟨j, hjq, ?_⟩
+    intro hjy
+    apply hzy
+    rw [← hjValue, hjy]
+  have htarget : ∀ j ∈ F.partition.cells d,
+      occurrenceValue xs j ≠ occurrenceValue xs x := by
+    intro j hj hvalue
+    apply hmissing
+    apply (mem_quotientLayer_iff (F.partition.tailPeriod rho)
+      (F.partition.valueCell d) _).2
+    refine ⟨occurrenceValue xs j, ?_, ?_⟩
+    · unfold Theorem21SetPartition.valueCell
+      exact Finset.mem_image.mpr ⟨j, hj, rfl⟩
+    · simp [hvalue]
+  by_cases hqd : q = d
+  · subst d
+    have hvalue : ∀ j ∈ F.partition.cells q, j ≠ y →
+        occurrenceValue xs j ≠ occurrenceValue xs x := by
+      intro j hj _
+      exact htarget j hj
+    obtain ⟨Q, hQcells, _hQsupport⟩ :=
+      F.partition.exists_replaceUsedWithUnusedSameCell hyq hxUnused hvalue
+    have htailZero : F.partition.tailSumset 0 ⊆ Q.tailSumset 0 :=
+      F.partition.tailSumset_subset_replaceSameCell_of_erase_eq
+        hyq hQcells 0 (herase 0 (Nat.zero_le rho))
+    have hsum : F.partition.sumset ⊆ Q.sumset := by
+      simpa [Theorem21SetPartition.tailSumset,
+        Theorem21SetPartition.tailValueCells,
+        Theorem21SetPartition.sumset] using htailZero
+    have hanchorMem : occurrenceValue xs (I.anchor q) ∈
+        insertValue (occurrenceValue xs x)
+          (eraseValue (F.partition.valueCell q) (occurrenceValue xs y)) := by
+      unfold insertValue eraseValue
+      exact Finset.mem_insert_of_mem
+        (Finset.mem_erase.mpr ⟨hyAnchor.symm, F.admissible.2 q⟩)
+    have hQadmissible : GMOReplacementAdmissible I Q :=
+      F.admissible.replaceUsedWithUnusedSameCell hyq hanchorMem hQcells hsum
+    have hmono : Definition1SourceChain.MonotoneReplacement
+        F.partition Q F.chain :=
+      Definition1SourceChain.MonotoneReplacement.of_replaceSameCell_of_erase_eq
+        F.inLambda.1 le_rfl hQadmissible hyq hduplicate hQcells herase
+    have htailRho : F.partition.tailSumset rho ⊆ Q.tailSumset rho :=
+      F.partition.tailSumset_subset_replaceSameCell_of_erase_eq
+        hyq hQcells rho (herase rho le_rfl)
+    have hinc : Q.quotientIncidenceAt (F.partition.tailPeriod rho) =
+        F.partition.quotientIncidenceAt (F.partition.tailPeriod rho) + 1 :=
+      F.partition.quotientIncidenceAt_replaceSameCell_eq_add_one
+        (F.partition.tailPeriod rho) hyq hduplicate hmissing hQcells
+    exact F.toWeakFactorForm.not_incidence_add_one_of_sourceMonotone
+      Q hmono htailRho hinc
+  · have hqd' : q ≠ d := hqd
+    obtain ⟨Q, hQcells, _hQsupport⟩ :=
+      F.partition.exists_replaceUsedWithUnused hqd' hyq hsource hxUnused htarget
+    have htailZero : F.partition.tailSumset 0 ⊆ Q.tailSumset 0 :=
+      F.partition.tailSumset_subset_replaceUsedWithUnused_of_erase_eq
+        hqd' hyq hQcells 0 (herase 0 (Nat.zero_le rho))
+    have hsum : F.partition.sumset ⊆ Q.sumset := by
+      simpa [Theorem21SetPartition.tailSumset,
+        Theorem21SetPartition.tailValueCells,
+        Theorem21SetPartition.sumset] using htailZero
+    have hQadmissible : GMOReplacementAdmissible I Q :=
+      F.admissible.replaceUsedWithUnused hqd' hyq hyAnchor.symm hQcells hsum
+    have hmono : Definition1SourceChain.MonotoneReplacement
+        F.partition Q F.chain :=
+      Definition1SourceChain.MonotoneReplacement.of_replaceUsedWithUnused_of_erase_eq
+        F.inLambda.1 le_rfl hQadmissible hqd' hyq hduplicate hQcells herase
+    have htailRho : F.partition.tailSumset rho ⊆ Q.tailSumset rho :=
+      F.partition.tailSumset_subset_replaceUsedWithUnused_of_erase_eq
+        hqd' hyq hQcells rho (herase rho le_rfl)
+    have hinc : Q.quotientIncidenceAt (F.partition.tailPeriod rho) =
+        F.partition.quotientIncidenceAt (F.partition.tailPeriod rho) + 1 :=
+      F.partition.quotientIncidenceAt_replace_eq_add_one
+        (F.partition.tailPeriod rho) hqd' hyq hduplicate hmissing hQcells
+    exact F.toWeakFactorForm.not_incidence_add_one_of_sourceMonotone
+      Q hmono htailRho hinc
 
 /-- Enlarging a period enlarges every thickened cell and hence the common
 core. -/
