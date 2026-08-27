@@ -6422,6 +6422,268 @@ theorem dgmCrossedD1D2_threeSummand_of_strongIH
   exact ⟨by simpa [H, H1, S11, S12] using hthree1,
     by simpa [H, H2, S21, S22] using hthree2⟩
 
+/-- Claim 1 for the first crossed branch alone.  This deliberately does not
+assume the second crossed branch is nonempty: it is the input used to prove
+that nonemptiness at the numeric gate. -/
+theorem dgmCrossedClaimOne_H1_of_strongIH
+    [Fintype A] (M : DGMPatternInnerMeasure)
+    (ih : ∀ M', DGMPatternInnerLt M' M → DGMPatternAtMeasure (A := A) M')
+    {K : AddSubgroup A} {k : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (B C : Finset A) (P : List (Finset A))
+    (μ : QuotientPattern K (k + 2)) (E : Finset A)
+    (hE : DGMPatternConvergent B C P μ E)
+    (hmeasure : dgmPatternInnerMeasure (B :: C :: P) μ = M)
+    {y : A} (base : LayerSubsumChoice (B :: C :: P) (k + 2) y)
+    (hbase : base.RealizesPattern μ)
+    (b₁ b₂ : A)
+    (νtail : QuotientPattern
+      (AddAction.stabilizer A (E : Set A)) k)
+    (hext : QuotientPattern.IsTwoStepExtension
+      (base.quotientPattern (AddAction.stabilizer A (E : Set A)))
+      b₁ b₂ νtail)
+    (htail : (patternSubsumSpectrum P νtail).Nonempty)
+    (hD12 : (dgmCrossedD12 B C P b₁ b₂ νtail).Nonempty)
+    (hpair1 : (dgmCrossedPairTail1 B C P b₁ b₂ νtail).Nonempty)
+    (hescape : ¬dgmCosetFiber
+      (AddAction.stabilizer A (E : Set A)) y ⊆
+        patternSubsumSpectrum (B :: C :: P) μ) :
+    let H := AddAction.stabilizer A (E : Set A)
+    let H1 := dgmCrossedH1 B C P b₁ b₂ νtail
+    Nat.card H1 * (dgmCappedMultiplicitySum H1 P k - k + 1) ≤
+      (patternSubsumSpectrum P νtail + dgmSubgroupFinset H1).card +
+        Nat.card H * (dgmCappedMultiplicitySum H P k - k) := by
+  classical
+  dsimp only
+  let H := AddAction.stabilizer A (E : Set A)
+  let ν := base.quotientPattern H
+  let H12 := dgmCrossedH12 B C P b₁ b₂ νtail
+  let H1 := dgmCrossedH1 B C P b₁ b₂ νtail
+  let T := patternSubsumSpectrum P νtail
+  let X1 := dgmCosetSlice H B b₁ + dgmCosetSlice H C b₂
+  have hD12fiber : ∀ x ∈ dgmCrossedD12 B C P b₁ b₂ νtail,
+      (x : A ⧸ H) = ν.quotientSum := by
+    intro x hx
+    exact patternSubsumSpectrum_quotient_eq _ ν
+      (dgmCrossedD12_subset_patternSubsumSpectrum
+        B C P ν b₁ b₂ νtail hext hx)
+  have hD1ne : (dgmCrossedD1 B C P b₁ b₂ νtail).Nonempty := by
+    rw [dgmCrossedD1]
+    exact hpair1.add ⟨0, hD12.zero_mem_addStab⟩
+  have h12H : H12 ≤ H := by
+    change AddAction.stabilizer A
+      (dgmCrossedD12 B C P b₁ b₂ νtail : Set A) ≤ H
+    exact stabilizer_le_of_nonempty_subset_quotientFiber H
+      (dgmCrossedD12 B C P b₁ b₂ νtail) hD12 ν.quotientSum hD12fiber
+  have h1H : H1 ≤ H := by
+    change AddAction.stabilizer A
+      (dgmCrossedD1 B C P b₁ b₂ νtail : Set A) ≤ H
+    exact stabilizer_le_of_nonempty_subset_quotientFiber H
+      (dgmCrossedD1 B C P b₁ b₂ νtail) hD1ne ν.quotientSum
+      (fun x hx ↦ hD12fiber x
+        (dgmCrossedD1_subset_D12 B C P b₁ b₂ νtail hD12 hx))
+  have h121 : H12 ≤ H1 := by
+    change dgmCrossedH12 B C P b₁ b₂ νtail ≤
+      AddAction.stabilizer A
+        (dgmCrossedD1 B C P b₁ b₂ νtail : Set A)
+    exact dgmCrossedH12_le_D1_stabilizer
+      B C P b₁ b₂ νtail hD12 hpair1
+  have hEdata := hE
+  unfold DGMPatternConvergent at hEdata
+  dsimp only at hEdata
+  rcases hEdata with ⟨hEne, _, hEupper, _⟩
+  have hy : y ∈ patternSubsumSpectrum (B :: C :: P) μ :=
+    (mem_patternSubsumSpectrum_iff _ μ y).2 ⟨⟨base, hbase⟩⟩
+  have hX1 : X1.Nonempty := by
+    obtain ⟨z, hz⟩ := hpair1
+    obtain ⟨x, hx, t, ht, hxt⟩ := Finset.mem_add.mp hz
+    exact ⟨x, by simpa [H, X1, dgmCrossedPairTail1] using hx⟩
+  have hH12fin : dgmSubgroupFinset H12 =
+      (dgmCrossedD12 B C P b₁ b₂ νtail).addStab := by
+    simpa [H12] using dgmSubgroupFinset_dgmCrossedH12_eq_addStab
+      B C P b₁ b₂ νtail hD12
+  have hDstab : AddAction.stabilizer A
+      ((((X1 + T) + dgmSubgroupFinset H12 : Finset A)) : Set A) = H1 := by
+    simpa [H, X1, T, H12, H1, dgmCrossedH1,
+      dgmCrossedD1, dgmCrossedPairTail1, hH12fin]
+  by_cases hk : k = 0
+  · subst k
+    simpa [H1, H, T] using dgmClaimOne_zero H1 H P νtail
+  · have hout := dgmClaimOne_of_strongIH M ih H12 H1 H h121 h1H
+        P νtail (Nat.pos_of_ne_zero hk) (B :: C :: P) μ hmeasure
+        E hEne hEupper (by rfl) hy (by simpa [H] using hescape)
+        htail X1 hX1 hDstab
+    simpa [H1, H, T] using hout
+
+/-- Equation (3) for the first crossed branch, before the proof knows that
+the second branch is nonempty. -/
+theorem dgmCrossedD1_threeSummand_of_strongIH
+    [Fintype A] (M : DGMPatternInnerMeasure)
+    (ih : ∀ M', DGMPatternInnerLt M' M → DGMPatternAtMeasure (A := A) M')
+    {K : AddSubgroup A} {k : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (B C : Finset A) (P : List (Finset A))
+    (μ : QuotientPattern K (k + 2)) (E : Finset A)
+    (hE : DGMPatternConvergent B C P μ E)
+    (hmeasure : dgmPatternInnerMeasure (B :: C :: P) μ = M)
+    {y : A} (base : LayerSubsumChoice (B :: C :: P) (k + 2) y)
+    (hbase : base.RealizesPattern μ)
+    (b₁ b₂ : A)
+    (νtail : QuotientPattern
+      (AddAction.stabilizer A (E : Set A)) k)
+    (hext : QuotientPattern.IsTwoStepExtension
+      (base.quotientPattern (AddAction.stabilizer A (E : Set A)))
+      b₁ b₂ νtail)
+    (htail : (patternSubsumSpectrum P νtail).Nonempty)
+    (hD12 : (dgmCrossedD12 B C P b₁ b₂ νtail).Nonempty)
+    (hpair1 : (dgmCrossedPairTail1 B C P b₁ b₂ νtail).Nonempty)
+    (hescape : ¬dgmCosetFiber
+      (AddAction.stabilizer A (E : Set A)) y ⊆
+        patternSubsumSpectrum (B :: C :: P) μ) :
+    let H := AddAction.stabilizer A (E : Set A)
+    let H1 := dgmCrossedH1 B C P b₁ b₂ νtail
+    (dgmCosetSlice H B b₁ + dgmSubgroupFinset H1).card +
+        (dgmCosetSlice H C b₂ + dgmSubgroupFinset H1).card +
+        Nat.card H1 * (dgmCappedMultiplicitySum H1 P k - k + 1) ≤
+      (dgmCrossedD1 B C P b₁ b₂ νtail).card + 2 * Nat.card H1 +
+        Nat.card H * (dgmCappedMultiplicitySum H P k - k) := by
+  classical
+  dsimp only
+  let H := AddAction.stabilizer A (E : Set A)
+  let H12 := dgmCrossedH12 B C P b₁ b₂ νtail
+  let H1 := dgmCrossedH1 B C P b₁ b₂ νtail
+  let T := patternSubsumSpectrum P νtail
+  let S11 := dgmCosetSlice H B b₁
+  let S12 := dgmCosetSlice H C b₂
+  have hclaim := dgmCrossedClaimOne_H1_of_strongIH
+    M ih B C P μ E hE hmeasure base hbase b₁ b₂ νtail hext
+      htail hD12 hpair1 hescape
+  have h121 : H12 ≤ H1 := by
+    change dgmCrossedH12 B C P b₁ b₂ νtail ≤
+      AddAction.stabilizer A
+        (dgmCrossedD1 B C P b₁ b₂ νtail : Set A)
+    exact dgmCrossedH12_le_D1_stabilizer
+      B C P b₁ b₂ νtail hD12 hpair1
+  have hS11 : S11.Nonempty := by
+    obtain ⟨z, hz⟩ := hpair1
+    obtain ⟨x, hx, t, ht, hxt⟩ := Finset.mem_add.mp hz
+    obtain ⟨u, hu, v, hv, huv⟩ := Finset.mem_add.mp hx
+    exact ⟨u, by simpa [H, S11, dgmCrossedPairTail1] using hu⟩
+  have hS12 : S12.Nonempty := by
+    obtain ⟨z, hz⟩ := hpair1
+    obtain ⟨x, hx, t, ht, hxt⟩ := Finset.mem_add.mp hz
+    obtain ⟨u, hu, v, hv, huv⟩ := Finset.mem_add.mp hx
+    exact ⟨v, by simpa [H, S12, dgmCrossedPairTail1] using hv⟩
+  have hH12fin : dgmSubgroupFinset H12 =
+      (dgmCrossedD12 B C P b₁ b₂ νtail).addStab := by
+    simpa [H12] using dgmSubgroupFinset_dgmCrossedH12_eq_addStab
+      B C P b₁ b₂ νtail hD12
+  have hD1eq : iteratedFinsetSum
+      [S11, S12, T + dgmSubgroupFinset H12] =
+        dgmCrossedD1 B C P b₁ b₂ νtail := by
+    simp only [iteratedFinsetSum_cons, iteratedFinsetSum_nil]
+    rw [dgmCrossedD1, dgmCrossedPairTail1, ← hH12fin]
+    simp [H, S11, S12, T]
+    ac_rfl
+  have hout := dgmCrossedThreeSummand_of_claimOne
+    H12 H1 H h121 S11 S12 T (dgmCrossedD1 B C P b₁ b₂ νtail)
+      hS11 hS12 htail hD1eq rfl
+      (dgmCappedMultiplicitySum H1 P k - k + 1)
+      (Nat.card H * (dgmCappedMultiplicitySum H P k - k))
+      (by simpa [H1, H, T] using hclaim)
+  simpa [H, H1, S11, S12] using hout
+
+/-- The source initial crossed data forces the second crossed component to
+be nonempty and the two exceptional coarse cosets to be distinct.  Neither
+gate is assumed: strict equation (2), first-branch Claim 1/equation (3), and
+the already-proved numeric contradiction generate both. -/
+theorem dgmCrossedNumericGates_of_minimalConvergent_strongIH
+    [Fintype A] (M : DGMPatternInnerMeasure)
+    (ih : ∀ M', DGMPatternInnerLt M' M → DGMPatternAtMeasure (A := A) M')
+    {K : AddSubgroup A} {k : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (B C : Finset A) (P : List (Finset A))
+    (hP : IsNonemptySetPartition P) (hInter : (B ∩ C).Nonempty)
+    (μ : QuotientPattern K (k + 2)) (E : Finset A)
+    (hE : DGMPatternConvergent B C P μ E)
+    (hmin : ∀ E' : Finset A, DGMPatternConvergent B C P μ E' →
+      Nat.card (AddAction.stabilizer A (E : Set A)) ≤
+        Nat.card (AddAction.stabilizer A (E' : Set A)))
+    (hmeasure : dgmPatternInnerMeasure (B :: C :: P) μ = M)
+    {y : A} (base : LayerSubsumChoice (B :: C :: P) (k + 2) y)
+    (hbase : base.RealizesPattern μ)
+    {b₁ b₂ : A} (hb₁ : b₁ ∈ B) (hb₂ : b₂ ∈ C)
+    (νtail : QuotientPattern
+      (AddAction.stabilizer A (E : Set A)) k)
+    (hext : QuotientPattern.IsTwoStepExtension
+      (base.quotientPattern (AddAction.stabilizer A (E : Set A)))
+      b₁ b₂ νtail)
+    (htail : (patternSubsumSpectrum P νtail).Nonempty)
+    (hD12 : (dgmCrossedD12 B C P b₁ b₂ νtail).Nonempty)
+    (hpair1 : (dgmCrossedPairTail1 B C P b₁ b₂ νtail).Nonempty)
+    (hescape : ¬dgmCosetFiber
+      (AddAction.stabilizer A (E : Set A)) y ⊆
+        patternSubsumSpectrum (B :: C :: P) μ) :
+    (dgmCrossedPairTail2 B C P b₁ b₂ νtail).Nonempty ∧
+      (b₁ : A ⧸ AddAction.stabilizer A (E : Set A)) ≠
+        (b₂ : A ⧸ AddAction.stabilizer A (E : Set A)) := by
+  classical
+  let H := AddAction.stabilizer A (E : Set A)
+  let ν := base.quotientPattern H
+  let H1 := dgmCrossedH1 B C P b₁ b₂ νtail
+  let S11 := dgmCosetSlice H B b₁
+  let S12 := dgmCosetSlice H C b₂
+  let D1 := dgmCrossedD1 B C P b₁ b₂ νtail
+  have hinfeasible : patternSubsumSpectrum
+      (dgmInterUnionLayers B C P) ν = ∅ := by
+    simpa [H, ν] using
+      patternSubsumSpectrum_interUnion_quotientPattern_eq_empty_of_escape
+        B C P μ E hE base hbase hescape
+  have hD12fine : dgmCrossedD12 B C P b₁ b₂ νtail ⊆
+      patternSubsumSpectrum (B :: C :: P) ν :=
+    dgmCrossedD12_subset_patternSubsumSpectrum
+      B C P ν b₁ b₂ νtail hext
+  have hD1ne : D1.Nonempty := by
+    simp only [D1, dgmCrossedD1]
+    exact hpair1.add ⟨0, hD12.zero_mem_addStab⟩
+  have hD1fine : D1 ⊆ patternSubsumSpectrum (B :: C :: P) ν :=
+    fun x hx ↦ hD12fine
+      (dgmCrossedD1_subset_D12 B C P b₁ b₂ νtail hD12 hx)
+  have hstrict := dgmStrictEquationTwo_of_minimal_convergent_refined_piece
+    B C P μ E hE hmin base hbase D1 hD1ne hD1fine hescape
+  have hthree := dgmCrossedD1_threeSummand_of_strongIH
+    M ih B C P μ E hE hmeasure base hbase b₁ b₂ νtail hext
+      htail hD12 hpair1 hescape
+  have hD1fiber : ∀ x ∈ D1, (x : A ⧸ H) = ν.quotientSum := by
+    intro x hx
+    exact patternSubsumSpectrum_quotient_eq _ ν (hD1fine hx)
+  have h1H : H1 ≤ H := by
+    change AddAction.stabilizer A (D1 : Set A) ≤ H
+    exact stabilizer_le_of_nonempty_subset_quotientFiber H
+      D1 hD1ne ν.quotientSum hD1fiber
+  have hstrict' : D1.card + Nat.card H *
+        (dgmCappedMultiplicitySum H
+          (dgmInterUnionLayers B C P) (k + 2) - (k + 2) + 1) <
+      Nat.card H1 *
+        (dgmCappedMultiplicitySum H1
+          (dgmInterUnionLayers B C P) (k + 2) - (k + 2) + 1) := by
+    change D1.card + Nat.card (AddAction.stabilizer A (E : Set A)) *
+        (dgmCappedMultiplicitySum (AddAction.stabilizer A (E : Set A))
+          (dgmInterUnionLayers B C P) (k + 2) - (k + 2) + 1) <
+      Nat.card (AddAction.stabilizer A (D1 : Set A)) *
+        (dgmCappedMultiplicitySum (AddAction.stabilizer A (D1 : Set A))
+          (dgmInterUnionLayers B C P) (k + 2) - (k + 2) + 1)
+    exact hstrict
+  have hslices := dgmCrossedStrictSlicesMissing_lt_of_threeSummand
+    H1 H h1H B C P ν hb₁ hb₂ νtail hext htail hinfeasible
+      hP hInter S11 S12 D1
+      hstrict'
+      (by simpa [H, H1, S11, S12, D1] using hthree)
+  have hgates := dgmCrossedNumericGates_of_strictSlicesMissing
+    H1 h1H B C P b₁ b₂ νtail htail
+      (by simpa [H, H1, S11, S12, dgmSingleSliceSaturation] using hslices)
+  simpa [H] using hgates
+
 /-- The unique pattern modulo the top subgroup. -/
 theorem quotientTop_subsingleton :
     Subsingleton (A ⧸ (⊤ : AddSubgroup A)) := by
