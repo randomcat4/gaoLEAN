@@ -1,6 +1,7 @@
 import GaoLean.PGSetpartitionOccurrences
 import GaoLean.PGGMOOrdinarySource
 import GaoLean.PGCapacity
+import GaoLean.PGScherk
 
 /-!
 # Occurrence-faithful statement of the GMO partition theorem
@@ -1133,6 +1134,67 @@ def leadingIndices (n rho : ℕ) : Finset (Fin n) :=
 def tailIndices (n rho : ℕ) : Finset (Fin n) :=
   Finset.univ.filter fun c ↦ rho ≤ c.val
 
+omit [AddCommGroup A] [Fintype A] in
+@[simp]
+theorem mem_tailIndices {n rho : ℕ} (c : Fin n) :
+    c ∈ tailIndices n rho ↔ rho ≤ c.val := by
+  simp [tailIndices]
+
+omit [AddCommGroup A] [Fintype A] in
+/-- There are exactly `n-rho` cells in the zero-based tail. -/
+theorem card_tailIndices {n rho : ℕ} (hrho : rho ≤ n) :
+    (tailIndices n rho).card = n - rho := by
+  classical
+  have hpart := Finset.card_filter_add_card_filter_not
+    (s := (Finset.univ : Finset (Fin n))) (fun c : Fin n ↦ c.val < rho)
+  have hlead :
+      ((Finset.univ : Finset (Fin n)).filter
+        (fun c : Fin n ↦ c.val < rho)).card = rho := by
+    simp [Fin.card_filter_val_lt, min_eq_right hrho]
+  have htotal :
+      ((Finset.univ : Finset (Fin n)).filter
+          (fun c : Fin n ↦ c.val < rho)).card +
+        (tailIndices n rho).card = n := by
+    simpa only [tailIndices, not_lt, Finset.card_univ,
+      Fintype.card_fin] using hpart
+  rw [hlead] at htotal
+  omega
+
+omit [AddCommGroup A] [Fintype A] in
+/-- There are exactly `rho` leading cells when `rho ≤ n`. -/
+theorem card_leadingIndices {n rho : ℕ} (hrho : rho ≤ n) :
+    (leadingIndices n rho).card = rho := by
+  classical
+  simp [leadingIndices, Fin.card_filter_val_lt, min_eq_right hrho]
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Every value cell contributes at least one value, so the tail incidence
+sum cannot truncate below its number of cells. -/
+theorem Theorem21SetPartition.card_tailIndices_le_sum_card_valueCell
+    {xs : List A} {n m rho : ℕ} (P : Theorem21SetPartition xs n m)
+    (hrho : rho ≤ n) :
+    n - rho ≤ ∑ c ∈ tailIndices n rho, (P.valueCell c).card := by
+  classical
+  rw [← card_tailIndices hrho]
+  calc
+    (tailIndices n rho).card =
+        ∑ c ∈ tailIndices n rho, 1 := by simp
+    _ ≤ ∑ c ∈ tailIndices n rho, (P.valueCell c).card := by
+      exact Finset.sum_le_sum fun c _ ↦
+        Finset.card_pos.mpr (P.valueCells_nonempty (P.valueCell c) (by
+          simp [Theorem21SetPartition.valueCells]))
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Splitting the tail incidence sum at a named tail cell. -/
+theorem Theorem21SetPartition.sum_tailIndices_erase_add
+    {xs : List A} {n m rho : ℕ} (P : Theorem21SetPartition xs n m)
+    (q : Fin n) (hrq : rho ≤ q.val) :
+    (∑ c ∈ (tailIndices n rho).erase q, (P.valueCell c).card) +
+        (P.valueCell q).card =
+      ∑ c ∈ tailIndices n rho, (P.valueCell c).card := by
+  classical
+  exact Finset.sum_erase_add _ _ (mem_tailIndices q |>.2 hrq)
+
 /-- Literal weak `rho`-factor form, with source cell `rho + 1` represented by
 Lean tail index `rho`.  The transition retains its independently fixed
 `F_{rho+1}`, while `partition_inLambda` only requires the factor partition to
@@ -2114,6 +2176,166 @@ noncomputable def Theorem21SetPartition.tailSumsetAfterErase
   classical
   exact fullLayerSumSpectrum (P.tailValueCellsAfterErase q x r)
 
+/-- The tail value-cell list with one entire indexed cell omitted.  When
+`r ≤ q`, the local zero-based position of cell `q` in the tail is
+`q.val - r`.  This is the literal `\sum_{i ≠ q} Y_i` layer list in
+dissertation Lemma 2. -/
+noncomputable def Theorem21SetPartition.tailValueCellsWithoutCell
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (q : Fin n) (r : ℕ) : List (Finset A) :=
+  (P.tailValueCells r).eraseIdx (q.val - r)
+
+/-- Full-layer sumset of a tail after omitting the whole cell `q`. -/
+noncomputable def Theorem21SetPartition.tailSumsetWithoutCell
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (q : Fin n) (r : ℕ) : Finset A := by
+  classical
+  exact fullLayerSumSpectrum (P.tailValueCellsWithoutCell q r)
+
+omit [AddCommGroup A] [Fintype A] in
+/-- The local index of a tail cell is in range. -/
+theorem Theorem21SetPartition.sub_lt_length_tailValueCells
+    {xs : List A} {n m r : ℕ} (P : Theorem21SetPartition xs n m)
+    (q : Fin n) (hrq : r ≤ q.val) :
+    q.val - r < (P.tailValueCells r).length := by
+  simp only [Theorem21SetPartition.tailValueCells, List.length_drop,
+    P.length_valueCells]
+  omega
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Looking up the local position `q-r` in the tail recovers cell `q`. -/
+theorem Theorem21SetPartition.getElem_tailValueCells_sub
+    {xs : List A} {n m r : ℕ} (P : Theorem21SetPartition xs n m)
+    (q : Fin n) (hrq : r ≤ q.val) :
+    (P.tailValueCells r)[q.val - r]'(P.sub_lt_length_tailValueCells q hrq) =
+      P.valueCell q := by
+  classical
+  simp only [Theorem21SetPartition.tailValueCells,
+    Theorem21SetPartition.valueCells, List.getElem_drop, List.getElem_ofFn]
+  congr
+  omega
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Deleting local tail index `q-r` leaves the prefix before `q` and the
+suffix after `q`. -/
+theorem Theorem21SetPartition.tailValueCellsWithoutCell_eq
+    {xs : List A} {n m r : ℕ} (P : Theorem21SetPartition xs n m)
+    (q : Fin n) (hrq : r ≤ q.val) :
+    P.tailValueCellsWithoutCell q r =
+      (P.valueCells.drop r).take (q.val - r) ++
+        P.valueCells.drop (q.val + 1) := by
+  unfold Theorem21SetPartition.tailValueCellsWithoutCell
+    Theorem21SetPartition.tailValueCells
+  rw [List.eraseIdx_eq_take_drop_succ, List.drop_drop]
+  congr 2
+  omega
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Membership in an `eraseIdx` list came from the original list. -/
+theorem List.mem_of_mem_eraseIdx' {X : Type*} {a : X}
+    {L : List X} {i : ℕ} (ha : a ∈ L.eraseIdx i) : a ∈ L := by
+  induction L generalizing i with
+  | nil => simp at ha
+  | cons b L ih =>
+      cases i with
+      | zero =>
+          simp only [List.eraseIdx] at ha
+          simpa only [List.mem_cons] using
+            (Or.inr ha : a = b ∨ a ∈ L)
+      | succ i =>
+          simp only [List.eraseIdx, List.mem_cons] at ha ⊢
+          exact ha.imp_right fun h ↦ ih h
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Erasing a list position cannot create an empty layer. -/
+theorem IsNonemptySetPartition.eraseIdx {X : Type*}
+    {L : List (Finset X)} (hL : IsNonemptySetPartition L) (i : ℕ) :
+    IsNonemptySetPartition (L.eraseIdx i) := by
+  intro B hB
+  exact hL B (List.mem_of_mem_eraseIdx' hB)
+
+omit [AddCommGroup A] [Fintype A] in
+/-- The omitted tail has exactly one fewer layer. -/
+theorem Theorem21SetPartition.length_tailValueCellsWithoutCell
+    {xs : List A} {n m r : ℕ} (P : Theorem21SetPartition xs n m)
+    (q : Fin n) (hrq : r ≤ q.val) :
+    (P.tailValueCellsWithoutCell q r).length = n - r - 1 := by
+  unfold Theorem21SetPartition.tailValueCellsWithoutCell
+  have htail : (P.tailValueCells r).length = n - r := by
+    simp only [Theorem21SetPartition.tailValueCells, List.length_drop,
+      P.length_valueCells]
+  have hlen := List.length_eraseIdx_add_one
+    (P.sub_lt_length_tailValueCells q hrq)
+  rw [htail] at hlen
+  omega
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Every retained layer of the omitted tail remains nonempty. -/
+theorem Theorem21SetPartition.tailValueCellsWithoutCell_nonempty
+    {xs : List A} {n m r : ℕ} (P : Theorem21SetPartition xs n m)
+    (q : Fin n) :
+    IsNonemptySetPartition (P.tailValueCellsWithoutCell q r) := by
+  unfold Theorem21SetPartition.tailValueCellsWithoutCell
+  exact (by
+    apply IsNonemptySetPartition.eraseIdx
+    intro B hB
+    exact P.valueCells_nonempty B
+      (List.mem_of_mem_drop hB) :
+    IsNonemptySetPartition ((P.tailValueCells r).eraseIdx (q.val - r)))
+
+omit [Fintype A] in
+/-- Removing one layer from a full-layer list extracts that layer as one
+pointwise summand. -/
+theorem fullLayerSumSpectrum_eraseIdx_add_getElem
+    [DecidableEq A] (L : List (Finset A)) (i : ℕ) (hi : i < L.length) :
+    fullLayerSumSpectrum L =
+      fullLayerSumSpectrum (L.eraseIdx i) + L[i] := by
+  induction L generalizing i with
+  | nil => simp at hi
+  | cons B L ih =>
+      cases i with
+      | zero =>
+          simp only [List.eraseIdx, List.getElem_cons_zero,
+            fullLayerSumSpectrum_cons]
+          exact add_comm B (fullLayerSumSpectrum L)
+      | succ i =>
+          have hiL : i < L.length := by simpa using hi
+          simp only [List.eraseIdx, List.getElem_cons_succ,
+            fullLayerSumSpectrum_cons, ih i hiL]
+          ac_rfl
+
+omit [Fintype A] in
+/-- Membership form of the preceding decomposition; unlike a raw finset
+equality it is insensitive to which extensionally equal decidable-equality
+instance is used by a surrounding noncomputable definition. -/
+theorem mem_fullLayerSumSpectrum_eraseIdx_iff
+    [DecidableEq A] (L : List (Finset A)) (i : ℕ) (hi : i < L.length)
+    (a : A) :
+    a ∈ fullLayerSumSpectrum L ↔
+      ∃ b ∈ fullLayerSumSpectrum (L.eraseIdx i),
+        ∃ c ∈ L[i], b + c = a := by
+  rw [fullLayerSumSpectrum_eraseIdx_add_getElem L i hi]
+  simp only [Finset.mem_add]
+
+omit [Fintype A] in
+/-- Exact two-summand decomposition of a tail into the omitted-cell sumset
+and cell `q`. -/
+theorem Theorem21SetPartition.tailSumset_eq_withoutCell_add
+    [DecidableEq A] {xs : List A} {n m r : ℕ}
+    (P : Theorem21SetPartition xs n m)
+    (q : Fin n) (hrq : r ≤ q.val) :
+    P.tailSumset r = P.tailSumsetWithoutCell q r + P.valueCell q := by
+  classical
+  unfold Theorem21SetPartition.tailSumset
+    Theorem21SetPartition.tailSumsetWithoutCell
+    Theorem21SetPartition.tailValueCellsWithoutCell
+  apply Finset.ext
+  intro a
+  simpa only [Finset.mem_add, P.getElem_tailValueCells_sub q hrq] using
+    (@mem_fullLayerSumSpectrum_eraseIdx_iff A _ (Classical.decEq A)
+      (P.tailValueCells r) (q.val - r)
+      (P.sub_lt_length_tailValueCells q hrq) a)
+
 omit [AddCommGroup A] [Fintype A] in
 /-- The reduced cell list is layerwise contained in the honest moved
 partition: source is equal after erase, target only gains the moved value,
@@ -2417,6 +2639,74 @@ theorem fullLayerSumSpectrum_append [DecidableEq A]
       exact (add_assoc _ _ _).symm
 
 omit [Fintype A] in
+/-- Literal erased-tail decomposition used before Scherk's Proposition 1.3:
+the omitted-cell sumset plus the erased cell. -/
+theorem Theorem21SetPartition.mem_tailSumsetAfterErase_iff_withoutCell
+    {xs : List A} {n m r : ℕ} (P : Theorem21SetPartition xs n m)
+    (q : Fin n) (x a : A) (hrq : r ≤ q.val) :
+    a ∈ P.tailSumsetAfterErase q x r ↔
+      ∃ b ∈ P.tailSumsetWithoutCell q r,
+        ∃ c ∈ eraseValue (P.valueCell q) x, b + c = a := by
+  classical
+  unfold Theorem21SetPartition.tailSumsetAfterErase
+    Theorem21SetPartition.tailSumsetWithoutCell
+  rw [P.tailValueCellsAfterErase_decompose q x hrq,
+    P.tailValueCellsWithoutCell_eq q hrq,
+    fullLayerSumSpectrum_append, fullLayerSumSpectrum_cons,
+    fullLayerSumSpectrum_append]
+  simp only [Finset.mem_add]
+  constructor
+  · rintro ⟨p, hp, u, ⟨c, hc, s, hs, rfl⟩, rfl⟩
+    exact ⟨p + s, ⟨p, hp, s, hs, rfl⟩, c, hc, by ac_rfl⟩
+  · rintro ⟨u, ⟨p, hp, s, hs, rfl⟩, c, hc, rfl⟩
+    exact ⟨p, hp, c + s, ⟨c, hc, s, hs, rfl⟩, by ac_rfl⟩
+
+omit [Fintype A] in
+/-- Finset equality form of the erased-tail decomposition. -/
+theorem Theorem21SetPartition.tailSumsetAfterErase_eq_withoutCell_add
+    [DecidableEq A] {xs : List A} {n m r : ℕ}
+    (P : Theorem21SetPartition xs n m)
+    (q : Fin n) (x : A) (hrq : r ≤ q.val) :
+    P.tailSumsetAfterErase q x r =
+      P.tailSumsetWithoutCell q r + eraseValue (P.valueCell q) x := by
+  classical
+  apply Finset.ext
+  intro a
+  simpa only [Finset.mem_add] using
+    P.mem_tailSumsetAfterErase_iff_withoutCell q x a hrq
+
+omit [Fintype A] in
+/-- If the erased tail is not periodic by the actual old tail stabilizer,
+it cannot equal the old tail. -/
+theorem Theorem21SetPartition.tailSumsetAfterErase_ne_tail_of_not_periodic
+    {xs : List A} {n m r : ℕ} (P : Theorem21SetPartition xs n m)
+    (q : Fin n) (x : A)
+    (hnot : ¬ P.tailPeriod r ≤ AddAction.stabilizer A
+      (P.tailSumsetAfterErase q x r : Set A)) :
+    P.tailSumsetAfterErase q x r ≠ P.tailSumset r := by
+  intro heq
+  apply hnot
+  unfold Theorem21SetPartition.tailPeriod
+  rw [heq]
+
+omit [Fintype A] in
+/-- Therefore the common omitted-cell sumset distinguishes the full cell
+from its one-value erasure.  This is the exact strict-change input to
+Scherk's Proposition 1.3 in Lemma 2. -/
+theorem Theorem21SetPartition.withoutCell_add_ne_add_erase
+    [DecidableEq A] {xs : List A} {n m r : ℕ}
+    (P : Theorem21SetPartition xs n m)
+    (q : Fin n) (x : A) (hrq : r ≤ q.val)
+    (hnot : ¬ P.tailPeriod r ≤ AddAction.stabilizer A
+      (P.tailSumsetAfterErase q x r : Set A)) :
+    P.tailSumsetWithoutCell q r + P.valueCell q ≠
+      P.tailSumsetWithoutCell q r + eraseValue (P.valueCell q) x := by
+  have hne := P.tailSumsetAfterErase_ne_tail_of_not_periodic q x hnot
+  rw [P.tailSumsetAfterErase_eq_withoutCell_add q x hrq,
+    P.tailSumset_eq_withoutCell_add q hrq] at hne
+  exact hne.symm
+
+omit [Fintype A] in
 /-- A full-layer sumset of nonempty layers is nonempty.  This elementary
 fact is recorded explicitly because the stabilizer propagation used in
 Definition 1 passes through `Finset.addStab`, whose coercion theorem requires
@@ -2427,6 +2717,33 @@ theorem fullLayerSumSpectrum_nonempty_of_nonemptySetPartition
     (fullLayerSumSpectrum L).Nonempty := by
   unfold fullLayerSumSpectrum
   exact layerSubsumSpectrum_nonempty L hL L.length le_rfl
+
+omit [Fintype A] in
+/-- The sumset after omitting one tail cell is nonempty.  In the degenerate
+zero-layer case the full-layer convention gives `{0}`; in Lemma 2 the range
+guard in fact leaves at least one genuine layer. -/
+theorem Theorem21SetPartition.tailSumsetWithoutCell_nonempty
+    {xs : List A} {n m r : ℕ} (P : Theorem21SetPartition xs n m)
+    (q : Fin n) :
+    (P.tailSumsetWithoutCell q r).Nonempty := by
+  classical
+  unfold Theorem21SetPartition.tailSumsetWithoutCell
+  exact fullLayerSumSpectrum_nonempty_of_nonemptySetPartition
+    (P.tailValueCellsWithoutCell q r)
+    (P.tailValueCellsWithoutCell_nonempty q)
+
+omit [Fintype A] in
+/-- Every ordinary tail full-layer sumset is nonempty. -/
+theorem Theorem21SetPartition.tailSumset_nonempty
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (r : ℕ) : (P.tailSumset r).Nonempty := by
+  classical
+  unfold Theorem21SetPartition.tailSumset
+    Theorem21SetPartition.tailValueCells
+  exact fullLayerSumSpectrum_nonempty_of_nonemptySetPartition
+    (P.valueCells.drop r) (by
+      intro B hB
+      exact P.valueCells_nonempty B (List.mem_of_mem_drop hB))
 
 omit [Fintype A] in
 /-- Translation symmetries of the right summand remain symmetries after
@@ -3292,6 +3609,115 @@ theorem lemma2_nat_closing
   omega
 
 omit [Fintype A] in
+/-- All index and truncated-subtraction bookkeeping in dissertation Lemma 2,
+once equation (3.3) has been established.  This lemma assumes only the weak
+factor form and condition (III); condition (II) is intentionally absent. -/
+theorem WeakFactorForm.lemma2_of_equation33
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (W : WeakFactorForm I rho)
+    (hIII : (W.partition.tailSumset rho).card <
+      (∑ c ∈ tailIndices n rho, (W.partition.valueCell c).card) -
+        (n - rho) + 1)
+    (q : Fin n) (hrhoq : rho ≤ q.val)
+    (h33 : (W.partition.tailSumsetWithoutCell q rho).card +
+        (W.partition.valueCell q).card - 1 ≤
+      (W.partition.tailSumset rho).card) :
+    (W.partition.tailSumsetWithoutCell q rho).card <
+      (∑ c ∈ (tailIndices n rho).erase q,
+        (W.partition.valueCell c).card) - ((n - rho) - 1) + 1 := by
+  have htotal := W.partition.sum_tailIndices_erase_add q hrhoq
+  have hcell : 1 ≤ (W.partition.valueCell q).card :=
+    Finset.card_pos.mpr (W.partition.valueCells_nonempty
+      (W.partition.valueCell q) (by
+        classical
+        simp [Theorem21SetPartition.valueCells]))
+  have hk : 2 ≤ n - rho :=
+    Nat.le_sub_of_add_le (by
+      have hrange := W.range
+      omega : 2 + rho ≤ n)
+  exact lemma2_nat_closing htotal.symm hcell hk hIII h33
+
+omit [Fintype A] in
+/-- Dissertation Lemma 2 in its complete ordinary, zero-based form.  Lemma
+1 first chooses an anchor-safe representative of the doubled exceptional
+quotient class and proves that its cell lies in the tail.  Scherk's
+Proposition 1.3 then gives equation (3.3), and the preceding arithmetic lemma
+closes condition (III) without any use of condition (II). -/
+theorem WeakFactorForm.lemma2
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (W : WeakFactorForm I rho)
+    (hIII : (W.partition.tailSumset rho).card <
+      (∑ c ∈ tailIndices n rho, (W.partition.valueCell c).card) -
+        (n - rho) + 1)
+    (q : Fin n) (x : A)
+    (hexception : W.partition.IsHException
+      (W.partition.tailPeriod rho) x)
+    (hdouble : W.partition.IsHDoubledInCell
+      (W.partition.tailPeriod rho) q x) :
+    (W.partition.tailSumsetWithoutCell q rho).card <
+      (∑ c ∈ (tailIndices n rho).erase q,
+        (W.partition.valueCell c).card) - ((n - rho) - 1) + 1 := by
+  classical
+  obtain ⟨z, _hzquot, _hzException, hzDouble, _hzAnchor,
+      hrhoq, hzNotPeriodic⟩ :=
+    W.exists_lemma1_representative q x hexception hdouble
+  have hzmem : z ∈ W.partition.valueCell q := hzDouble.1
+  have hother : (W.partition.tailSumsetWithoutCell q rho).Nonempty :=
+    W.partition.tailSumsetWithoutCell_nonempty q
+  have hne := W.partition.withoutCell_add_ne_add_erase
+    q z hrhoq hzNotPeriodic
+  unfold eraseValue at hne
+  have h33 := card_add_sub_one_le_of_add_ne_add_erase
+    (W.partition.tailSumsetWithoutCell q rho)
+    (W.partition.valueCell q) hother hzmem hne
+  have hwhole := W.partition.tailSumset_eq_withoutCell_add q hrhoq
+  rw [← hwhole] at h33
+  exact W.lemma2_of_equation33 hIII q hrhoq h33
+
+omit [Fintype A] in
+/-- Condition (II)'s subtraction by `rho+1` is nontruncating: the tail
+quotient contributes at least one class and each leading cell contributes at
+least one. -/
+theorem WeakFactorForm.quotient_growth_base_le
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (W : WeakFactorForm I rho) :
+    rho + 1 ≤
+      (quotientLayer (W.partition.tailPeriod rho)
+          (W.partition.tailSumset rho)).card +
+        ∑ c ∈ leadingIndices n rho,
+          (quotientLayer (W.partition.tailPeriod rho)
+            (W.partition.valueCell c)).card := by
+  classical
+  have hrhon : rho ≤ n := by
+    have hrange := W.range
+    omega
+  have htail : 1 ≤
+      (quotientLayer (W.partition.tailPeriod rho)
+        (W.partition.tailSumset rho)).card :=
+    Finset.card_pos.mpr (quotientLayer_nonempty _ _
+      (W.partition.tailSumset_nonempty rho))
+  have hleading : rho ≤
+      ∑ c ∈ leadingIndices n rho,
+        (quotientLayer (W.partition.tailPeriod rho)
+          (W.partition.valueCell c)).card := by
+    calc
+      rho = (leadingIndices n rho).card := (card_leadingIndices hrhon).symm
+      _ =
+          ∑ c ∈ leadingIndices n rho, 1 := by simp
+      _ ≤ ∑ c ∈ leadingIndices n rho,
+          (quotientLayer (W.partition.tailPeriod rho)
+            (W.partition.valueCell c)).card := by
+        exact Finset.sum_le_sum fun c _ ↦
+          Finset.card_pos.mpr (quotientLayer_nonempty _ _
+            (W.partition.valueCells_nonempty
+              (W.partition.valueCell c) (by
+                simp [Theorem21SetPartition.valueCells])))
+  omega
+
+omit [Fintype A] in
 /-- Equation-(3.2) contradiction at one completed Definition 1 stage: two
 members of the same next maximal family have the same incidence objective,
 so one cannot exceed the other by one. -/
@@ -3672,16 +4098,17 @@ structure GMOTheoremEOutput
       occurrenceValue xs i ∈ partition.commonCore H
 
 /-- Source-faithful Theorem E output relative to its literal initial
-setpartition and anchors.  The period is the actual stabilizer, not an
-arbitrary subperiod; when it is nontrivial, every unused labelled source
-occurrence lies in the common core.  No unconditional `N ≥ 1` or global
-no-doubled conclusion is built into this structure. -/
+setpartition and anchors.  As in the source statement, `H` is a period of
+the resulting sumset; it is not falsely required to be the full stabilizer.
+When `H` is nontrivial, every unused labelled source occurrence lies in the
+common core.  No unconditional `N ≥ 1` or global no-doubled conclusion is
+built into this structure. -/
 structure GMOTheoremESourceOutput
     {xs : List A} {seed : Selection xs} {n : ℕ}
     (I : GMOTheoremEInput xs seed n) where
   partition : Theorem21SetPartition xs n seed.card
   H : AddSubgroup A
-  actual_period : H = AddAction.stabilizer A (partition.sumset : Set A)
+  periodic : H ≤ AddAction.stabilizer A (partition.sumset : Set A)
   admissible : GMOReplacementAdmissible I partition
   card_lower :
     ((partition.commonCosetCount H * n +
@@ -3690,6 +4117,67 @@ structure GMOTheoremESourceOutput
   unused_mem_commonCore :
     H ≠ ⊥ → ∀ i : Occurrence xs, i ∉ partition.support →
       occurrenceValue xs i ∈ partition.commonCore H
+
+/-- The scalar trivial-period conclusion used as the contradiction target in
+dissertation Lemma 3: an admissible replacement satisfying the ordinary
+Cauchy--Davenport bound.  It is deliberately separate from an
+actual-stabilizer normalization, since the trivial subgroup can be a strict
+subperiod of the sumset. -/
+structure GMOTheoremETrivialConclusion
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    (I : GMOTheoremEInput xs seed n) where
+  partition : Theorem21SetPartition xs n seed.card
+  admissible : GMOReplacementAdmissible I partition
+  card_lower : seed.card - n + 1 ≤ partition.sumset.card
+
+/-- Enlarging a period enlarges every thickened cell and hence the common
+core. -/
+theorem Theorem21SetPartition.commonCore_mono
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    {H K : AddSubgroup A} (hHK : H ≤ K) :
+    P.commonCore H ⊆ P.commonCore K := by
+  classical
+  intro x hx
+  rw [P.mem_commonCore_iff H x] at hx
+  rw [P.mem_commonCore_iff K x]
+  intro c
+  unfold Theorem21SetPartition.thickenedCell at hx ⊢
+  obtain ⟨a, ha, h, hh, rfl⟩ := Finset.mem_add.mp (hx c)
+  exact Finset.mem_add.mpr
+    ⟨a, ha, h, (mem_subgroupFinset K h).2
+      (hHK ((mem_subgroupFinset H h).1 hh)), rfl⟩
+
+/-- Actual-stabilizer data associated to a literal periodic witness.  The
+source numerical bound remains indexed by the witness period; this
+normalization only records the genuine stabilizer and the structural data
+that transport monotonically to it. -/
+structure GMOTheoremEActualNormalization
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (out : GMOTheoremESourceOutput I) where
+  H : AddSubgroup A
+  actual_period : H = AddAction.stabilizer A
+    (out.partition.sumset : Set A)
+  witness_le : out.H ≤ H
+  unused_mem_commonCore : out.H ≠ ⊥ →
+    ∀ i : Occurrence xs, i ∉ out.partition.support →
+      occurrenceValue xs i ∈ out.partition.commonCore H
+
+/-- Every literal periodic witness has a canonical actual-stabilizer
+normalization, without pretending that its witness period was already
+maximal. -/
+noncomputable def GMOTheoremESourceOutput.toActualNormalization
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (out : GMOTheoremESourceOutput I) :
+    GMOTheoremEActualNormalization out where
+  H := AddAction.stabilizer A (out.partition.sumset : Set A)
+  actual_period := rfl
+  witness_le := out.periodic
+  unused_mem_commonCore := by
+    intro hH i hi
+    exact out.partition.commonCore_mono out.periodic
+      (out.unused_mem_commonCore hH i hi)
 
 /-- Literal source statement of ordinary Theorem E.  Its input is an initial
 setpartition, not merely the hypotheses used to construct one. -/
@@ -3708,7 +4196,7 @@ def GMOTheoremESourceOutput.toProjected
     GMOTheoremEOutput xs seed n where
   partition := out.partition
   H := out.H
-  periodic := out.actual_period ▸ le_rfl
+  periodic := out.periodic
   card_lower := out.card_lower
   unused_in_core := out.unused_mem_commonCore
 
