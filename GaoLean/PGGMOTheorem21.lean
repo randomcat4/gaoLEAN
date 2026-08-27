@@ -936,6 +936,317 @@ theorem exists_definition1ExtremalChain
       exact ⟨state,
         ⟨Definition1ExtremalChain.next chain state F htransition⟩⟩
 
+/-! ### The doubled-exception removal step (dissertation Lemma 1) -/
+
+/-- A value is an `H`-exception for a setpartition when its quotient class is
+missing from at least one cell.  This is the literal ordinary-weight
+specialization of the dissertation's exception terminology. -/
+noncomputable def Theorem21SetPartition.IsHException
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (H : AddSubgroup A) (x : A) : Prop :=
+  ∃ c : Fin n,
+    QuotientAddGroup.mk' H x ∉ quotientLayer H (P.valueCell c)
+
+/-- The quotient class of `x` is doubled in cell `c`: the cell contains a
+different value in the same `H`-coset. -/
+noncomputable def Theorem21SetPartition.IsHDoubledInCell
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (H : AddSubgroup A) (c : Fin n) (x : A) : Prop :=
+  x ∈ P.valueCell c ∧
+    ∃ y ∈ P.valueCell c, y ≠ x ∧
+      QuotientAddGroup.mk' H y = QuotientAddGroup.mk' H x
+
+/-- A doubled exception records both roles and the cell in which the
+duplicate occurs. -/
+noncomputable def Theorem21SetPartition.IsHDoubledException
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (H : AddSubgroup A) (x : A) : Prop :=
+  P.IsHException H x ∧ ∃ c : Fin n, P.IsHDoubledInCell H c x
+
+omit [Fintype A] in
+/-- Elementary removal engine used in dissertation Lemma 1.  If `x` has a
+different representative `y` in the same `H`-coset and the sumset after
+removing `x` is still `H`-periodic, then removal does not change the sumset.
+This isolates the precise periodic/nonperiodic fork before any appeal to the
+Definition 1 extremal chain. -/
+theorem add_erase_eq_of_periodic_of_quotient_eq
+    [DecidableEq A] (H : AddSubgroup A) (B C : Finset A) {x y : A}
+    (hy : y ∈ C) (hxy : y ≠ x)
+    (hquot : QuotientAddGroup.mk' H y = QuotientAddGroup.mk' H x)
+    (hperiodic : H ≤
+      AddAction.stabilizer A ((B + C.erase x : Finset A) : Set A)) :
+    B + C = B + C.erase x := by
+  classical
+  apply Finset.Subset.antisymm
+  · intro z hz
+    rcases Finset.mem_add.mp hz with ⟨b, hb, c, hc, rfl⟩
+    by_cases hcx : c = x
+    · subst c
+      have hyErase : y ∈ C.erase x := Finset.mem_erase.mpr ⟨hxy, hy⟩
+      have hby : b + y ∈ B + C.erase x :=
+        Finset.mem_add.mpr ⟨b, hb, y, hyErase, rfl⟩
+      have hyxH : y - x ∈ H :=
+        QuotientAddGroup.eq_iff_sub_mem.mp hquot
+      have hxyH : x - y ∈ H := by
+        simpa only [neg_sub] using H.neg_mem hyxH
+      have hstab := hperiodic hxyH
+      rw [AddAction.mem_stabilizer_set] at hstab
+      have htranslated := (hstab (b + y)).2 hby
+      change (x - y) + (b + y) ∈ B + C.erase x at htranslated
+      simpa [sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using
+        htranslated
+    · exact Finset.mem_add.mpr
+        ⟨b, hb, c, Finset.mem_erase.mpr ⟨hcx, hc⟩, rfl⟩
+  · intro z hz
+    rcases Finset.mem_add.mp hz with ⟨b, hb, c, hc, rfl⟩
+    exact Finset.mem_add.mpr
+      ⟨b, hb, c, Finset.mem_of_mem_erase hc, rfl⟩
+
+omit [Fintype A] in
+/-- Checkable removal dichotomy in the exact direction used by Lemma 1:
+either the reduced sumset loses `H`-periodicity, or it is equal to the
+unreduced sumset. -/
+theorem add_erase_not_periodic_or_eq_of_quotient_eq
+    [DecidableEq A] (H : AddSubgroup A) (B C : Finset A) {x y : A}
+    (hy : y ∈ C) (hxy : y ≠ x)
+    (hquot : QuotientAddGroup.mk' H y = QuotientAddGroup.mk' H x) :
+    ¬ H ≤ AddAction.stabilizer A
+        ((B + C.erase x : Finset A) : Set A) ∨
+      B + C = B + C.erase x := by
+  classical
+  by_cases hperiodic : H ≤ AddAction.stabilizer A
+      ((B + C.erase x : Finset A) : Set A)
+  · exact Or.inr (add_erase_eq_of_periodic_of_quotient_eq
+      H B C hy hxy hquot hperiodic)
+  · exact Or.inl hperiodic
+
+/-- Cell family obtained by moving one labelled occurrence from `q` to `d`.
+The source erase precedes the target insert; the hypothesis `q ≠ d` used
+below makes these two clauses disjoint. -/
+def Theorem21SetPartition.moveOccurrenceCells
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (q d : Fin n) (i : Occurrence xs) (c : Fin n) : Selection xs :=
+  if c = q then (P.cells c).erase i
+  else if c = d then insert i (P.cells c)
+  else P.cells c
+
+omit [AddCommGroup A] [Fintype A] in
+theorem Theorem21SetPartition.mem_moveOccurrenceCells_iff_of_ne
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (q d : Fin n) (i x : Occurrence xs) (c : Fin n) (hxi : x ≠ i) :
+    x ∈ P.moveOccurrenceCells q d i c ↔ x ∈ P.cells c := by
+  by_cases hcq : c = q
+  · subst c
+    simp [Theorem21SetPartition.moveOccurrenceCells, hxi]
+  · by_cases hcd : c = d
+    · subst c
+      simp [Theorem21SetPartition.moveOccurrenceCells, hcq, hxi]
+    · simp [Theorem21SetPartition.moveOccurrenceCells, hcq, hcd]
+
+omit [AddCommGroup A] [Fintype A] in
+theorem Theorem21SetPartition.not_mem_cell_of_mem_of_ne
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    {q c : Fin n} {i : Occurrence xs}
+    (hiq : i ∈ P.cells q) (hcq : c ≠ q) :
+    i ∉ P.cells c := by
+  intro hic
+  exact (Finset.disjoint_left.mp
+    (P.cells_pairwise_disjoint hcq.symm)) hiq hic
+
+omit [AddCommGroup A] [Fintype A] in
+theorem Theorem21SetPartition.mem_moveOccurrenceCells_self_iff
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    {q d : Fin n} {i : Occurrence xs} (hqd : q ≠ d)
+    (hiq : i ∈ P.cells q) (c : Fin n) :
+    i ∈ P.moveOccurrenceCells q d i c ↔ c = d := by
+  by_cases hcq : c = q
+  · subst c
+    simp [Theorem21SetPartition.moveOccurrenceCells, hqd]
+  · by_cases hcd : c = d
+    · subst c
+      simp [Theorem21SetPartition.moveOccurrenceCells, hqd.symm]
+    · have hnot : i ∉ P.cells c := P.not_mem_cell_of_mem_of_ne hiq hcq
+      simp [Theorem21SetPartition.moveOccurrenceCells, hcq, hcd, hnot]
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Moving one labelled occurrence between distinct cells preserves the exact
+setpartition structure, provided the source retains another occurrence and
+the target contains no occurrence with the moved value.  The support itself,
+not only its cardinality, is preserved. -/
+theorem Theorem21SetPartition.exists_moveOccurrence
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    {q d : Fin n} {i : Occurrence xs}
+    (hqd : q ≠ d) (hiq : i ∈ P.cells q)
+    (hsource : ∃ j ∈ P.cells q, j ≠ i)
+    (htarget : ∀ j ∈ P.cells d,
+      occurrenceValue xs j ≠ occurrenceValue xs i) :
+    ∃ Q : Theorem21SetPartition xs n m,
+      (∀ c, Q.cells c = P.moveOccurrenceCells q d i c) ∧
+      Q.support = P.support := by
+  classical
+  let moved : Fin n → Selection xs := P.moveOccurrenceCells q d i
+  have hmovedNonempty : ∀ c, (moved c).Nonempty := by
+    intro c
+    by_cases hcq : c = q
+    · subst c
+      obtain ⟨j, hj, hji⟩ := hsource
+      exact ⟨j, by
+        simp [moved, Theorem21SetPartition.moveOccurrenceCells, hji, hj]⟩
+    · by_cases hcd : c = d
+      · subst c
+        exact ⟨i, by
+          simp [moved, Theorem21SetPartition.moveOccurrenceCells, hqd.symm]⟩
+      · obtain ⟨j, hj⟩ := P.cells_nonempty c
+        exact ⟨j, by
+          simp [moved, Theorem21SetPartition.moveOccurrenceCells, hcq, hcd, hj]⟩
+  have hmovedDisjoint : ∀ {c e}, c ≠ e → Disjoint (moved c) (moved e) := by
+    intro c e hce
+    rw [Finset.disjoint_left]
+    intro x hxc hxe
+    by_cases hxi : x = i
+    · subst x
+      have hcd := (P.mem_moveOccurrenceCells_self_iff hqd hiq c).1 hxc
+      have hed := (P.mem_moveOccurrenceCells_self_iff hqd hiq e).1 hxe
+      exact hce (hcd.trans hed.symm)
+    · have hxc' : x ∈ P.cells c :=
+        (P.mem_moveOccurrenceCells_iff_of_ne q d i x c hxi).1 hxc
+      have hxe' : x ∈ P.cells e :=
+        (P.mem_moveOccurrenceCells_iff_of_ne q d i x e hxi).1 hxe
+      exact (Finset.disjoint_left.mp
+        (P.cells_pairwise_disjoint hce)) hxc' hxe'
+  have hmovedInjective : ∀ c,
+      Set.InjOn (occurrenceValue xs) (moved c : Set (Occurrence xs)) := by
+    intro c x hxc y hyc hvalue
+    by_cases hxi : x = i
+    · subst x
+      by_cases hyi : y = i
+      · exact hyi.symm
+      · have hcd := (P.mem_moveOccurrenceCells_self_iff hqd hiq c).1 hxc
+        subst c
+        have hyTarget : y ∈ P.cells d :=
+          (P.mem_moveOccurrenceCells_iff_of_ne q d i y d hyi).1 hyc
+        exact False.elim ((htarget y hyTarget) hvalue.symm)
+    · by_cases hyi : y = i
+      · subst y
+        have hcd := (P.mem_moveOccurrenceCells_self_iff hqd hiq c).1 hyc
+        subst c
+        have hxTarget : x ∈ P.cells d :=
+          (P.mem_moveOccurrenceCells_iff_of_ne q d i x d hxi).1 hxc
+        exact False.elim ((htarget x hxTarget) hvalue)
+      · apply P.value_injective c
+        · exact (P.mem_moveOccurrenceCells_iff_of_ne q d i x c hxi).1 hxc
+        · exact (P.mem_moveOccurrenceCells_iff_of_ne q d i y c hyi).1 hyc
+        · exact hvalue
+  have hsupport : Finset.univ.biUnion moved = P.support := by
+    ext x
+    by_cases hxi : x = i
+    · subst x
+      constructor
+      · intro _
+        apply Finset.mem_biUnion.mpr
+        exact ⟨q, Finset.mem_univ q, hiq⟩
+      · intro _
+        apply Finset.mem_biUnion.mpr
+        exact ⟨d, Finset.mem_univ d,
+          (P.mem_moveOccurrenceCells_self_iff hqd hiq d).2 rfl⟩
+    · simp only [Finset.mem_biUnion, Finset.mem_univ, true_and,
+        Theorem21SetPartition.support]
+      constructor
+      · rintro ⟨c, hxc⟩
+        exact ⟨c,
+          (P.mem_moveOccurrenceCells_iff_of_ne q d i x c hxi).1 hxc⟩
+      · rintro ⟨c, hxc⟩
+        exact ⟨c,
+          (P.mem_moveOccurrenceCells_iff_of_ne q d i x c hxi).2 hxc⟩
+  let Q : Theorem21SetPartition xs n m := {
+    cells := moved
+    cells_nonempty := hmovedNonempty
+    cells_pairwise_disjoint := hmovedDisjoint
+    value_injective := hmovedInjective
+    card_support := by rw [hsupport]; exact P.card_support
+  }
+  refine ⟨Q, ?_, ?_⟩
+  · intro c
+    rfl
+  · exact hsupport
+
+/-- A doubled exception supplies all occurrence-level hypotheses needed for
+an honest move to a cell missing its quotient class.  In particular, the
+second representative keeps the source cell nonempty, while absence of the
+whole quotient class is stronger than the target value-injectivity condition.
+-/
+theorem Theorem21SetPartition.exists_moveOccurrence_of_isHDoubledException
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (H : AddSubgroup A) {x : A} (hx : P.IsHDoubledException H x) :
+    ∃ (q d : Fin n) (i : Occurrence xs)
+      (Q : Theorem21SetPartition xs n m),
+      q ≠ d ∧ i ∈ P.cells q ∧ occurrenceValue xs i = x ∧
+      (∀ c, Q.cells c = P.moveOccurrenceCells q d i c) ∧
+      Q.support = P.support := by
+  classical
+  rcases hx with ⟨⟨d, hdMissing⟩, q, hxq, y, hyq, hyx, hyquot⟩
+  rcases Finset.mem_image.mp hxq with ⟨i, hiq, hix⟩
+  rcases Finset.mem_image.mp hyq with ⟨j, hjq, hjy⟩
+  have hqd : q ≠ d := by
+    intro hqd
+    subst d
+    apply hdMissing
+    exact (mem_quotientLayer_iff H (P.valueCell q) _).2 ⟨x, hxq, rfl⟩
+  have hji : j ≠ i := by
+    intro hji
+    subst j
+    apply hyx
+    rw [← hix, ← hjy]
+  have htarget : ∀ k ∈ P.cells d,
+      occurrenceValue xs k ≠ occurrenceValue xs i := by
+    intro k hkd hkvalue
+    apply hdMissing
+    apply (mem_quotientLayer_iff H (P.valueCell d) _).2
+    refine ⟨occurrenceValue xs k, ?_, ?_⟩
+    · exact Finset.mem_image.mpr ⟨k, hkd, rfl⟩
+    · simpa [hkvalue, hix]
+  obtain ⟨Q, hQcells, hQsupport⟩ := P.exists_moveOccurrence
+    hqd hiq ⟨j, hjq, hji⟩ htarget
+  exact ⟨q, d, i, Q, hqd, hiq, hix, hQcells, hQsupport⟩
+
+omit [Fintype A] in
+/-- Erasing one representative of a doubled quotient class does not change
+the quotient image of the finite set. -/
+theorem quotientLayer_erase_eq_of_duplicate
+    [DecidableEq A] (H : AddSubgroup A) (C : Finset A) {x y : A}
+    (hy : y ∈ C) (hxy : y ≠ x)
+    (hquot : QuotientAddGroup.mk' H y = QuotientAddGroup.mk' H x) :
+    quotientLayer H (C.erase x) = quotientLayer H C := by
+  classical
+  ext q
+  constructor
+  · intro hq
+    obtain ⟨z, hz, rfl⟩ := (mem_quotientLayer_iff H (C.erase x) q).1 hq
+    exact (mem_quotientLayer_iff H C _).2
+      ⟨z, Finset.mem_of_mem_erase hz, rfl⟩
+  · intro hq
+    obtain ⟨z, hz, hzq⟩ := (mem_quotientLayer_iff H C q).1 hq
+    by_cases hzx : z = x
+    · subst z
+      exact (mem_quotientLayer_iff H (C.erase x) q).2
+        ⟨y, Finset.mem_erase.mpr ⟨hxy, hy⟩, hquot.trans hzq⟩
+    · exact (mem_quotientLayer_iff H (C.erase x) q).2
+        ⟨z, Finset.mem_erase.mpr ⟨hzx, hz⟩, hzq⟩
+
+omit [Fintype A] in
+/-- Inserting a value whose quotient class was absent adds exactly one class
+to the quotient image. -/
+theorem card_quotientLayer_insert_of_not_mem
+    [DecidableEq A] (H : AddSubgroup A) (C : Finset A) (x : A)
+    (hx : QuotientAddGroup.mk' H x ∉ quotientLayer H C) :
+    (quotientLayer H (insert x C)).card = (quotientLayer H C).card + 1 := by
+  classical
+  have himage : quotientLayer H (insert x C) =
+      insert (QuotientAddGroup.mk' H x) (quotientLayer H C) := by
+    ext q
+    simp [mem_quotientLayer_iff, eq_comm]
+  rw [himage, Finset.card_insert_of_notMem hx]
+
 /-- Regression for the placement of natural subtraction in Theorem E.
 
 The source coefficient is `(N * n + e + 1) - n`.  Subtracting one from `N`

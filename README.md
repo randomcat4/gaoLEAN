@@ -291,3 +291,11 @@ spectrum 与 signed exact-`n` occurrence 谱的逐字相等。general DGM 已完
 论文 Theorem 2.1 和 Theorem 1.1 的结构归纳。因此终稿状态仍为
 `LEAN_CONDITIONAL`，没有把 DGM 中间进展误报为 GMO 已完成。见
 `milestone-59.md`。
+
+M60--M62 继续把 GMO 文献边界拆成原文忠实的 DGM pattern、普通 Definition 1
+极值链和奇阶 signed quotient lifting，并公开修正了 Theorem E 在自然数减法位置上
+的旧编码错误。M63 进一步闭合 DGM 的 literal `H12 <= H1,H2 < H` 稳定子链，
+并在普通 GMO 中完成 labelled occurrence 的 doubled-exception 搬移：完整支撑保持，
+源商像不变，目标商像基数恰增一。当前状态仍是 `LEAN_CONDITIONAL`；DGM 最后的
+`Xi`/方程 (1)--(5)、普通 Lemmas 1--5 到 Theorem E/2.4/2.5，以及 signed
+Steps 1/6 都尚未宣称完成。见 `milestone-60.md` 至 `milestone-63.md`。

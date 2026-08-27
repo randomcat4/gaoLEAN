@@ -927,3 +927,20 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
   use only `propext`, `Classical.choice`, and `Quot.sound`.
 - This remains a conditional checkpoint.  DGM's `D1/D2/D12` contradiction,
   Theorem E exchange Lemmas 1--5, and the signed Step 1/5/6 closure remain.
+
+## 2026-08-27: DGM stabilizer chain and ordinary occurrence exchange (M63)
+
+- Closed the literal crossed-set stabilizer chain: `H12` is identified with
+  `D12.addStab`, the `D1/D2` saturations stay inside `D12`, and the exact
+  escape hypotheses yield `H12 <= H1,H2 < H`.
+- Added quotient sums for proof-relevant patterns and proved their exact
+  spectrum lies in the corresponding quotient fibre.
+- Constructed the ordinary Lemma 1 move at labelled-occurrence level.  The
+  moved partition preserves the complete support and all setpartition
+  invariants; source quotient incidence is unchanged and target incidence
+  rises by exactly one.
+- Joint target build: 8707 jobs, exit 0.  Full project build: 8753 jobs,
+  exit 0.  The final forbidden-declaration and whitespace scans are clean.
+- This remains an honest conditional checkpoint.  DGM equations (1)--(5),
+  the Definition 1 maximality contradiction and Lemmas 2--5, and signed
+  Steps 1/6 remain unproved.

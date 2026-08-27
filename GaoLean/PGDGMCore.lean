@@ -671,6 +671,59 @@ def QuotientPattern.IsTwoStepExtension
     ν q = (if (b₁ : A ⧸ H) = q then 1 else 0) +
       (if (b₂ : A ⧸ H) = q then 1 else 0) + νtail q
 
+/-- The quotient coset in which every sum realizing a fixed pattern lies. -/
+noncomputable def QuotientPattern.quotientSum
+    {K : AddSubgroup A} {n : ℕ} [Fintype (A ⧸ K)]
+    (μ : QuotientPattern K n) : A ⧸ K :=
+  ∑ q : A ⧸ K, μ q • q
+
+/-- Before prescribing a pattern, the quotient of a proof-relevant chosen
+sum is the multiplicity-weighted sum of its selected quotient cosets. -/
+theorem LayerSubsumChoice.coe_eq_sum_quotientMultiplicity
+    {K : AddSubgroup A} [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    {P : List (Finset A)} {n : ℕ} {y : A}
+    (h : LayerSubsumChoice P n y) :
+    (y : A ⧸ K) = ∑ q : A ⧸ K,
+      h.quotientMultiplicity K q • q := by
+  classical
+  induction h with
+  | zero P => simp [LayerSubsumChoice.quotientMultiplicity]
+  | skip h ih => simpa [LayerSubsumChoice.quotientMultiplicity] using ih
+  | @take B P n b y hb h ih =>
+      rw [show ((b + y : A) : A ⧸ K) = (b : A ⧸ K) + (y : A ⧸ K) by rfl,
+        ih]
+      simp only [LayerSubsumChoice.quotientMultiplicity, add_nsmul,
+        Finset.sum_add_distrib]
+      have hindicator :
+          (∑ q : A ⧸ K,
+            (if (b : A ⧸ K) = q then 1 else 0) • q) =
+            (b : A ⧸ K) := by
+        simp [eq_comm]
+      rw [hindicator]
+
+theorem LayerSubsumChoice.coe_eq_pattern_quotientSum
+    {K : AddSubgroup A} {n : ℕ} [Fintype (A ⧸ K)]
+    [DecidableEq (A ⧸ K)]
+    {P : List (Finset A)} {y : A}
+    {h : LayerSubsumChoice P n y} {μ : QuotientPattern K n}
+    (hμ : h.RealizesPattern μ) :
+    (y : A ⧸ K) = μ.quotientSum := by
+  rw [h.coe_eq_sum_quotientMultiplicity]
+  apply Finset.sum_congr rfl
+  intro q _
+  rw [hμ q]
+
+/-- Hence a pattern spectrum is contained in one literal quotient fiber. -/
+theorem patternSubsumSpectrum_quotient_eq
+    {K : AddSubgroup A} {n : ℕ} [Fintype (A ⧸ K)]
+    [DecidableEq (A ⧸ K)]
+    (P : List (Finset A)) (μ : QuotientPattern K n)
+    {y : A} (hy : y ∈ patternSubsumSpectrum P μ) :
+    (y : A ⧸ K) = μ.quotientSum := by
+  obtain ⟨⟨h, hμ⟩⟩ :=
+    (mem_patternSubsumSpectrum_iff P μ y).1 hy
+  exact h.coe_eq_pattern_quotientSum hμ
+
 /-- Adding two chosen elements in the prescribed cosets to a tail sum
 realizing `νtail` produces a sum realizing the two-step extension `ν`.
 This is the basic feasibility bridge used by each of `D₁`, `D₂`, `D₁₂`. -/
@@ -759,6 +812,417 @@ theorem dgmCrossedD12_nonempty
   have hslice₂ : (dgmCosetSlice H C b₂).Nonempty :=
     ⟨b₂, mem_dgmCosetSlice_self H C hb₂⟩
   exact ((hslice₁.add hslice₂).mono (Finset.subset_union_left)).add htail
+
+/-- The two uncrossed/crossed pair-tail sumsets whose union is `D₁₂`. -/
+noncomputable def dgmCrossedPairTail1
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (b₁ b₂ : A) (νtail : QuotientPattern H k) : Finset A :=
+  (dgmCosetSlice H B b₁ + dgmCosetSlice H C b₂) +
+    patternSubsumSpectrum P νtail
+
+noncomputable def dgmCrossedPairTail2
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (b₁ b₂ : A) (νtail : QuotientPattern H k) : Finset A :=
+  (dgmCosetSlice H B b₂ + dgmCosetSlice H C b₁) +
+    patternSubsumSpectrum P νtail
+
+theorem dgmCrossedPairTail1_subset_D12
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (b₁ b₂ : A) (νtail : QuotientPattern H k) :
+    dgmCrossedPairTail1 B C P b₁ b₂ νtail ⊆
+      dgmCrossedD12 B C P b₁ b₂ νtail := by
+  intro y hy
+  obtain ⟨u, hu, t, ht, rfl⟩ := Finset.mem_add.mp hy
+  exact Finset.mem_add.mpr
+    ⟨u, Finset.mem_union_left _ hu, t, ht, rfl⟩
+
+theorem dgmCrossedPairTail2_subset_D12
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (b₁ b₂ : A) (νtail : QuotientPattern H k) :
+    dgmCrossedPairTail2 B C P b₁ b₂ νtail ⊆
+      dgmCrossedD12 B C P b₁ b₂ νtail := by
+  intro y hy
+  obtain ⟨u, hu, t, ht, rfl⟩ := Finset.mem_add.mp hy
+  exact Finset.mem_add.mpr
+    ⟨u, Finset.mem_union_right _ hu, t, ht, rfl⟩
+
+/-- Stabilizer of `D₁₂`, followed by the source paper's saturated `D₁,D₂`.
+The direct `+ H₁₂` representation is the one used in equations (1)--(5). -/
+noncomputable def dgmCrossedH12
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (b₁ b₂ : A) (νtail : QuotientPattern H k) : AddSubgroup A :=
+  AddAction.stabilizer A
+    (dgmCrossedD12 B C P b₁ b₂ νtail : Set A)
+
+noncomputable def dgmCrossedD1
+    [Fintype A]
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (b₁ b₂ : A) (νtail : QuotientPattern H k) : Finset A :=
+  dgmCrossedPairTail1 B C P b₁ b₂ νtail +
+    (dgmCrossedD12 B C P b₁ b₂ νtail).addStab
+
+noncomputable def dgmCrossedD2
+    [Fintype A]
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (b₁ b₂ : A) (νtail : QuotientPattern H k) : Finset A :=
+  dgmCrossedPairTail2 B C P b₁ b₂ νtail +
+    (dgmCrossedD12 B C P b₁ b₂ νtail).addStab
+
+/-- Saturating either pair-tail component by `H₁₂` stays inside `D₁₂`,
+because `H₁₂` is exactly the stabilizer of `D₁₂`. -/
+theorem dgmCrossedD1_subset_D12
+    [Fintype A]
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (b₁ b₂ : A) (νtail : QuotientPattern H k)
+    (hD12 : (dgmCrossedD12 B C P b₁ b₂ νtail).Nonempty) :
+    dgmCrossedD1 B C P b₁ b₂ νtail ⊆
+      dgmCrossedD12 B C P b₁ b₂ νtail := by
+  intro y hy
+  rw [dgmCrossedD1] at hy
+  obtain ⟨x, hx, a, ha, rfl⟩ := Finset.mem_add.mp hy
+  have hxD12 := dgmCrossedPairTail1_subset_D12
+    B C P b₁ b₂ νtail hx
+  have htranslate :=
+    (Finset.mem_addStab hD12).1 ha
+  have hmem : a + x ∈ a +ᵥ dgmCrossedD12 B C P b₁ b₂ νtail :=
+    Finset.mem_vadd_finset.mpr ⟨x, hxD12, rfl⟩
+  rw [htranslate] at hmem
+  simpa [add_comm] using hmem
+
+theorem dgmCrossedD2_subset_D12
+    [Fintype A]
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (b₁ b₂ : A) (νtail : QuotientPattern H k)
+    (hD12 : (dgmCrossedD12 B C P b₁ b₂ νtail).Nonempty) :
+    dgmCrossedD2 B C P b₁ b₂ νtail ⊆
+      dgmCrossedD12 B C P b₁ b₂ νtail := by
+  intro y hy
+  rw [dgmCrossedD2] at hy
+  obtain ⟨x, hx, a, ha, rfl⟩ := Finset.mem_add.mp hy
+  have hxD12 := dgmCrossedPairTail2_subset_D12
+    B C P b₁ b₂ νtail hx
+  have htranslate :=
+    (Finset.mem_addStab hD12).1 ha
+  have hmem : a + x ∈ a +ᵥ dgmCrossedD12 B C P b₁ b₂ νtail :=
+    Finset.mem_vadd_finset.mpr ⟨x, hxD12, rfl⟩
+  rw [htranslate] at hmem
+  simpa [add_comm] using hmem
+
+/-- The stabilizer used to saturate a nonempty finite sumset remains in the
+stabilizer after saturation.  This is the abstract `H₁₂ ≤ Hᵢ` step. -/
+theorem addStab_subset_addStab_add_addStab
+    (X Y : Finset A) (hX : X.Nonempty) (hY : Y.Nonempty) :
+    X.addStab ⊆ (Y + X.addStab).addStab := by
+  intro a ha
+  have hsum : (Y + X.addStab).Nonempty :=
+    hY.add ⟨0, hX.zero_mem_addStab⟩
+  apply (Finset.mem_addStab hsum).2
+  apply Finset.eq_of_subset_of_card_le
+  · intro z hz
+    obtain ⟨w, hw, rfl⟩ := Finset.mem_vadd_finset.mp hz
+    obtain ⟨y, hy, s, hs, rfl⟩ := Finset.mem_add.mp hw
+    have ha' : a ∈ AddAction.stabilizer A (X : Set A) := by
+      have haSet : a ∈ (X.addStab : Set A) := ha
+      rwa [Finset.coe_addStab hX] at haSet
+    have hs' : s ∈ AddAction.stabilizer A (X : Set A) := by
+      have hsSet : s ∈ (X.addStab : Set A) := hs
+      rwa [Finset.coe_addStab hX] at hsSet
+    have has : a + s ∈ X.addStab := by
+      rw [← Finset.mem_coe, Finset.coe_addStab hX]
+      exact (AddAction.stabilizer A (X : Set A)).add_mem ha' hs'
+    exact Finset.mem_add.mpr ⟨y, hy, a + s, has, by ac_rfl⟩
+  · simp
+
+theorem dgmCrossedPairTail1_nonempty
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    {b₁ b₂ : A} (hb₁ : b₁ ∈ B) (hb₂ : b₂ ∈ C)
+    (νtail : QuotientPattern H k)
+    (htail : (patternSubsumSpectrum P νtail).Nonempty) :
+    (dgmCrossedPairTail1 B C P b₁ b₂ νtail).Nonempty := by
+  have hslice₁ : (dgmCosetSlice H B b₁).Nonempty :=
+    ⟨b₁, mem_dgmCosetSlice_self H B hb₁⟩
+  have hslice₂ : (dgmCosetSlice H C b₂).Nonempty :=
+    ⟨b₂, mem_dgmCosetSlice_self H C hb₂⟩
+  exact (hslice₁.add hslice₂).add htail
+
+theorem dgmCrossedPairTail2_nonempty
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    {b₁ b₂ : A} (hb₂B : b₂ ∈ B) (hb₁C : b₁ ∈ C)
+    (νtail : QuotientPattern H k)
+    (htail : (patternSubsumSpectrum P νtail).Nonempty) :
+    (dgmCrossedPairTail2 B C P b₁ b₂ νtail).Nonempty := by
+  have hslice₂B : (dgmCosetSlice H B b₂).Nonempty :=
+    ⟨b₂, mem_dgmCosetSlice_self H B hb₂B⟩
+  have hslice₁C : (dgmCosetSlice H C b₁).Nonempty :=
+    ⟨b₁, mem_dgmCosetSlice_self H C hb₁C⟩
+  exact (hslice₂B.add hslice₁C).add htail
+
+/-- The literal finite-stabilizer inclusions `H₁₂ ≤ H₁` and, when the
+crossed component is nonempty, `H₁₂ ≤ H₂`. -/
+theorem dgmCrossedH12_subset_D1_addStab
+    [Fintype A]
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (b₁ b₂ : A) (νtail : QuotientPattern H k)
+    (hD12 : (dgmCrossedD12 B C P b₁ b₂ νtail).Nonempty)
+    (hpair : (dgmCrossedPairTail1 B C P b₁ b₂ νtail).Nonempty) :
+    (dgmCrossedD12 B C P b₁ b₂ νtail).addStab ⊆
+      (dgmCrossedD1 B C P b₁ b₂ νtail).addStab := by
+  simpa [dgmCrossedD1] using
+    addStab_subset_addStab_add_addStab
+      (dgmCrossedD12 B C P b₁ b₂ νtail)
+      (dgmCrossedPairTail1 B C P b₁ b₂ νtail) hD12 hpair
+
+theorem dgmCrossedH12_subset_D2_addStab
+    [Fintype A]
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (b₁ b₂ : A) (νtail : QuotientPattern H k)
+    (hD12 : (dgmCrossedD12 B C P b₁ b₂ νtail).Nonempty)
+    (hpair : (dgmCrossedPairTail2 B C P b₁ b₂ νtail).Nonempty) :
+    (dgmCrossedD12 B C P b₁ b₂ νtail).addStab ⊆
+      (dgmCrossedD2 B C P b₁ b₂ νtail).addStab := by
+  simpa [dgmCrossedD2] using
+    addStab_subset_addStab_add_addStab
+      (dgmCrossedD12 B C P b₁ b₂ νtail)
+      (dgmCrossedPairTail2 B C P b₁ b₂ νtail) hD12 hpair
+
+/-- The bundled subgroup `dgmCrossedH12` is literally the subgroup whose
+finite carrier is `(D₁₂).addStab`. -/
+theorem coe_dgmCrossedH12_eq_addStab
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (b₁ b₂ : A) (νtail : QuotientPattern H k)
+    (hD12 : (dgmCrossedD12 B C P b₁ b₂ νtail).Nonempty) :
+    (dgmCrossedH12 B C P b₁ b₂ νtail : Set A) =
+      ((dgmCrossedD12 B C P b₁ b₂ νtail).addStab : Set A) := by
+  rw [Finset.coe_addStab hD12]
+  rfl
+
+theorem dgmCrossedH12_le_D1_stabilizer
+    [Fintype A]
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (b₁ b₂ : A) (νtail : QuotientPattern H k)
+    (hD12 : (dgmCrossedD12 B C P b₁ b₂ νtail).Nonempty)
+    (hpair : (dgmCrossedPairTail1 B C P b₁ b₂ νtail).Nonempty) :
+    dgmCrossedH12 B C P b₁ b₂ νtail ≤
+      AddAction.stabilizer A
+        (dgmCrossedD1 B C P b₁ b₂ νtail : Set A) := by
+  intro a ha
+  have haFin : a ∈ (dgmCrossedD12 B C P b₁ b₂ νtail).addStab := by
+    have haSet : a ∈ (dgmCrossedH12 B C P b₁ b₂ νtail : Set A) := ha
+    rw [coe_dgmCrossedH12_eq_addStab B C P b₁ b₂ νtail hD12] at haSet
+    exact haSet
+  have haD1 := dgmCrossedH12_subset_D1_addStab
+    B C P b₁ b₂ νtail hD12 hpair haFin
+  have hD1 : (dgmCrossedD1 B C P b₁ b₂ νtail).Nonempty := by
+    rw [dgmCrossedD1]
+    exact hpair.add ⟨0, hD12.zero_mem_addStab⟩
+  have haSet : a ∈
+      ((dgmCrossedD1 B C P b₁ b₂ νtail).addStab : Set A) := haD1
+  rwa [Finset.coe_addStab hD1] at haSet
+
+theorem dgmCrossedH12_le_D2_stabilizer
+    [Fintype A]
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (b₁ b₂ : A) (νtail : QuotientPattern H k)
+    (hD12 : (dgmCrossedD12 B C P b₁ b₂ νtail).Nonempty)
+    (hpair : (dgmCrossedPairTail2 B C P b₁ b₂ νtail).Nonempty) :
+    dgmCrossedH12 B C P b₁ b₂ νtail ≤
+      AddAction.stabilizer A
+        (dgmCrossedD2 B C P b₁ b₂ νtail : Set A) := by
+  intro a ha
+  have haFin : a ∈ (dgmCrossedD12 B C P b₁ b₂ νtail).addStab := by
+    have haSet : a ∈ (dgmCrossedH12 B C P b₁ b₂ νtail : Set A) := ha
+    rw [coe_dgmCrossedH12_eq_addStab B C P b₁ b₂ νtail hD12] at haSet
+    exact haSet
+  have haD2 := dgmCrossedH12_subset_D2_addStab
+    B C P b₁ b₂ νtail hD12 hpair haFin
+  have hD2 : (dgmCrossedD2 B C P b₁ b₂ νtail).Nonempty := by
+    rw [dgmCrossedD2]
+    exact hpair.add ⟨0, hD12.zero_mem_addStab⟩
+  have haSet : a ∈
+      ((dgmCrossedD2 B C P b₁ b₂ νtail).addStab : Set A) := haD2
+  rwa [Finset.coe_addStab hD2] at haSet
+
+/-- A nonempty finite set properly contained in one `H`-coset has stabilizer
+strictly smaller than `H`.  This is the exact proper-coset argument used for
+`H₁₂,H₁,H₂ < H`. -/
+theorem stabilizer_lt_of_proper_quotientFiber
+    (H : AddSubgroup A) (D : Finset A) (hD : D.Nonempty)
+    (q : A ⧸ H)
+    (hfiber : ∀ x ∈ D, (x : A ⧸ H) = q)
+    {y : A} (hyq : (y : A ⧸ H) = q) (hyD : y ∉ D) :
+    AddAction.stabilizer A (D : Set A) < H := by
+  have hle : AddAction.stabilizer A (D : Set A) ≤ H := by
+    intro a ha
+    have hDcopy := hD
+    obtain ⟨x, hx⟩ := hDcopy
+    have haFin : a ∈ D.addStab := by
+      have haSet : a ∈ (AddAction.stabilizer A (D : Set A) : Set A) := ha
+      rw [← Finset.coe_addStab hD] at haSet
+      exact haSet
+    have htranslate := (Finset.mem_addStab hD).1 haFin
+    have hax : a + x ∈ D := by
+      have : a + x ∈ a +ᵥ D :=
+        Finset.mem_vadd_finset.mpr ⟨x, hx, rfl⟩
+      rwa [htranslate] at this
+    have hqeq : (a + x : A ⧸ H) = (x : A ⧸ H) :=
+      (hfiber (a + x) hax).trans (hfiber x hx).symm
+    have hzero : (a : A ⧸ H) = 0 := by
+      apply add_right_cancel (b := (x : A ⧸ H))
+      simpa using hqeq
+    exact (QuotientAddGroup.eq_zero_iff a).1 hzero
+  refine lt_of_le_of_ne hle ?_
+  intro heq
+  have hDcopy := hD
+  obtain ⟨x, hx⟩ := hDcopy
+  let a : A := y - x
+  have haH : a ∈ H := by
+    exact QuotientAddGroup.eq_iff_sub_mem.mp (hyq.trans (hfiber x hx).symm)
+  have ha : a ∈ AddAction.stabilizer A (D : Set A) := by
+    rw [heq]
+    exact haH
+  have haFin : a ∈ D.addStab := by
+    have haSet : a ∈ (AddAction.stabilizer A (D : Set A) : Set A) := ha
+    rw [← Finset.coe_addStab hD] at haSet
+    exact haSet
+  have htranslate := (Finset.mem_addStab hD).1 haFin
+  have hay : a + x ∈ D := by
+    have : a + x ∈ a +ᵥ D :=
+      Finset.mem_vadd_finset.mpr ⟨x, hx, rfl⟩
+    rwa [htranslate] at this
+  apply hyD
+  simpa [a] using hay
+
+noncomputable def dgmCrossedH1
+    [Fintype A]
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (b₁ b₂ : A) (νtail : QuotientPattern H k) : AddSubgroup A :=
+  AddAction.stabilizer A
+    (dgmCrossedD1 B C P b₁ b₂ νtail : Set A)
+
+noncomputable def dgmCrossedH2
+    [Fintype A]
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (b₁ b₂ : A) (νtail : QuotientPattern H k) : AddSubgroup A :=
+  AddAction.stabilizer A
+    (dgmCrossedD2 B C P b₁ b₂ νtail : Set A)
+
+/-- An escaping point in the same pattern coset proves all three source
+stabilizers are proper in `H` (for `D₂`, once its crossed component is
+nonempty). -/
+theorem dgmCrossedH12_lt_of_escape
+    [Fintype A]
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (ν : QuotientPattern H (k + 2)) (b₁ b₂ : A)
+    (νtail : QuotientPattern H k)
+    (hext : ν.IsTwoStepExtension b₁ b₂ νtail)
+    (hD12 : (dgmCrossedD12 B C P b₁ b₂ νtail).Nonempty)
+    {y : A} (hy : y ∈ patternSubsumSpectrum (B :: C :: P) ν)
+    (hyD12 : y ∉ dgmCrossedD12 B C P b₁ b₂ νtail) :
+    dgmCrossedH12 B C P b₁ b₂ νtail < H := by
+  apply stabilizer_lt_of_proper_quotientFiber H
+    (dgmCrossedD12 B C P b₁ b₂ νtail) hD12 ν.quotientSum
+  · intro x hx
+    exact patternSubsumSpectrum_quotient_eq _ ν
+      (dgmCrossedD12_subset_patternSubsumSpectrum
+        B C P ν b₁ b₂ νtail hext hx)
+  · exact patternSubsumSpectrum_quotient_eq _ ν hy
+  · exact hyD12
+
+theorem dgmCrossedH1_lt_of_escape
+    [Fintype A]
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (ν : QuotientPattern H (k + 2)) (b₁ b₂ : A)
+    (νtail : QuotientPattern H k)
+    (hext : ν.IsTwoStepExtension b₁ b₂ νtail)
+    (hD12 : (dgmCrossedD12 B C P b₁ b₂ νtail).Nonempty)
+    (hpair : (dgmCrossedPairTail1 B C P b₁ b₂ νtail).Nonempty)
+    {y : A} (hy : y ∈ patternSubsumSpectrum (B :: C :: P) ν)
+    (hyD12 : y ∉ dgmCrossedD12 B C P b₁ b₂ νtail) :
+    dgmCrossedH1 B C P b₁ b₂ νtail < H := by
+  have hD1 : (dgmCrossedD1 B C P b₁ b₂ νtail).Nonempty := by
+    rw [dgmCrossedD1]
+    exact hpair.add ⟨0, hD12.zero_mem_addStab⟩
+  apply stabilizer_lt_of_proper_quotientFiber H
+    (dgmCrossedD1 B C P b₁ b₂ νtail) hD1 ν.quotientSum
+  · intro x hx
+    have hxD12 := dgmCrossedD1_subset_D12
+      B C P b₁ b₂ νtail hD12 hx
+    exact patternSubsumSpectrum_quotient_eq _ ν
+      (dgmCrossedD12_subset_patternSubsumSpectrum
+        B C P ν b₁ b₂ νtail hext hxD12)
+  · exact patternSubsumSpectrum_quotient_eq _ ν hy
+  · intro hyD1
+    exact hyD12 (dgmCrossedD1_subset_D12
+      B C P b₁ b₂ νtail hD12 hyD1)
+
+theorem dgmCrossedH2_lt_of_escape
+    [Fintype A]
+    {H : AddSubgroup A} {k : ℕ} [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)]
+    (B C : Finset A) (P : List (Finset A))
+    (ν : QuotientPattern H (k + 2)) (b₁ b₂ : A)
+    (νtail : QuotientPattern H k)
+    (hext : ν.IsTwoStepExtension b₁ b₂ νtail)
+    (hD12 : (dgmCrossedD12 B C P b₁ b₂ νtail).Nonempty)
+    (hpair : (dgmCrossedPairTail2 B C P b₁ b₂ νtail).Nonempty)
+    {y : A} (hy : y ∈ patternSubsumSpectrum (B :: C :: P) ν)
+    (hyD12 : y ∉ dgmCrossedD12 B C P b₁ b₂ νtail) :
+    dgmCrossedH2 B C P b₁ b₂ νtail < H := by
+  have hD2 : (dgmCrossedD2 B C P b₁ b₂ νtail).Nonempty := by
+    rw [dgmCrossedD2]
+    exact hpair.add ⟨0, hD12.zero_mem_addStab⟩
+  apply stabilizer_lt_of_proper_quotientFiber H
+    (dgmCrossedD2 B C P b₁ b₂ νtail) hD2 ν.quotientSum
+  · intro x hx
+    have hxD12 := dgmCrossedD2_subset_D12
+      B C P b₁ b₂ νtail hD12 hx
+    exact patternSubsumSpectrum_quotient_eq _ ν
+      (dgmCrossedD12_subset_patternSubsumSpectrum
+        B C P ν b₁ b₂ νtail hext hxD12)
+  · exact patternSubsumSpectrum_quotient_eq _ ν hy
+  · intro hyD2
+    exact hyD12 (dgmCrossedD2_subset_D12
+      B C P b₁ b₂ νtail hD12 hyD2)
 
 /-- A translation outside the stabilizer of a nonempty finite set moves
 some member of the set outside it. -/
