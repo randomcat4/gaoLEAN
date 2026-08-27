@@ -5592,6 +5592,125 @@ theorem stabilizerLayerMultiplicity_mk_eq_raw_of_addStab_eq_singleton
         rw [stabilizerLayerMultiplicity_cons_of_not_mem C B P _ hqx,
           rawLayerMultiplicity_cons_of_not_mem B P x hx, ih]
 
+/-- With trivial finite stabilizer, the stabilizer-quotient capped incidence
+sum is exactly the raw capped incidence sum on the ambient group. -/
+theorem stabilizerDgmCappedMultiplicitySum_eq_raw_of_addStab_eq_singleton
+    [Fintype A] (C : Finset A) (hC : C.Nonempty)
+    (hstab : C.addStab = {0}) (P : List (Finset A)) (n : ℕ) :
+    stabilizerDgmCappedMultiplicitySum C P n =
+      rawDgmCappedMultiplicitySum P n := by
+  classical
+  let H : AddSubgroup A := AddAction.stabilizer A (C : Set A)
+  let q : A → A ⧸ H := fun x ↦ (x : A ⧸ H)
+  have hq_inj : Function.Injective q := by
+    simpa [q, H] using
+      stabilizerQuotient_mk_injective_of_addStab_eq_singleton C hC hstab
+  have hq_surj : Function.Surjective q := by
+    simpa [q, H] using QuotientAddGroup.mk'_surjective H
+  let e : A ≃ A ⧸ H := Equiv.ofBijective q ⟨hq_inj, hq_surj⟩
+  unfold stabilizerDgmCappedMultiplicitySum rawDgmCappedMultiplicitySum
+  symm
+  refine Fintype.sum_equiv e
+    (fun x : A ↦ min n (rawLayerMultiplicity P x))
+    (fun z : A ⧸ H ↦ min n (stabilizerLayerMultiplicity C P z)) ?_
+  intro x
+  congr 1
+  symm
+  simpa [H, q, e] using
+    stabilizerLayerMultiplicity_mk_eq_raw_of_addStab_eq_singleton
+      C hC hstab P x
+
+/-- In a genuine counterexample with aperiodic target, every convergent has
+nontrivial stabilizer.  Otherwise the convergent inequality, the exact
+intersection--union incidence identity, and `C ⊆ T` already prove the target
+pattern bound. -/
+theorem dgmPatternConvergent_stabilizer_ne_bot_of_target_failure
+    [Fintype A] {K : AddSubgroup A} {n : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (B C : Finset A) (P : List (Finset A))
+    (μ : QuotientPattern K n)
+    (hTargetStab :
+      (patternSubsumSpectrum (B :: C :: P) μ).addStab = {0})
+    (hfailure : ¬DGMPatternBound (B :: C :: P) μ)
+    (E : Finset A) (hEconv : DGMPatternConvergent B C P μ E) :
+    AddAction.stabilizer A (E : Set A) ≠ ⊥ := by
+  intro hEbot
+  have hEdata := hEconv
+  unfold DGMPatternConvergent at hEdata
+  dsimp only at hEdata
+  rcases hEdata with ⟨hEne, _, hEupper, hEbound⟩
+  let T := patternSubsumSpectrum (B :: C :: P) μ
+  have hTne : T.Nonempty := hEne.mono (by simpa [T] using hEupper)
+  have hEadd : E.addStab = {0} := by
+    ext a
+    have hcoe := Finset.coe_addStab hEne
+    rw [← Finset.mem_coe, hcoe, hEbot]
+    simp
+  have hEcap :=
+    stabilizerDgmCappedMultiplicitySum_eq_raw_of_addStab_eq_singleton
+      E hEne hEadd (dgmInterUnionLayers B C P) n
+  have hTcap :=
+    stabilizerDgmCappedMultiplicitySum_eq_raw_of_addStab_eq_singleton
+      T hTne (by simpa [T] using hTargetStab) (B :: C :: P) n
+  have hraw := rawDgmCappedMultiplicitySum_inter_union B C P n
+  have hEcard : E.card ≤ T.card :=
+    Finset.card_le_card (by simpa [T] using hEupper)
+  have hEgroupCard : Nat.card (AddAction.stabilizer A (E : Set A)) = 1 := by
+    rw [hEbot]
+    exact Nat.card_unique
+  have hTgroupCard : Nat.card (AddAction.stabilizer A (T : Set A)) = 1 := by
+    rw [← card_addStab_eq_natCard_stabilizer T hTne,
+      show T.addStab = {0} by simpa [T] using hTargetStab]
+    simp
+  apply hfailure
+  unfold DGMPatternBound
+  dsimp only
+  change Nat.card (AddAction.stabilizer A (T : Set A)) *
+      (stabilizerDgmCappedMultiplicitySum T (B :: C :: P) n - n + 1) ≤
+    T.card + Nat.card K * (dgmCappedMultiplicitySum K (B :: C :: P) n - n)
+  rw [hTgroupCard, one_mul, hTcap]
+  rw [hEgroupCard, one_mul, hEcap] at hEbound
+  change rawDgmCappedMultiplicitySum
+      ((B ∩ C) :: (B ∪ C) :: P) n - n + 1 ≤
+    E.card + Nat.card K *
+      (dgmCappedMultiplicitySum K (B :: C :: P) n - n) at hEbound
+  rw [hraw] at hEbound
+  exact hEbound.trans (Nat.add_le_add_right hEcard _)
+
+/-- The minimum convergent selected in the crossed counterexample is
+simultaneously nontrivial and has the exact extension nonconvergence property
+used in equation (2). -/
+theorem exists_dgmPatternConvergent_min_nontrivial_with_extension_hnot
+    [Fintype A] {K : AddSubgroup A} {n : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (B C : Finset A) (P : List (Finset A))
+    (μ : QuotientPattern K n) {D₀ : Finset A}
+    (hD₀ : DGMPatternConvergent B C P μ D₀)
+    (hTargetStab :
+      (patternSubsumSpectrum (B :: C :: P) μ).addStab = {0})
+    (hfailure : ¬DGMPatternBound (B :: C :: P) μ) :
+    ∃ E : Finset A,
+      DGMPatternConvergent B C P μ E ∧
+      AddAction.stabilizer A (E : Set A) ≠ ⊥ ∧
+      (∀ E' : Finset A, DGMPatternConvergent B C P μ E' →
+        Nat.card (AddAction.stabilizer A (E : Set A)) ≤
+          Nat.card (AddAction.stabilizer A (E' : Set A))) ∧
+      ∀ (D : Finset A) (y : A),
+        D.Nonempty →
+        (∀ x ∈ D,
+          (x : A ⧸ AddAction.stabilizer A (E : Set A)) =
+            (y : A ⧸ AddAction.stabilizer A (E : Set A))) →
+        y ∉ D →
+        (¬dgmCosetFiber (AddAction.stabilizer A (E : Set A)) y ⊆
+          patternSubsumSpectrum (B :: C :: P) μ) →
+        ¬DGMPatternConvergent B C P μ (E ∪ D) := by
+  obtain ⟨E, hE, hmin, hext⟩ :=
+    exists_dgmPatternConvergent_min_with_extension_hnot B C P μ hD₀
+  exact ⟨E, hE,
+    dgmPatternConvergent_stabilizer_ne_bot_of_target_failure
+      B C P μ hTargetStab hfailure E hE,
+    hmin, hext⟩
+
 /-- Double counting raw layer-value incidences. -/
 theorem sum_rawLayerMultiplicity
     [Fintype A] (P : List (Finset A)) :
