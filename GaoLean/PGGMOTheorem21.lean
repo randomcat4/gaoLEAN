@@ -629,6 +629,43 @@ noncomputable def Theorem21SetPartition.capturedOutsideCommonCore
   exact (P.support.filter fun i ↦
     occurrenceValue xs i ∉ P.commonCore H).card
 
+/-! ### Source-faithful Theorem E base family -/
+
+/-- The actual input of the Partition Theorem's Theorem E is an already
+chosen occurrence-faithful `n`-setpartition of `S'`, together with one fixed
+anchor occurrence in every cell.  The multiplicity and length hypotheses are
+used earlier to construct this object; they are not hypotheses of Theorem E
+itself. -/
+structure GMOTheoremEInput
+    (xs : List A) (seed : Selection xs) (n : ℕ) where
+  initial : Theorem21SetPartition xs n seed.card
+  initial_support : initial.support = seed
+  anchor : Fin n → Occurrence xs
+  anchor_mem : ∀ c, anchor c ∈ initial.cells c
+
+/-- Literal `Lambda_0` admissibility in dissertation Definition 1: the
+initial full sumset is contained in the replacement full sumset, and every
+distinguished anchor value remains in its indexed cell. -/
+def GMOReplacementAdmissible
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    (I : GMOTheoremEInput xs seed n)
+    (P : Theorem21SetPartition xs n seed.card) : Prop :=
+  I.initial.sumset ⊆ P.sumset ∧
+    ∀ c : Fin n,
+      occurrenceValue xs (I.anchor c) ∈ P.valueCell c
+
+omit [Fintype A] in
+/-- The initial partition belongs to its literal source base family. -/
+theorem GMOTheoremEInput.initial_admissible
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    (I : GMOTheoremEInput xs seed n) :
+    GMOReplacementAdmissible I I.initial := by
+  classical
+  constructor
+  · exact Finset.Subset.rfl
+  · intro c
+    exact Finset.mem_image.mpr ⟨I.anchor c, I.anchor_mem c, rfl⟩
+
 /-- The ordered tail `A_{r+1}, ..., A_n` of value cells (with zero-based
 Lean index `r`). -/
 noncomputable def Theorem21SetPartition.tailValueCells
@@ -758,6 +795,21 @@ structure Definition1InitialValid
   mem_upsilon_iff : ∀ P : Theorem21SetPartition xs n seed.card,
     P ∈ state.upsilon ↔ P.sumset.card = state.chosen.sumset.card
 
+/-- Source-faithful `Upsilon_0`: maximality is taken only inside the literal
+`Lambda_0` family determined by the initial sumset and anchors. -/
+structure Definition1InitialValidUnder
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    (I : GMOTheoremEInput xs seed n)
+    (state : Definition1ExtremalState xs seed n) : Prop where
+  chosen_admissible : GMOReplacementAdmissible I state.chosen
+  maximal : ∀ P : Theorem21SetPartition xs n seed.card,
+    GMOReplacementAdmissible I P →
+    P.sumset.card ≤ state.chosen.sumset.card
+  mem_upsilon_iff : ∀ P : Theorem21SetPartition xs n seed.card,
+    P ∈ state.upsilon ↔
+      GMOReplacementAdmissible I P ∧
+        P.sumset.card = state.chosen.sumset.card
+
 /-- One positive-stage transition of Definition 1.  At zero-based stage
 `r`, `H` is the maximal period of the previous chosen tail beginning at
 `r`.  The intermediate witness `F` is chosen after maximizing total quotient
@@ -812,6 +864,37 @@ structure Definition1Transition
         (P.tailSumset (r + 1)).card =
           (next.chosen.tailSumset (r + 1)).card
 
+/-- Literal membership predicate for the intermediate `Lambda_{r+1}` family
+of Definition 1.  Unlike `next.upsilon`, it stops after fixing the current
+tail and maximizing quotient incidence; retaining this seam is essential in
+the `l = min (rho + 1) q` proof of Lemma 1. -/
+def Definition1Transition.InLambda
+    {xs : List A} {seed : Selection xs} {n r : ℕ}
+    {previous next : Definition1ExtremalState xs seed n}
+    {F : Theorem21SetPartition xs n seed.card}
+    (_step : Definition1Transition r previous next F)
+    (P : Theorem21SetPartition xs n seed.card) : Prop :=
+  P ∈ previous.upsilon ∧
+    P.tailSumset r = previous.chosen.tailSumset r ∧
+    P.quotientIncidenceAt
+        (AddAction.stabilizer A
+          (previous.chosen.tailSumset r : Set A)) =
+      F.quotientIncidenceAt
+        (AddAction.stabilizer A
+          (previous.chosen.tailSumset r : Set A))
+
+omit [Fintype A] in
+/-- Every member of the following `Upsilon` lies in the preceding literal
+`Lambda`; the converse intentionally need not hold. -/
+theorem Definition1Transition.inLambda_of_mem_next
+    {xs : List A} {seed : Selection xs} {n r : ℕ}
+    {previous next : Definition1ExtremalState xs seed n}
+    {F P : Theorem21SetPartition xs n seed.card}
+    (step : Definition1Transition r previous next F)
+    (hP : P ∈ next.upsilon) : step.InLambda P := by
+  have hPdata := (step.mem_next_upsilon_iff P).1 hP
+  exact ⟨hPdata.1, hPdata.2.1, hPdata.2.2.1⟩
+
 omit [Fintype A] in
 /-- The initial `Υ_0/G_0` state exists by a genuine finite argmax. -/
 theorem exists_definition1InitialState
@@ -842,6 +925,42 @@ theorem exists_definition1InitialState
     exact hGmax P (Finset.mem_univ P)
   · intro P
     simp [upsilon, all]
+
+omit [Fintype A] in
+/-- The literal source `Upsilon_0` exists by a finite argmax over
+`GMOReplacementAdmissible I`; the initial partition witnesses that this
+family is nonempty. -/
+theorem exists_definition1InitialStateUnder
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    (I : GMOTheoremEInput xs seed n) :
+    ∃ state : Definition1ExtremalState xs seed n,
+      Definition1InitialValidUnder I state := by
+  classical
+  letI : Fintype (Theorem21SetPartition xs n seed.card) := Fintype.ofFinite _
+  let all : Finset (Theorem21SetPartition xs n seed.card) := Finset.univ
+  let lambda0 := all.filter fun P ↦ GMOReplacementAdmissible I P
+  have hinitial : I.initial ∈ lambda0 := by
+    simp [lambda0, all, I.initial_admissible]
+  obtain ⟨G, hGlambda, hGmax⟩ := Finset.exists_max_image lambda0
+    (fun P ↦ P.sumset.card) ⟨I.initial, hinitial⟩
+  let upsilon := lambda0.filter fun P ↦ P.sumset.card = G.sumset.card
+  have hGupsilon : G ∈ upsilon := by simp [upsilon, hGlambda]
+  let state : Definition1ExtremalState xs seed n := {
+    upsilon := upsilon
+    chosen := G
+    chosen_mem := hGupsilon
+  }
+  refine ⟨state, {
+    chosen_admissible := ?_
+    maximal := ?_
+    mem_upsilon_iff := ?_
+  }⟩
+  · exact (Finset.mem_filter.mp hGlambda).2
+  · intro P hPadmissible
+    exact hGmax P (Finset.mem_filter.mpr
+      ⟨Finset.mem_univ P, hPadmissible⟩)
+  · intro P
+    simp [state, upsilon, lambda0, all]
 
 omit [Fintype A] in
 /-- Every valid finite `Υ_r/G_r` state admits the next
@@ -936,6 +1055,40 @@ theorem exists_definition1ExtremalChain
       exact ⟨state,
         ⟨Definition1ExtremalChain.next chain state F htransition⟩⟩
 
+/-- Source-faithful Definition 1 chain.  Only its initial constructor differs
+from the projected chain: `Upsilon_0` is maximized under the literal
+`Lambda_0` admissibility predicate.  All successor transitions are the same
+finite `Lambda/F/Upsilon/G/H` construction. -/
+inductive Definition1SourceChain
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    (I : GMOTheoremEInput xs seed n) :
+    ℕ → Definition1ExtremalState xs seed n → Type (u + 1)
+  | initial (state) (valid : Definition1InitialValidUnder I state) :
+      Definition1SourceChain I 0 state
+  | next {r previous}
+      (chain : Definition1SourceChain I r previous)
+      (state) (F : Theorem21SetPartition xs n seed.card)
+      (valid : Definition1Transition r previous state F) :
+      Definition1SourceChain I (r + 1) state
+
+omit [Fintype A] in
+/-- The literal source chain exists to every finite depth. -/
+theorem exists_definition1SourceChain
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    (I : GMOTheoremEInput xs seed n) (r : ℕ) :
+    ∃ state : Definition1ExtremalState xs seed n,
+      Nonempty (Definition1SourceChain I r state) := by
+  induction r with
+  | zero =>
+      obtain ⟨state, hstate⟩ := exists_definition1InitialStateUnder I
+      exact ⟨state, ⟨Definition1SourceChain.initial state hstate⟩⟩
+  | succ r ih =>
+      obtain ⟨previous, ⟨chain⟩⟩ := ih
+      obtain ⟨state, F, htransition⟩ :=
+        exists_definition1Transition r previous
+      exact ⟨state,
+        ⟨Definition1SourceChain.next chain state F htransition⟩⟩
+
 /-! ### The doubled-exception removal step (dissertation Lemma 1) -/
 
 /-- A value is an `H`-exception for a setpartition when its quotient class is
@@ -962,6 +1115,73 @@ noncomputable def Theorem21SetPartition.IsHDoubledException
     {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
     (H : AddSubgroup A) (x : A) : Prop :=
   P.IsHException H x ∧ ∃ c : Fin n, P.IsHDoubledInCell H c x
+
+/-! ### Literal zero-based weak factor forms (dissertation Definition 2) -/
+
+/-- Actual stabilizer of the source tail beginning at one-based cell
+`r + 1`. -/
+noncomputable def Theorem21SetPartition.tailPeriod
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (r : ℕ) : AddSubgroup A :=
+  AddAction.stabilizer A (P.tailSumset r : Set A)
+
+/-- Zero-based leading cells `X₁, ..., X_rho`. -/
+def leadingIndices (n rho : ℕ) : Finset (Fin n) :=
+  Finset.univ.filter fun c ↦ c.val < rho
+
+/-- Zero-based tail cells `Y_{rho+1}, ..., Y_n`. -/
+def tailIndices (n rho : ℕ) : Finset (Fin n) :=
+  Finset.univ.filter fun c ↦ rho ≤ c.val
+
+/-- Literal weak `rho`-factor form, with source cell `rho + 1` represented by
+Lean tail index `rho`.  Field `transition` makes `partition` the fixed
+`F_{rho+1}` selected from the genuine intermediate `Lambda_{rho+1}`, while
+`chain` starts from the source-admissible `Lambda_0`.  Conditions (I), (IV)
+and (V) are retained exactly; (II) and (III) belong to `FactorForm`. -/
+structure WeakFactorForm
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    (I : GMOTheoremEInput xs seed n) (rho : ℕ) where
+  range : rho ≤ n - 2
+  partition : Theorem21SetPartition xs n seed.card
+  admissible : GMOReplacementAdmissible I partition
+  previous : Definition1ExtremalState xs seed n
+  chain : Definition1SourceChain I rho previous
+  next : Definition1ExtremalState xs seed n
+  transition : Definition1Transition rho previous next partition
+  tail_actual : ∀ r, r ≤ rho →
+    ⊥ < partition.tailPeriod r ∧ partition.tailPeriod r < ⊤
+  leading_exception : ∀ c : Fin n, c.val < rho →
+    ∃ x ∈ partition.valueCell c,
+      partition.IsHException (partition.tailPeriod c.val) x
+
+/-- Conditions (II) and (III) completing a weak factor form.  Natural-number
+subtraction is kept in the same parenthesization as the source inequalities.
+-/
+structure FactorForm
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    (I : GMOTheoremEInput xs seed n) (rho : ℕ)
+    extends WeakFactorForm I rho where
+  quotient_growth :
+    ((quotientLayer (partition.tailPeriod rho)
+          (partition.tailSumset rho)).card +
+        (∑ c ∈ leadingIndices n rho,
+          (quotientLayer (partition.tailPeriod rho)
+            (partition.valueCell c)).card) - (rho + 1) + 1) ≤
+      (quotientLayer (partition.tailPeriod rho)
+        partition.sumset).card
+  tail_deficit :
+    (partition.tailSumset rho).card <
+      (∑ c ∈ tailIndices n rho, (partition.valueCell c).card) -
+        (n - rho) + 1
+
+omit [Fintype A] in
+/-- Condition (V) in explicit `InLambda` form. -/
+theorem WeakFactorForm.inLambda
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (W : WeakFactorForm I rho) :
+    W.transition.InLambda W.partition := by
+  exact ⟨W.transition.F_mem_previous, W.transition.F_tail_fixed, rfl⟩
 
 omit [Fintype A] in
 /-- Elementary removal engine used in dissertation Lemma 1.  If `x` has a
@@ -2364,22 +2584,23 @@ theorem Definition1ExtremalChain.MonotoneReplacement.of_moveOccurrence_of_later_
         heraseCurrent heraseNext
 
 omit [Fintype A] in
-/-- Complete maximality contradiction of dissertation Lemma 1 for a fixed
-exception cell `d` before the current tail and a doubled source cell `q`
-inside that tail.  The conclusion is the source lemma's substantive one:
-after deleting the doubled representative, the tail cannot remain periodic
-under its original stabilizer. -/
+/-- `q`-in-tail maximality contradiction used inside dissertation Lemma 1.
+For literal membership in `Lambda_{k+1}`, the missing target cell may be
+anywhere: even when the insertion enlarges the `k`-tail, prior-stage
+maximality forces equality of the two tail sumsets before quotient incidence
+can increase.  This is still the `k ≤ q` branch; the full source lemma first
+works at `l = min k q` and then derives this inequality. -/
 theorem Definition1Transition.not_periodic_tailAfterErase_of_doubledException
     {xs : List A} {seed : Selection xs} {n k : ℕ}
     {previous next : Definition1ExtremalState xs seed n}
     {prior : Definition1ExtremalChain xs seed n k previous}
     {F P : Theorem21SetPartition xs n seed.card}
     (step : Definition1Transition k previous next F)
-    (hP : P ∈ next.upsilon)
+    (hP : step.InLambda P)
     (H : AddSubgroup A)
     (hH : H = AddAction.stabilizer A
       (previous.chosen.tailSumset k : Set A))
-    (q d : Fin n) (x : A) (hdk : d.val < k) (hkq : k ≤ q.val)
+    (q d : Fin n) (x : A) (hkq : k ≤ q.val)
     (hmissing : QuotientAddGroup.mk' H x ∉
       quotientLayer H (P.valueCell d))
     (hdouble : P.IsHDoubledInCell H q x) :
@@ -2417,9 +2638,7 @@ theorem Definition1Transition.not_periodic_tailAfterErase_of_doubledException
     simp [hzvalue, hix]
   obtain ⟨Q, hQcells, _hQsupport⟩ := P.exists_moveOccurrence
     hqd hiq ⟨j, hjq, hji⟩ htarget
-  have hPdata := (step.mem_next_upsilon_iff P).1 hP
-  have hPtail : P.tailSumset k = previous.chosen.tailSumset k :=
-    hPdata.2.1
+  have hPtail : P.tailSumset k = previous.chosen.tailSumset k := hP.2.1
   have hdoubleP : P.IsHDoubledInCell
       (AddAction.stabilizer A (P.tailSumset k : Set A)) q x := by
     simpa [hPtail] using
@@ -2435,21 +2654,25 @@ theorem Definition1Transition.not_periodic_tailAfterErase_of_doubledException
   have hmono :
       Definition1ExtremalChain.MonotoneReplacement P Q prior :=
     Definition1ExtremalChain.MonotoneReplacement.of_moveOccurrence_of_later_periodic
-      hPdata.1 le_rfl hkq hqd hiq hix hdoubleP hQcells hperiodicP
+      hP.1 le_rfl hkq hqd hiq hix hdoubleP hQcells hperiodicP
   have hQprevious : Q ∈ previous.upsilon :=
     prior.mem_final_of_monotoneReplacement hmono
-  have hQerased : Q.tailSumset k = P.tailSumsetAfterErase q x k := by
-    unfold Theorem21SetPartition.tailSumset
-      Theorem21SetPartition.tailSumsetAfterErase
-    rw [P.tailValueCells_move_eq_afterErase_of_target_lt hdk hiq hQcells]
-    rw [hix]
   have hPerase : P.tailSumset k = P.tailSumsetAfterErase q x k :=
     P.tailSumset_eq_afterErase_of_periodic
       (AddAction.stabilizer A
         (previous.chosen.tailSumset k : Set A)) q hkq hyq hyx hyquot
       hperiodic
+  have hPsubsetQ : P.tailSumset k ⊆ Q.tailSumset k :=
+    P.tailSumset_subset_moveOccurrence_of_erase_eq hqd hiq hQcells k
+      (by simpa [hix] using hPerase)
+  have hQcard : (Q.tailSumset k).card =
+      (previous.chosen.tailSumset k).card :=
+    prior.tail_card_eq_chosen_of_mem hQprevious
+  have hQeqP : Q.tailSumset k = P.tailSumset k := by
+    exact (Finset.eq_of_subset_of_card_le hPsubsetQ (by
+      rw [hQcard, hPtail])).symm
   have hQtail : Q.tailSumset k = previous.chosen.tailSumset k := by
-    rw [hQerased, ← hPerase, hPtail]
+    rw [hQeqP, hPtail]
   have hQinc : Q.quotientIncidenceAt
         (AddAction.stabilizer A
           (previous.chosen.tailSumset k : Set A)) =
@@ -2461,7 +2684,7 @@ theorem Definition1Transition.not_periodic_tailAfterErase_of_doubledException
         (previous.chosen.tailSumset k : Set A))
       hqd hiq hix ⟨hxq, y, hyq, hyx, hyquot⟩ hmissing hQcells
   have hQmax := step.incidence_maximal Q hQprevious hQtail
-  have hPinc := hPdata.2.2.1
+  have hPinc := hP.2.2
   rw [hQinc, hPinc] at hQmax
   omega
 
@@ -2842,8 +3065,10 @@ theorem theoremE_natSub_regression :
       ((0 - 1) * 2 + 2 + 1 = 3) := by
   norm_num
 
-/-- Exact ordinary specialization of the stronger replacement theorem called
-Theorem E in the source of Theorems 2.4 and 2.5. -/
+/-- A downstream projection of Theorem E used by the older assembly lemmas.
+It forgets the source base-family admissibility and weakens actual stabilizer
+equality to a subperiod.  Consequently it must not be used as the exact
+source statement; `GMOTheoremESourceOutput` below retains those data. -/
 structure GMOTheoremEOutput
     (xs : List A) (seed : Selection xs) (n : ℕ) where
   partition : Theorem21SetPartition xs n seed.card
@@ -2853,24 +3078,62 @@ structure GMOTheoremEOutput
     ((partition.commonCosetCount H * n +
         partition.exceptionDefect H + 1) - n) * Nat.card H ≤
       partition.sumset.card
-  nontrivial_data : H ≠ ⊥ →
-    1 ≤ partition.commonCosetCount H ∧
-      ∀ i : Occurrence xs, i ∉ partition.support →
-        occurrenceValue xs i ∈ partition.commonCore H
+  unused_in_core : H ≠ ⊥ →
+    ∀ i : Occurrence xs, i ∉ partition.support →
+      occurrenceValue xs i ∈ partition.commonCore H
 
-/-- The now-proved numerical bridge packages an exact Theorem E output once
-the two remaining structural conclusions of the maximal-replacement argument
-are available: elimination of doubled exceptions, and (for nontrivial
-period) nonempty common core together with whole-source unused support in
-that core.  No theorem statement is assumed or renamed here. -/
+/-- Source-faithful Theorem E output relative to its literal initial
+setpartition and anchors.  The period is the actual stabilizer, not an
+arbitrary subperiod, and every unused labelled source occurrence is retained.
+No `N ≥ 1` or global no-doubled conclusion is built into this structure. -/
+structure GMOTheoremESourceOutput
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    (I : GMOTheoremEInput xs seed n) where
+  partition : Theorem21SetPartition xs n seed.card
+  H : AddSubgroup A
+  actual_period : H = AddAction.stabilizer A (partition.sumset : Set A)
+  admissible : GMOReplacementAdmissible I partition
+  card_lower :
+    ((partition.commonCosetCount H * n +
+        partition.exceptionDefect H + 1) - n) * Nat.card H ≤
+      partition.sumset.card
+  unused_mem_commonCore :
+    ∀ i : Occurrence xs, i ∉ partition.support →
+      occurrenceValue xs i ∈ partition.commonCore H
+
+/-- Literal source statement of ordinary Theorem E.  Its input is an initial
+setpartition, not merely the hypotheses used to construct one. -/
+def GMOTheoremESourceStatement
+    (A : Type u) [AddCommGroup A] [Fintype A] : Prop :=
+  ∀ (xs : List A) (seed : Selection xs) (n : ℕ)
+    (I : GMOTheoremEInput xs seed n),
+    Nonempty (GMOTheoremESourceOutput I)
+
+/-- Forget the literal base-family data after the source theorem has been
+proved. -/
+def GMOTheoremESourceOutput.toProjected
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (out : GMOTheoremESourceOutput I) :
+    GMOTheoremEOutput xs seed n where
+  partition := out.partition
+  H := out.H
+  periodic := out.actual_period ▸ le_rfl
+  card_lower := out.card_lower
+  unused_in_core := fun _hH ↦ out.unused_mem_commonCore
+
+/-- One sufficient route to a Theorem E output.  Global elimination of
+doubled exceptions yields the numerical inequality, while the independent
+source conclusion places every unused labelled occurrence in the common
+core.  The source proof does not assert global no-doubledness as its final
+output, so this constructor is deliberately not presented as the unique or
+complete route to Theorem E. -/
 theorem nonempty_gmoTheoremEOutput_of_structural_conclusions
     {xs : List A} {seed : Selection xs} {n : ℕ}
     (P : Theorem21SetPartition xs n seed.card)
     (hno : ∀ x : A, ¬ P.IsHDoubledException
       (AddAction.stabilizer A (P.sumset : Set A)) x)
     (hstruct : AddAction.stabilizer A (P.sumset : Set A) ≠ ⊥ →
-      1 ≤ P.commonCosetCount
-        (AddAction.stabilizer A (P.sumset : Set A)) ∧
       ∀ i : Occurrence xs, i ∉ P.support →
         occurrenceValue xs i ∈ P.commonCore
           (AddAction.stabilizer A (P.sumset : Set A))) :
@@ -2880,13 +3143,12 @@ theorem nonempty_gmoTheoremEOutput_of_structural_conclusions
     H := AddAction.stabilizer A (P.sumset : Set A)
     periodic := le_rfl
     card_lower := P.theoremE_card_lower_of_no_doubled hno
-    nontrivial_data := hstruct
+    unused_in_core := hstruct
   }⟩
 
-/-- Exact frozen ordinary Theorem E.  Singleton weight `1` automatically
-satisfies the source coprimality condition, so its only hypotheses are the
-literal `S' | S` setpartition criterion.  This is the smallest currently
-unproved replacement/maximal-setpartition source boundary. -/
+/-- Older projected Theorem E boundary obtained after constructing and then
+forgetting a literal source input.  It is retained for downstream compatibility
+but is not the exact source theorem; see `GMOTheoremESourceStatement`. -/
 def GMOTheoremEStatement
     (A : Type u) [AddCommGroup A] [Fintype A] : Prop :=
   ∀ (xs : List A) (seed : Selection xs) (n : ℕ),
@@ -3004,7 +3266,7 @@ theorem GMOTheoremEOutput.outsideCommonCore_subset_support
       h.partition.support := by
   intro i hi
   by_contra hisupport
-  have hcore := (h.nontrivial_data hH).2 i hisupport
+  have hcore := h.unused_in_core hH i hisupport
   have hnotcore : occurrenceValue xs i ∉ h.partition.commonCore h.H := by
     intro hmem
     exact (Finset.mem_sdiff.mp hi).2
@@ -3123,6 +3385,48 @@ theorem Theorem21SetPartition.add_mem_commonCore
   intro c
   exact P.add_mem_thickenedCell H c hh
     ((P.mem_commonCore_iff H x).1 hx c)
+
+/-- An actual unused labelled occurrence supplies a point of the common
+core.  Its full `H`-coset is then contained in the core, so the source count
+`N = |core| / |H|` is at least one.  This is the faithful conditional form of
+`N ≥ 1`; no such assertion is built into Theorem E when there is no unused
+source occurrence. -/
+theorem GMOTheoremESourceOutput.one_le_commonCosetCount_of_exists_unused
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (out : GMOTheoremESourceOutput I)
+    (hu : ∃ i : Occurrence xs, i ∉ out.partition.support) :
+    1 ≤ out.partition.commonCosetCount out.H := by
+  classical
+  rcases hu with ⟨i, hi⟩
+  have hx : occurrenceValue xs i ∈ out.partition.commonCore out.H :=
+    out.unused_mem_commonCore i hi
+  have hcoset : addCosetFinset out.H (occurrenceValue xs i) ⊆
+      out.partition.commonCore out.H := by
+    intro y hy
+    have hyH := (mem_addCosetFinset_iff out.H
+      (occurrenceValue xs i) y).1 hy
+    have hadd := out.partition.add_mem_commonCore out.H hyH hx
+    simpa [sub_add_cancel] using hadd
+  have hcard : Nat.card out.H ≤
+      (out.partition.commonCore out.H).card := by
+    simpa using Finset.card_le_card hcoset
+  unfold Theorem21SetPartition.commonCosetCount
+  exact (Nat.le_div_iff_mul_le Nat.card_pos).2 (by simpa using hcard)
+
+/-- Conversely, `N = 0` forces the replacement support to use every source
+occurrence; otherwise the preceding lemma would give `N ≥ 1`. -/
+theorem GMOTheoremESourceOutput.support_eq_univ_of_commonCosetCount_eq_zero
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (out : GMOTheoremESourceOutput I)
+    (hN : out.partition.commonCosetCount out.H = 0) :
+    out.partition.support = Finset.univ := by
+  apply Finset.eq_univ_iff_forall.mpr
+  intro i
+  by_contra hi
+  have hOne := out.one_le_commonCosetCount_of_exists_unused ⟨i, hi⟩
+  omega
 
 /-- The source number `N = |commonCore| / |H|` really counts cosets at the
 endpoint `N = 1`: periodicity forces the common core to be one literal

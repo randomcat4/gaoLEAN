@@ -2553,6 +2553,416 @@ theorem natCard_dvd_card_add_dgmSubgroupFinset
   rw [card_add_dgmSubgroupFinset_eq L S]
   exact ⟨(quotientLayer L S).card, rfl⟩
 
+/-- Saturate every layer by a subgroup.  This is the paper's sequence
+`(A₃+L, …, Aₘ+L)` used in the inductive tail call of equation (2). -/
+noncomputable def dgmSaturateLayers [Fintype A]
+    (L : AddSubgroup A) (P : List (Finset A)) : List (Finset A) :=
+  P.map fun B ↦ B + dgmSubgroupFinset L
+
+theorem dgmSaturateLayers_nonempty [Fintype A]
+    (L : AddSubgroup A) (P : List (Finset A))
+    (hP : IsNonemptySetPartition P) :
+    IsNonemptySetPartition (dgmSaturateLayers L P) := by
+  intro C hC
+  obtain ⟨B, hBP, rfl⟩ := List.mem_map.mp (by
+    simpa [dgmSaturateLayers] using hC)
+  exact (hP B hBP).add
+    ⟨0, (mem_dgmSubgroupFinset_iff L 0).2 L.zero_mem⟩
+
+/-- Addition of subgroup finsets absorbs the smaller subgroup. -/
+theorem dgmSubgroupFinset_add_eq_of_le [Fintype A]
+    (L₀ L : AddSubgroup A) (hL₀L : L₀ ≤ L) :
+    dgmSubgroupFinset L₀ + dgmSubgroupFinset L = dgmSubgroupFinset L := by
+  classical
+  ext z
+  constructor
+  · intro hz
+    obtain ⟨x, hx, y, hy, rfl⟩ := Finset.mem_add.mp hz
+    exact (mem_dgmSubgroupFinset_iff L _).2
+      (L.add_mem (hL₀L ((mem_dgmSubgroupFinset_iff L₀ x).1 hx))
+        ((mem_dgmSubgroupFinset_iff L y).1 hy))
+  · intro hz
+    exact Finset.mem_add.mpr
+      ⟨0, (mem_dgmSubgroupFinset_iff L₀ 0).2 L₀.zero_mem,
+        z, hz, zero_add z⟩
+
+/-- A finite subgroup, viewed literally as a finset, is its own additive
+stabilizer. -/
+theorem addStab_dgmSubgroupFinset_eq [Fintype A]
+    (L : AddSubgroup A) :
+    (dgmSubgroupFinset L).addStab = dgmSubgroupFinset L := by
+  classical
+  have hLne : (dgmSubgroupFinset L).Nonempty :=
+    ⟨0, (mem_dgmSubgroupFinset_iff L 0).2 L.zero_mem⟩
+  apply Finset.Subset.antisymm
+  · intro a ha
+    have htranslate := (Finset.mem_addStab hLne).1 ha
+    have ha0 : a ∈ a +ᵥ dgmSubgroupFinset L :=
+      Finset.mem_vadd_finset.mpr
+        ⟨0, (mem_dgmSubgroupFinset_iff L 0).2 L.zero_mem, by simp⟩
+    rw [htranslate] at ha0
+    exact ha0
+  · intro a ha
+    apply (Finset.mem_addStab hLne).2
+    ext z
+    constructor
+    · intro hz
+      obtain ⟨y, hy, rfl⟩ := Finset.mem_vadd_finset.mp hz
+      exact (mem_dgmSubgroupFinset_iff L _).2
+        (L.add_mem ((mem_dgmSubgroupFinset_iff L a).1 ha)
+          ((mem_dgmSubgroupFinset_iff L y).1 hy))
+    · intro hz
+      have hza : z - a ∈ dgmSubgroupFinset L :=
+        (mem_dgmSubgroupFinset_iff L _).2
+          (L.sub_mem ((mem_dgmSubgroupFinset_iff L z).1 hz)
+            ((mem_dgmSubgroupFinset_iff L a).1 ha))
+      apply Finset.mem_vadd_finset.mpr
+      refine ⟨z - a, hza, ?_⟩
+      change a + (z - a) = z
+      abel
+
+/-- The set identity behind the actual-stabilizer part of Claim 1.  If
+`D=(X+T)+L₀` has stabilizer `L` and `L₀≤L`, saturating both `X` and `T` by
+`L` reconstructs exactly `D`. -/
+theorem baseSat_add_tailSat_eq_of_stabilizer_base_tail
+    [Fintype A] (L₀ L : AddSubgroup A) (hL₀L : L₀ ≤ L)
+    (X T : Finset A) (hX : X.Nonempty) (hT : T.Nonempty)
+    (hstab : AddAction.stabilizer A
+      ((((X + T) + dgmSubgroupFinset L₀ : Finset A)) : Set A) = L) :
+    (X + dgmSubgroupFinset L) + (T + dgmSubgroupFinset L) =
+      (X + T) + dgmSubgroupFinset L₀ := by
+  classical
+  let D := (X + T) + dgmSubgroupFinset L₀
+  have hDne : D.Nonempty :=
+    (hX.add hT).add
+      ⟨0, (mem_dgmSubgroupFinset_iff L₀ 0).2 L₀.zero_mem⟩
+  have hDadd : D.addStab = dgmSubgroupFinset L := by
+    ext a
+    rw [← Finset.mem_coe, Finset.coe_addStab hDne, hstab]
+    exact (mem_dgmSubgroupFinset_iff L a).symm
+  have hLL := dgmSubgroupFinset_add_eq_of_le L L le_rfl
+  have hL₀Lfin := dgmSubgroupFinset_add_eq_of_le L₀ L hL₀L
+  calc
+    (X + dgmSubgroupFinset L) + (T + dgmSubgroupFinset L) =
+        (X + T) + (dgmSubgroupFinset L + dgmSubgroupFinset L) := by
+          ac_rfl
+    _ = (X + T) + dgmSubgroupFinset L := by rw [hLL]
+    _ = ((X + T) + dgmSubgroupFinset L₀) + dgmSubgroupFinset L := by
+      symm
+      calc
+        ((X + T) + dgmSubgroupFinset L₀) + dgmSubgroupFinset L =
+            (X + T) +
+              (dgmSubgroupFinset L₀ + dgmSubgroupFinset L) := by ac_rfl
+        _ = (X + T) + dgmSubgroupFinset L := by rw [hL₀Lfin]
+    _ = D + D.addStab := by rw [hDadd]
+    _ = D := Finset.add_addStab D
+    _ = (X + T) + dgmSubgroupFinset L₀ := rfl
+
+/-- Actual tail-saturation stabilizer: under the same hypotheses as the set
+identity above, `stab(T+L)=L`.  The forward inclusion uses that a stabilizer
+of the tail also stabilizes its sum with `X+L`; the reverse inclusion is the
+literal `L`-periodicity of `T+L`. -/
+theorem stabilizer_tail_saturation_eq_of_stabilizer_base_tail
+    [Fintype A] (L₀ L : AddSubgroup A) (hL₀L : L₀ ≤ L)
+    (X T : Finset A) (hX : X.Nonempty) (hT : T.Nonempty)
+    (hstab : AddAction.stabilizer A
+      ((((X + T) + dgmSubgroupFinset L₀ : Finset A)) : Set A) = L) :
+    AddAction.stabilizer A
+      ((T + dgmSubgroupFinset L : Finset A) : Set A) = L := by
+  classical
+  let Tsat := T + dgmSubgroupFinset L
+  let Xsat := X + dgmSubgroupFinset L
+  let D := (X + T) + dgmSubgroupFinset L₀
+  have hTsat : Tsat.Nonempty := hT.add
+    ⟨0, (mem_dgmSubgroupFinset_iff L 0).2 L.zero_mem⟩
+  have hXsat : Xsat.Nonempty := hX.add
+    ⟨0, (mem_dgmSubgroupFinset_iff L 0).2 L.zero_mem⟩
+  have hDne : D.Nonempty := (hX.add hT).add
+    ⟨0, (mem_dgmSubgroupFinset_iff L₀ 0).2 L₀.zero_mem⟩
+  have hsum : Xsat + Tsat = D := by
+    simpa [Xsat, Tsat, D] using
+      baseSat_add_tailSat_eq_of_stabilizer_base_tail
+        L₀ L hL₀L X T hX hT hstab
+  ext a
+  constructor
+  · intro ha
+    have haFin : a ∈ Tsat.addStab := by
+      rw [← Finset.mem_coe, Finset.coe_addStab hTsat]
+      exact ha
+    have haSum : a ∈ (Xsat + Tsat).addStab :=
+      Finset.subset_addStab_add_right hXsat haFin
+    have haDfin : a ∈ D.addStab := by
+      simpa [hsum] using haSum
+    have haD : a ∈ AddAction.stabilizer A (D : Set A) := by
+      rw [← Finset.mem_coe, Finset.coe_addStab hDne] at haDfin
+      exact haDfin
+    rw [show AddAction.stabilizer A (D : Set A) = L by simpa [D] using hstab] at haD
+    exact haD
+  · intro ha
+    have haFin : a ∈ dgmSubgroupFinset L :=
+      (mem_dgmSubgroupFinset_iff L a).2 ha
+    have hsub : dgmSubgroupFinset L ⊆ Tsat.addStab := by
+      have hraw := addStab_subset_addStab_add_addStab
+        (dgmSubgroupFinset L) T
+        ⟨0, (mem_dgmSubgroupFinset_iff L 0).2 L.zero_mem⟩ hT
+      rw [addStab_dgmSubgroupFinset_eq L] at hraw
+      simpa [Tsat, add_comm] using hraw
+    have haTail : a ∈ Tsat.addStab := hsub haFin
+    rw [← Finset.mem_coe, Finset.coe_addStab hTsat] at haTail
+    exact haTail
+
+/-- Saturating a layer by `L ≤ H` does not change which `H`-cosets it meets.
+Consequently the tail pattern itself needs no alteration in the smaller
+instance. -/
+theorem quotientLayer_add_dgmSubgroupFinset_eq_of_le
+    [Fintype A] (L H : AddSubgroup A) (hLH : L ≤ H) (B : Finset A) :
+    quotientLayer H (B + dgmSubgroupFinset L) = quotientLayer H B := by
+  classical
+  ext q
+  constructor
+  · intro hq
+    obtain ⟨y, hy, hyq⟩ := (mem_quotientLayer_iff H _ q).1 hq
+    obtain ⟨x, hxB, l, hlL, rfl⟩ := Finset.mem_add.mp hy
+    apply (mem_quotientLayer_iff H B q).2
+    refine ⟨x, hxB, ?_⟩
+    rw [← hyq]
+    change (x : A ⧸ H) = (x : A ⧸ H) + (l : A ⧸ H)
+    rw [(QuotientAddGroup.eq_zero_iff l).2
+      (hLH ((mem_dgmSubgroupFinset_iff L l).1 hlL)), add_zero]
+  · intro hq
+    obtain ⟨x, hxB, hxq⟩ := (mem_quotientLayer_iff H B q).1 hq
+    apply (mem_quotientLayer_iff H _ q).2
+    refine ⟨x + 0, Finset.mem_add.mpr
+      ⟨x, hxB, 0, (mem_dgmSubgroupFinset_iff L 0).2 L.zero_mem, rfl⟩, ?_⟩
+    simpa using hxq
+
+/-- Layerwise `L`-saturation preserves every raw `H`-coset incidence count
+when `L ≤ H`. -/
+theorem quotientLayerMultiplicity_dgmSaturateLayers_eq_of_le
+    [Fintype A] (L H : AddSubgroup A) (hLH : L ≤ H)
+    (P : List (Finset A)) (q : A ⧸ H) :
+    quotientLayerMultiplicity H (dgmSaturateLayers L P) q =
+      quotientLayerMultiplicity H P q := by
+  classical
+  induction P with
+  | nil => simp [dgmSaturateLayers, quotientLayerMultiplicity]
+  | cons B P ih =>
+      have hlayer := quotientLayer_add_dgmSubgroupFinset_eq_of_le L H hLH B
+      by_cases hq : q ∈ quotientLayer H B
+      · have hq' : q ∈ quotientLayer H (B + dgmSubgroupFinset L) := by
+          rwa [hlayer]
+        change quotientLayerMultiplicity H
+          ((B + dgmSubgroupFinset L) :: dgmSaturateLayers L P) q = _
+        rw [
+          quotientLayerMultiplicity_cons_of_mem H
+            (B + dgmSubgroupFinset L) (dgmSaturateLayers L P) q hq',
+          quotientLayerMultiplicity_cons_of_mem H B P q hq, ih]
+      · have hq' : q ∉ quotientLayer H (B + dgmSubgroupFinset L) := by
+          rwa [hlayer]
+        change quotientLayerMultiplicity H
+          ((B + dgmSubgroupFinset L) :: dgmSaturateLayers L P) q = _
+        rw [
+          quotientLayerMultiplicity_cons_of_not_mem H
+            (B + dgmSubgroupFinset L) (dgmSaturateLayers L P) q hq',
+          quotientLayerMultiplicity_cons_of_not_mem H B P q hq, ih]
+
+/-- Every proof-relevant choice lifts to layerwise saturation without changing
+its sum or any quotient multiplicity (choose the zero element of `L` in every
+selected layer). -/
+theorem exists_layerSubsumChoice_dgmSaturateLayers_same
+    [Fintype A] (L H : AddSubgroup A) [DecidableEq (A ⧸ H)]
+    {P : List (Finset A)} {n : ℕ} {y : A}
+    (h : LayerSubsumChoice P n y) :
+    ∃ h' : LayerSubsumChoice (dgmSaturateLayers L P) n y,
+      ∀ q : A ⧸ H,
+        h'.quotientMultiplicity H q = h.quotientMultiplicity H q := by
+  classical
+  induction h with
+  | zero P =>
+      exact ⟨LayerSubsumChoice.zero (dgmSaturateLayers L P), fun _ ↦ rfl⟩
+  | @skip B P n y h ih =>
+      obtain ⟨h', h'mult⟩ := ih
+      change ∃ hout : LayerSubsumChoice
+          ((B + dgmSubgroupFinset L) :: dgmSaturateLayers L P) n y,
+        ∀ q : A ⧸ H, hout.quotientMultiplicity H q =
+          (LayerSubsumChoice.skip h).quotientMultiplicity H q
+      exact ⟨LayerSubsumChoice.skip h', h'mult⟩
+  | @take B P n b y hb h ih =>
+      obtain ⟨h', h'mult⟩ := ih
+      have hb' : b + 0 ∈ B + dgmSubgroupFinset L :=
+        Finset.mem_add.mpr
+          ⟨b, hb, 0, (mem_dgmSubgroupFinset_iff L 0).2 L.zero_mem, rfl⟩
+      let hraw := LayerSubsumChoice.take hb' h'
+      have heq : (b + 0) + y = b + y := by simp
+      let hout := heq ▸ hraw
+      change ∃ hout : LayerSubsumChoice
+          ((B + dgmSubgroupFinset L) :: dgmSaturateLayers L P)
+            (n + 1) (b + y),
+        ∀ q : A ⧸ H, hout.quotientMultiplicity H q =
+          (LayerSubsumChoice.take hb h).quotientMultiplicity H q
+      refine ⟨hout, ?_⟩
+      intro q
+      rw [show hout = heq ▸ hraw by rfl,
+        LayerSubsumChoice.quotientMultiplicity_cast]
+      change (if ((b + 0 : A) : A ⧸ H) = q then 1 else 0) +
+          h'.quotientMultiplicity H q =
+        (if (b : A ⧸ H) = q then 1 else 0) +
+          h.quotientMultiplicity H q
+      simpa [h'mult q]
+
+/-- If the exact choice is nonempty, one prescribed `l ∈ L` may be absorbed
+into its first selected saturated layer.  Under `L ≤ H` this changes the sum
+from `y` to `y+l` while preserving the entire `H`-pattern. -/
+theorem exists_layerSubsumChoice_dgmSaturateLayers_add
+    [Fintype A] (L H : AddSubgroup A) [DecidableEq (A ⧸ H)]
+    (hLH : L ≤ H)
+    {P : List (Finset A)} {n : ℕ} {y l : A}
+    (h : LayerSubsumChoice P n y) (hn : 0 < n) (hl : l ∈ L) :
+    ∃ h' : LayerSubsumChoice (dgmSaturateLayers L P) n (y + l),
+      ∀ q : A ⧸ H,
+        h'.quotientMultiplicity H q = h.quotientMultiplicity H q := by
+  classical
+  induction h with
+  | zero P => omega
+  | @skip B P n y h ih =>
+      obtain ⟨h', h'mult⟩ := ih hn
+      change ∃ hout : LayerSubsumChoice
+          ((B + dgmSubgroupFinset L) :: dgmSaturateLayers L P) n (y + l),
+        ∀ q : A ⧸ H, hout.quotientMultiplicity H q =
+          (LayerSubsumChoice.skip h).quotientMultiplicity H q
+      exact ⟨LayerSubsumChoice.skip h', h'mult⟩
+  | @take B P n b y hb h ih =>
+      obtain ⟨htail, htailMult⟩ :=
+        exists_layerSubsumChoice_dgmSaturateLayers_same L H h
+      have hbl : b + l ∈ B + dgmSubgroupFinset L :=
+        Finset.mem_add.mpr
+          ⟨b, hb, l, (mem_dgmSubgroupFinset_iff L l).2 hl, rfl⟩
+      let hraw := LayerSubsumChoice.take hbl htail
+      have heq : (b + l) + y = (b + y) + l := by ac_rfl
+      let hout := heq ▸ hraw
+      change ∃ hout : LayerSubsumChoice
+          ((B + dgmSubgroupFinset L) :: dgmSaturateLayers L P)
+            (n + 1) ((b + y) + l),
+        ∀ q : A ⧸ H, hout.quotientMultiplicity H q =
+          (LayerSubsumChoice.take hb h).quotientMultiplicity H q
+      refine ⟨hout, ?_⟩
+      intro q
+      rw [show hout = heq ▸ hraw by rfl,
+        LayerSubsumChoice.quotientMultiplicity_cast]
+      change (if ((b + l : A) : A ⧸ H) = q then 1 else 0) +
+          htail.quotientMultiplicity H q =
+        (if (b : A ⧸ H) = q then 1 else 0) +
+          h.quotientMultiplicity H q
+      have hlq : (l : A ⧸ H) = 0 :=
+        (QuotientAddGroup.eq_zero_iff l).2 (hLH hl)
+      rw [show ((b + l : A) : A ⧸ H) = (b : A ⧸ H) by
+        change (b : A ⧸ H) + (l : A ⧸ H) = (b : A ⧸ H)
+        rw [hlq, add_zero], htailMult q]
+
+/-- Conversely, every choice from layerwise `L`-saturation splits into an
+original choice plus one aggregate element of `L`; its `H`-pattern is
+unchanged when `L ≤ H`. -/
+theorem exists_layerSubsumChoice_of_dgmSaturateLayers
+    [Fintype A] (L H : AddSubgroup A) [DecidableEq (A ⧸ H)]
+    (hLH : L ≤ H) {P : List (Finset A)} {n : ℕ} {z : A}
+    (hsat : LayerSubsumChoice (dgmSaturateLayers L P) n z) :
+    ∃ y l : A, l ∈ L ∧ z = y + l ∧
+      ∃ h : LayerSubsumChoice P n y,
+        ∀ q : A ⧸ H,
+          h.quotientMultiplicity H q = hsat.quotientMultiplicity H q := by
+  classical
+  induction P generalizing n z with
+  | nil =>
+      change LayerSubsumChoice [] n z at hsat
+      cases hsat with
+      | zero =>
+          refine ⟨0, 0, L.zero_mem, by simp,
+            LayerSubsumChoice.zero [], ?_⟩
+          intro q
+          rfl
+  | cons B P ih =>
+      change LayerSubsumChoice
+        ((B + dgmSubgroupFinset L) :: dgmSaturateLayers L P) n z at hsat
+      cases hsat with
+      | zero =>
+          refine ⟨0, 0, L.zero_mem, by simp,
+            LayerSubsumChoice.zero (B :: P), ?_⟩
+          intro q
+          rfl
+      | @skip _ _ n y htail =>
+          obtain ⟨y₀, l, hl, hy, h, hmult⟩ := ih htail
+          refine ⟨y₀, l, hl, hy, LayerSubsumChoice.skip h, ?_⟩
+          intro q
+          exact hmult q
+      | @take _ _ n x y hx htail =>
+          obtain ⟨b, hb, l₁, hl₁, rfl⟩ := Finset.mem_add.mp hx
+          obtain ⟨y₀, l₂, hl₂, hy, h, hmult⟩ := ih htail
+          subst y
+          refine ⟨b + y₀, l₁ + l₂,
+            L.add_mem ((mem_dgmSubgroupFinset_iff L l₁).1 hl₁) hl₂,
+            by ac_rfl, LayerSubsumChoice.take hb h, ?_⟩
+          intro q
+          simp only [LayerSubsumChoice.quotientMultiplicity]
+          rw [hmult q]
+          have hl₁q : (l₁ : A ⧸ H) = 0 :=
+            (QuotientAddGroup.eq_zero_iff l₁).2
+              (hLH ((mem_dgmSubgroupFinset_iff L l₁).1 hl₁))
+          rw [show (((b + l₁ : A)) : A ⧸ H) = (b : A ⧸ H) by
+            change (b : A ⧸ H) + (l₁ : A ⧸ H) = (b : A ⧸ H)
+            rw [hl₁q, add_zero]]
+
+/-- For a positive-weight pattern, saturating every layer by `L ≤ H`
+commutes exactly with the pattern spectrum: all inserted subgroup terms
+aggregate to one final `L`-summand, and conversely that summand can be
+absorbed into the first selected layer. -/
+theorem patternSubsumSpectrum_dgmSaturateLayers_eq_add
+    [Fintype A] (L H : AddSubgroup A) [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)] (hLH : L ≤ H)
+    (P : List (Finset A)) {n : ℕ} (μ : QuotientPattern H n)
+    (hn : 0 < n) :
+    patternSubsumSpectrum (dgmSaturateLayers L P) μ =
+      patternSubsumSpectrum P μ + dgmSubgroupFinset L := by
+  classical
+  ext z
+  constructor
+  · intro hz
+    obtain ⟨⟨hsat, hsatPattern⟩⟩ :=
+      (mem_patternSubsumSpectrum_iff _ μ z).1 hz
+    obtain ⟨y, l, hl, hzy, h, hmult⟩ :=
+      exists_layerSubsumChoice_of_dgmSaturateLayers L H hLH hsat
+    have hPattern : h.RealizesPattern μ := by
+      intro q
+      rw [hmult q, hsatPattern q]
+    have hy : y ∈ patternSubsumSpectrum P μ :=
+      (mem_patternSubsumSpectrum_iff _ μ y).2 ⟨⟨h, hPattern⟩⟩
+    exact Finset.mem_add.mpr
+      ⟨y, hy, l, (mem_dgmSubgroupFinset_iff L l).2 hl, hzy.symm⟩
+  · intro hz
+    obtain ⟨y, hy, l, hl, rfl⟩ := Finset.mem_add.mp hz
+    obtain ⟨⟨h, hPattern⟩⟩ :=
+      (mem_patternSubsumSpectrum_iff _ μ y).1 hy
+    obtain ⟨hsat, hsatMult⟩ :=
+      exists_layerSubsumChoice_dgmSaturateLayers_add L H hLH h hn
+        ((mem_dgmSubgroupFinset_iff L l).1 hl)
+    have hsatPattern : hsat.RealizesPattern μ := by
+      intro q
+      rw [hsatMult q, hPattern q]
+    exact (mem_patternSubsumSpectrum_iff _ μ _).2
+      ⟨⟨hsat, hsatPattern⟩⟩
+
+/-- The corresponding Xi/capped-incidence transport for the tail call. -/
+theorem dgmCappedMultiplicitySum_dgmSaturateLayers_eq_of_le
+    [Fintype A] (L H : AddSubgroup A) [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ H)] (hLH : L ≤ H)
+    (P : List (Finset A)) (n : ℕ) :
+    dgmCappedMultiplicitySum H (dgmSaturateLayers L P) n =
+      dgmCappedMultiplicitySum H P n := by
+  classical
+  unfold dgmCappedMultiplicitySum
+  apply Finset.sum_congr rfl
+  intro q _
+  rw [quotientLayerMultiplicity_dgmSaturateLayers_eq_of_le L H hLH P q]
+
 /-- Within a fixed coarse `H`-coset, the fine quotient values met by `B∪C`
 are exactly those met by the union of the two literal `H`-slices. -/
 theorem refinementFiber_inter_quotientLayer_union_eq
@@ -3182,6 +3592,79 @@ def GeneralDGMPatternTheorem
     (P : List (Finset A)) (μ : QuotientPattern K n),
     (patternSubsumSpectrum P μ).Nonempty → DGMPatternBound P μ
 
+/-- Exact inductive tail call used in equation (2).  Once the genuinely
+smaller saturated-tail instance satisfies the generalized pattern bound and
+its spectrum stabilizer is identified as `L`, the result transports back to
+the unsaturated tail Xi terms at both `L` and `H`. -/
+theorem dgmTailPatternBound_of_saturatedPatternBound
+    [Fintype A] (L H : AddSubgroup A)
+    [Fintype (A ⧸ L)] [Fintype (A ⧸ H)]
+    [DecidableEq (A ⧸ L)] [DecidableEq (A ⧸ H)]
+    (hLH : L ≤ H) (P : List (Finset A)) {n : ℕ}
+    (μ : QuotientPattern H n) (hn : 0 < n)
+    (hbound : DGMPatternBound (dgmSaturateLayers L P) μ)
+    (hstab : AddAction.stabilizer A
+      (patternSubsumSpectrum (dgmSaturateLayers L P) μ : Set A) = L) :
+    Nat.card L * (dgmCappedMultiplicitySum L P n - n + 1) ≤
+      (patternSubsumSpectrum P μ + dgmSubgroupFinset L).card +
+        Nat.card H * (dgmCappedMultiplicitySum H P n - n) := by
+  classical
+  let Tsat := patternSubsumSpectrum (dgmSaturateLayers L P) μ
+  have hcapStab : stabilizerDgmCappedMultiplicitySum Tsat
+      (dgmSaturateLayers L P) n =
+      dgmCappedMultiplicitySum L (dgmSaturateLayers L P) n := by
+    rw [← dgmCappedMultiplicitySum_stabilizer_eq Tsat
+      (dgmSaturateLayers L P) n]
+    simpa [Tsat] using congrArg
+      (fun J : AddSubgroup A ↦
+        dgmCappedMultiplicitySum J (dgmSaturateLayers L P) n) hstab
+  have hb := hbound
+  unfold DGMPatternBound at hb
+  dsimp only at hb
+  change Nat.card (AddAction.stabilizer A (Tsat : Set A)) *
+      (stabilizerDgmCappedMultiplicitySum Tsat
+        (dgmSaturateLayers L P) n - n + 1) ≤
+    Tsat.card + Nat.card H *
+      (dgmCappedMultiplicitySum H (dgmSaturateLayers L P) n - n) at hb
+  rw [hstab, hcapStab,
+    dgmCappedMultiplicitySum_dgmSaturateLayers_eq_of_le L L le_rfl P n,
+    dgmCappedMultiplicitySum_dgmSaturateLayers_eq_of_le L H hLH P n,
+    show Tsat = patternSubsumSpectrum P μ + dgmSubgroupFinset L by
+      simpa [Tsat] using
+        patternSubsumSpectrum_dgmSaturateLayers_eq_add L H hLH P μ hn] at hb
+  exact hb
+
+/-- Combined three-summand form of paper equation (3), after one additional
+Kneser step for the two leading slices.  Iterated Kneser supplies the two
+`|L|` losses, while the genuine smaller-instance Claim 1 tail bound supplies
+the third summand. -/
+theorem dgmEquationThree_threeSummand
+    [Fintype A] (L : AddSubgroup A) (S₁ S₂ T : Finset A)
+    (hS₁ : S₁.Nonempty) (hS₂ : S₂.Nonempty) (hT : T.Nonempty)
+    (hstab : (iteratedFinsetSum [S₁, S₂, T]).addStab =
+      dgmSubgroupFinset L)
+    (a correction : ℕ)
+    (htail : Nat.card L * a ≤
+      (T + dgmSubgroupFinset L).card + correction) :
+    (S₁ + dgmSubgroupFinset L).card +
+        (S₂ + dgmSubgroupFinset L).card + Nat.card L * a ≤
+      (iteratedFinsetSum [S₁, S₂, T]).card +
+        2 * Nat.card L + correction := by
+  have hnonempty : ∀ S ∈ [S₁, S₂, T], S.Nonempty := by
+    intro S hS
+    have hcases : S = S₁ ∨ S = S₂ ∨ S = T := by
+      simpa using hS
+    rcases hcases with rfl | rfl | rfl
+    · exact hS₁
+    · exact hS₂
+    · exact hT
+  have hk := sum_card_addStab_add_card_addStab_le
+    [S₁, S₂, T] hnonempty
+  simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil,
+    List.length_cons, List.length_nil] at hk
+  rw [hstab, card_dgmSubgroupFinset] at hk
+  omega
+
 /-! ### Faithful convergents for the generalized minimal-counterexample proof -/
 
 /-- The source paper's general-case convergent, in additive natural-number
@@ -3264,7 +3747,8 @@ theorem exists_dgmPatternConvergent_min_stabilizer_card
   intro D' hD'
   exact hmin D' (Finset.mem_filter.mpr ⟨Finset.mem_univ D', hD'⟩)
 
-/-- Strict additive form of equation (1).  A convergent `D`, together with a
+/-- Strict additive form of the paper's convergent inequality (equation (2)
+in the strict-Xi chain).  A convergent `D`, together with a
 disjoint extension `E` whose union satisfies the endpoint conditions but is
 not convergent, gives a genuinely strict inequality.  This is the strictness
 which must survive the later `(1)--(5)` chain. -/
@@ -3314,6 +3798,9 @@ theorem dgmEquationOne_of_convergent_union_not_convergent
     Nat.lt_of_not_ge hnotBound
   rw [Finset.card_union_of_disjoint hDE] at hstrict
   omega
+
+alias dgmEquationTwo_of_convergent_union_not_convergent :=
+  dgmEquationOne_of_convergent_union_not_convergent
 
 /-- The unique pattern modulo the top subgroup. -/
 theorem quotientTop_subsingleton :
