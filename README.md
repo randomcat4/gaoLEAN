@@ -243,3 +243,10 @@ M45-A 已核验商方向核心：`q-1` 个带 occurrence 标签、允许数值�
 fillers，并证明 raw-support 顶层二分：要么对每个目标都有 exact-`d` exchange，
 要么得到 `E.card≤q-2` 的规范仿射超平面证书。新增定理均只依赖 Mathlib 常规三项；
 总体状态仍为 `LEAN_PARTIALLY_CHECKED`，边界见 `milestone-46.md`。
+
+M50 已将 13 页稿 Lemma 5.2 从外部参数改为内部定理。
+`PGDavenportConvolution.lean` 用 occurrence-labelled 前缀/后缀拼接证明
+`D(K)+D(A/K)≤D(A)+1`，`GAOARFinal` 现从有限群的精确 ordinary Davenport
+常数内部导出该不等式。终稿总状态仍为
+`CRITICAL_GAPS / LEAN_CONDITIONAL`；剩余承重边界为 Proposition 3.1、
+Olson、GJM 与 GMO，见 `milestone-50.md` 和 `pr7-13-page-map.md`。

@@ -1,15 +1,16 @@
 import GaoLean.GAOARResidualController
 import GaoLean.PGSourceAssembly
+import GaoLean.PGDavenportConvolution
 
 /-!
 # Final source-facing assembly for the 13-page PR #7 manuscript
 
 The source is `randomcat4/gao0824` PR #7 at commit `6d4ab81`, whose main
 statement is the odd abelian p-group theorem `PG-GAO-v1`.  The package below
-contains the still-unformalized source-facing inputs: cited small-Davenport,
-restricted-coefficient and GMO results, together with subgroup Davenport
-bounds and the concatenation inequality that the paper proves informally.
-Thus this boundary is broader than "literature inputs only".  It contains no
+contains the still-unformalized source-facing inputs: cited small-Davenport
+and GMO results together with the restricted-coefficient/plus-minus inputs.
+The ordinary subgroup and quotient Davenport values and their concatenation
+inequality are now constructed internally.  The package contains no
 controller, branch output, or desired Gao upper conclusion.
 -/
 
@@ -28,34 +29,53 @@ def PGGaoStructuralUpperInputs
   OrdinaryGMOPrescribedLengthProvider A D ∧
   WeightedGMOPrescribedLengthProvider A ∧
   PlusMinusGMOStructuralProvider A ∧
-  ∃ Dker Dquot : AddSubgroup A → ℕ,
-    (∀ K : AddSubgroup A,
-      QuotientSmallDavenportProductOneFreeAtMost K (Dquot K)) ∧
-    (∀ K : AddSubgroup A, Dquot K ≤ D) ∧
-    (∀ K : AddSubgroup A, ⊥ < K → K < ⊤ →
-      Dker K + Dquot K ≤ D + 1) ∧
-    (∀ (K : AddSubgroup A) [Fintype K], ⊥ < K → K < ⊤ →
-      OrdinaryDavenportAtMost K (Dker K)) ∧
-    (∀ (K : AddSubgroup A) [Fintype K], ⊥ < K → K < ⊤ →
-      PlusMinusDavenportAtMost K (Dker K)) ∧
-    (∀ (K : AddSubgroup A) [Fintype K],
-      OrdinaryGMOStructuralProvider K) ∧
-    (∀ (K : AddSubgroup A) [Fintype K],
-      PlusMinusGMOStructuralProvider K)
+  (∀ K : AddSubgroup A,
+    QuotientSmallDavenportProductOneFreeAtMost K
+      (ordinaryDavenportValue (A ⧸ K))) ∧
+  (∀ (K : AddSubgroup A) [Fintype K], ⊥ < K → K < ⊤ →
+    PlusMinusDavenportAtMost K (ordinaryDavenportValue K)) ∧
+  (∀ (K : AddSubgroup A) [Fintype K],
+    OrdinaryGMOStructuralProvider K) ∧
+  (∀ (K : AddSubgroup A) [Fintype K],
+    PlusMinusGMOStructuralProvider K)
 
 set_option maxHeartbeats 1000000 in
 /-- The final structural source package produces the exact upper input for
 every labelled source sequence. -/
 theorem pgGaoUpperInputs_of_structuralUpperInputs
     (D : ℕ) (hDQ : D ≤ Nat.card A) (hAodd : Odd (Nat.card A))
+    (hD : IsOrdinaryDavenportConstant A D)
     (hsource : PGGaoStructuralUpperInputs A D) :
     PGGaoUpperInputs A D := by
   classical
   rcases hsource with
     ⟨hsmall, hDodd, hrestricted, hordinaryPrescribed, hweighted,
-      hambientGMO, Dker, Dquot, hsmallQuotient, hDquotLe,
-      hconvolution, hordinary, hplusMinus, hordinaryGMO,
+      hambientGMO, hsmallQuotient, hplusMinus, hordinaryGMO,
       hplusMinusGMO⟩
+  let Dker : AddSubgroup A → ℕ := fun K => ordinaryDavenportValue K
+  let Dquot : AddSubgroup A → ℕ := fun K =>
+    ordinaryDavenportValue (A ⧸ K)
+  have hDkerSpec (K : AddSubgroup A) [Fintype K] :
+      IsOrdinaryDavenportConstant K (Dker K) := by
+    simpa [Dker] using ordinaryDavenportValue_spec K
+  have hDquotSpec (K : AddSubgroup A) :
+      IsOrdinaryDavenportConstant (A ⧸ K) (Dquot K) := by
+    simpa [Dquot] using ordinaryDavenportValue_spec (A ⧸ K)
+  have hconvolution : ∀ K : AddSubgroup A, ⊥ < K → K < ⊤ →
+      Dker K + Dquot K ≤ D + 1 := by
+    intro K _ _
+    exact ordinaryDavenport_subgroup_quotient K D (Dker K) (Dquot K)
+      hD (hDkerSpec K) (hDquotSpec K)
+  have hDquotLe : ∀ K : AddSubgroup A, Dquot K ≤ D := by
+    intro K
+    have hconv := ordinaryDavenport_subgroup_quotient
+      K D (Dker K) (Dquot K) hD (hDkerSpec K) (hDquotSpec K)
+    have hpos := ordinaryDavenportConstant_pos (Dker K) (hDkerSpec K)
+    omega
+  have hordinary : ∀ (K : AddSubgroup A) [Fintype K],
+      ⊥ < K → K < ⊤ → OrdinaryDavenportAtMost K (Dker K) := by
+    intro K _ _ _
+    exact (hDkerSpec K).1
   have hpmAmbient : PlusMinusDavenportAtMost A ((D + 1) / 2) :=
     plusMinusDavenportAtMost_of_restrictedCoefficientOutput hrestricted
   intro s hlen
@@ -109,7 +129,7 @@ theorem pgGaoV1_of_structuralUpperInputs_and_ordinaryDavenport
   have hDQ : D ≤ Nat.card A := ordinaryDavenportConstant_le_natCard D hD
   exact pgGaoV1_of_upperInputs_and_isOrdinaryDavenportConstant
     D hDQ hAodd
-      (pgGaoUpperInputs_of_structuralUpperInputs D hDQ hAodd hsource) hD
+      (pgGaoUpperInputs_of_structuralUpperInputs D hDQ hAodd hD hsource) hD
 
 /-- Exact remaining-input boundary under the frozen odd-prime p-group
 quantifiers.  Some fields are cited results and some are paper-internal

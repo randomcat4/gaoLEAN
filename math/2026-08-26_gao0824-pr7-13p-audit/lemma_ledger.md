@@ -10,7 +10,7 @@
 | P7-L06 | plus-minus half bound | OPEN_AS_PARAMETER | STRICTLY_WEAKER | restricted-coefficient bridge；正文群代数证明未形式化 |
 | P7-L07 | low/high/middle reflection consumers | PROVED_HERE | STRICTLY_WEAKER | `PGLowReflection`, `PGHighReflection`, `PGMiddle*` |
 | P7-L08 | quotient extraction and defect correction | PROVED_HERE | STRICTLY_WEAKER | `PGReflectionExtraction`, `PGRotationExtraction` |
-| P7-L09 | Davenport concatenation inequality | OPEN_AS_PARAMETER | STRICTLY_WEAKER | `Dker+Dquot<=D+1` field |
+| P7-L09 | Davenport concatenation inequality | PROVED_HERE | STRICTLY_WEAKER | `PGDavenportConvolution.ordinaryDavenport_subgroup_quotient` |
 | P7-L10 | simultaneous strict subgroup controller | PROVED_HERE conditionally | STRICTLY_WEAKER | `GAOARResidualController` |
 | P7-L11 | exact lower threshold | PROVED_HERE from ordinary Davenport | STRICTLY_WEAKER | `PGDavenportBridge`, `PGLowerBound` |
 | P7-L12 | exact PR #7 main statement | PROVED_HERE conditionally | EQUIVALENT | `PR7ThirteenPage.pr7ThirteenPageMain_of_remainingInputs` |

@@ -695,3 +695,20 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
 - `lake build GaoLean.PGStatements GaoLean.PR7ThirteenPage`: 8724 jobs, exit 0.
 - Final status remains `CRITICAL_GAPS / LEAN_CONDITIONAL`; Proposition 3.1,
   Lemma 5.2, Olson, GJM, and GMO are the remaining load-bearing boundaries.
+
+## 2026-08-26: internal Davenport convolution (M50)
+
+- Added `GaoLean.PGDavenportConvolution`, including exact ordinary Davenport
+  values, occurrence-labelled prefix/suffix mechanics, and the subgroup--
+  quotient zero-sum-free concatenation argument.
+- Proved `ordinaryDavenport_subgroup_quotient`:
+  `D(K) + D(A/K) <= D(A) + 1` from the three exact constants.
+- Refactored `GAOARFinal` so the final structural input package no longer
+  contains an arbitrary convolution inequality; the theorem derives it
+  internally from canonical exact Davenport constants.
+- Target module build: 8688 jobs, exit 0; full build and unified axiom audit:
+  8737 jobs, exit 0.  The new declarations use only `propext`,
+  `Classical.choice`, and `Quot.sound`; the forbidden-declaration scan and
+  `git diff --check` pass.
+- The overall status remains `CRITICAL_GAPS / LEAN_CONDITIONAL`; the remaining
+  load-bearing boundaries are Proposition 3.1, Olson, GJM, and GMO.

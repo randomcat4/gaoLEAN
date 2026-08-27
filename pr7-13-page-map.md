@@ -39,7 +39,7 @@
 | Proposition 4.3 full branch | 平衡反射 + `ell` 个旋转闭合 | `PGMiddleReflection`; `PGSpectrum` | `CONDITIONAL` 于 signed full-spectrum 输出 |
 | Proposition 4.3 non-full branch | 共同陪集推出真实 `K`-集中，`K=0` padding | `PGMiddleNonfull`; `PGMiddleAssembly`; `PGBase` | `CONDITIONAL` 于 structural GMO；奇阶商桥已检查 |
 | §5 definitions `P_S(K), Q(K)` | 固定源 RC 与通用全旋转 ZR 同时控制 | `PGController`; `PGControllerClosure`; `PGInduction` | `CHECKED` |
-| Lemma 5.2 | Davenport subgroup/quotient 拼接不等式 | `Dker K + Dquot K <= D+1` 顶层字段；抽取模块消费 | `CONDITIONAL`；算术消费已检查，正文的零和自由拼接证明未形式化 |
+| Lemma 5.2 | Davenport subgroup/quotient 拼接不等式 | `PGDavenportConvolution.ordinaryDavenport_subgroup_quotient` | `CHECKED`；从精确 ordinary Davenport 常数构造前缀/后缀 occurrence 分解，零和自由拼接及 `D(K)+D(A/K)≤D(A)+1` 已核验 |
 | Lemma 5.3 | target-length estimate | `PGCapacity`; extraction 中的 target bounds | `CHECKED` |
 | Lemma 5.4 | concentration transitivity | `PGCapacity.residual_capacity_composition*` | `CHECKED` |
 | Lemma 5.5 | quotient defect correction | `PGReflectionOrdering`; `PGReflectionChannel` | `CHECKED` |
@@ -66,11 +66,10 @@
 2. GJM small-Davenport 等号（当前只保留所需 bound 接口）；
 3. Olson invariant-factor 公式及数值推论；
 4. Proposition 3.1 的论文内群代数证明；
-5. Lemma 5.2 的论文内 Davenport 拼接证明及由精确常数到当前 `Dker/Dquot` 包的构造；
-6. 一般 homocyclic 数值 corollary 的最终 Lean 导出。
+5. 一般 homocyclic 数值 corollary 的最终 Lean 导出。
 
-两个独立审计后，主实例另行补证了 `|Dih(A)|=2|A|` 与 exact-length/
-at-least threshold 等价；它们不再列为缺口，也不改变以上承重裁决。
+两个独立审计后，主实例另行补证了 `|Dih(A)|=2|A|`、exact-length/
+at-least threshold 等价以及 Lemma 5.2；它们不再列为缺口。上述其余承重边界未改动。
 
 因此当前不是该 13 页稿的无条件完整 Lean；准确状态是主证明骨架
 `LEAN_CONDITIONAL`，并有上述逐段缺口账。

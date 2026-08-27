@@ -35,3 +35,11 @@
 - 新增一般群阶定理和 exact/at-least threshold 等价，不改变冻结目标或承重前提。
 - `lake build GaoLean.PGStatements GaoLean.PR7ThirteenPage`：8724 jobs，退出码 0。
 - 裁决保持 `CRITICAL_GAPS / LEAN_CONDITIONAL`。
+
+## R5：Lemma 5.2 内部闭合
+
+- 新增 occurrence-labelled 前缀/后缀分解，并证明两段和的精确加法公式。
+- 从子群和商群的精确 ordinary Davenport 常数构造零和自由拼接，得到
+  `D(K) + D(A/K) ≤ D(A) + 1`。
+- `GAOARFinal` 已删除外部 `hconvolution` 输入，改为内部调用该定理。
+- 总状态仍为 `CRITICAL_GAPS / LEAN_CONDITIONAL`，但 Lemma 5.2 已从承重缺口中移除。

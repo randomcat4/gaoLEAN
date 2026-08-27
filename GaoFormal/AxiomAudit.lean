@@ -282,6 +282,9 @@ import GaoFormal
 #print axioms GaoLean.card_primeVectorDihedral
 #print axioms GaoLean.ConcreteGDihedral.card_group
 #print axioms GaoLean.isExactProductOneThreshold_iff_isAtLeast
+#print axioms GaoLean.ordinaryDavenportValue_spec
+#print axioms GaoLean.davenportConvolutionWord_zeroSumFree
+#print axioms GaoLean.ordinaryDavenport_subgroup_quotient
 #print axioms GaoLean.ConcreteGDihedral.pgGaoUpperInputs_of_structuralUpperInputs
 #print axioms GaoLean.ConcreteGDihedral.pgGaoV1_of_structuralUpperInputs_and_ordinaryDavenport
 #print axioms GaoLean.ConcreteGDihedral.pgGaoV1Statement_of_structuralRemainingInputs

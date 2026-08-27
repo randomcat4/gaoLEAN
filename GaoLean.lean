@@ -56,6 +56,7 @@ import GaoLean.PGReflectionRegimes
 import GaoLean.PGLowerBound
 import GaoLean.PGSynthesis
 import GaoLean.PGDavenportBridge
+import GaoLean.PGDavenportConvolution
 import GaoLean.PGDavenportBound
 import GaoLean.PGOrdinaryGMOBridge
 import GaoLean.PGPGroupNumerics

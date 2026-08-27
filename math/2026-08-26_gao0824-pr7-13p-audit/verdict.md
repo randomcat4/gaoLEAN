@@ -6,7 +6,8 @@
 - 是否发现循环假设或偷偷改弱目标：否。
 - 是否已有无条件完整 Lean：否。
 - 服务器顶层构建：通过。
-- 剩余承重缺口：Proposition 3.1、Lemma 5.2、Olson、GJM、GMO。
+- 后续形式化进展：Lemma 5.2 已于 `PGDavenportConvolution` 闭合，不再是顶层参数。
+- 剩余承重缺口：Proposition 3.1、Olson、GJM、GMO。
 
 详细理由见 `verifications/agent-a.md`、`verifications/agent-b.md` 与
 `verifications/main-review.md`。
