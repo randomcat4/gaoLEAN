@@ -1675,6 +1675,126 @@ theorem Theorem21SetPartition.exists_replaceUsedWithUnused
     rfl
   · exact hsupport
 
+/-- Same-cell form of cross-support replacement.  The source occurrence is
+erased before the unused occurrence is inserted into that very cell. -/
+def Theorem21SetPartition.replaceUsedWithUnusedSameCell
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (q : Fin n) (y x : Occurrence xs) (c : Fin n) : Selection xs :=
+  if c = q then insert x ((P.cells c).erase y) else P.cells c
+
+omit [AddCommGroup A] [Fintype A] in
+theorem Theorem21SetPartition.mem_replaceUsedWithUnusedSameCell_iff
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    {q : Fin n} {y x z : Occurrence xs} (c : Fin n)
+    (hyq : y ∈ P.cells q) :
+    z ∈ P.replaceUsedWithUnusedSameCell q y x c ↔
+      (c = q ∧ z = x) ∨ (z ∈ P.cells c ∧ z ≠ y) := by
+  classical
+  by_cases hcq : c = q
+  · subst c
+    simp only [Theorem21SetPartition.replaceUsedWithUnusedSameCell, if_pos,
+      Finset.mem_insert, Finset.mem_erase, true_and]
+    tauto
+  · have hynot : y ∉ P.cells c :=
+      P.not_mem_cell_of_mem_of_ne hyq hcq
+    simp only [Theorem21SetPartition.replaceUsedWithUnusedSameCell,
+      hcq, false_and, false_or]
+    exact ⟨fun hz ↦ ⟨hz, fun hzy ↦ hynot (hzy ▸ hz)⟩, And.left⟩
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Same-cell replacement preserves the selected length and has exactly the
+same changed occurrence support as the distinct-cell operation. -/
+theorem Theorem21SetPartition.exists_replaceUsedWithUnusedSameCell
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    {q : Fin n} {y x : Occurrence xs}
+    (hyq : y ∈ P.cells q) (hxunused : x ∉ P.support)
+    (hvalue : ∀ j ∈ P.cells q, j ≠ y →
+      occurrenceValue xs j ≠ occurrenceValue xs x) :
+    ∃ Q : Theorem21SetPartition xs n m,
+      (∀ c, Q.cells c = P.replaceUsedWithUnusedSameCell q y x c) ∧
+      Q.support = insert x (P.support.erase y) := by
+  classical
+  let replaced : Fin n → Selection xs :=
+    P.replaceUsedWithUnusedSameCell q y x
+  have hmem (z : Occurrence xs) (c : Fin n) :
+      z ∈ replaced c ↔
+        (c = q ∧ z = x) ∨ (z ∈ P.cells c ∧ z ≠ y) := by
+    exact P.mem_replaceUsedWithUnusedSameCell_iff c hyq
+  have hnonempty : ∀ c, (replaced c).Nonempty := by
+    intro c
+    by_cases hcq : c = q
+    · exact ⟨x, (hmem x c).2 (Or.inl ⟨hcq, rfl⟩)⟩
+    · obtain ⟨j, hj⟩ := P.cells_nonempty c
+      have hjy : j ≠ y := by
+        intro hjyeq
+        subst j
+        exact (P.not_mem_cell_of_mem_of_ne hyq hcq) hj
+      exact ⟨j, (hmem j c).2 (Or.inr ⟨hj, hjy⟩)⟩
+  have hdisjoint : ∀ {c d}, c ≠ d →
+      Disjoint (replaced c) (replaced d) := by
+    intro c d hcd
+    rw [Finset.disjoint_left]
+    intro z hzc hzd
+    rcases (hmem z c).1 hzc with hxc | hzcOld
+    · rcases (hmem z d).1 hzd with hxd | hzdOld
+      · exact hcd (hxc.1.trans hxd.1.symm)
+      · rcases hxc with ⟨hcq, hzx⟩
+        subst z
+        exact hxunused (Finset.mem_biUnion.mpr
+          ⟨d, Finset.mem_univ d, hzdOld.1⟩)
+    · rcases (hmem z d).1 hzd with hxd | hzdOld
+      · rcases hxd with ⟨hdq, hzx⟩
+        subst z
+        exact hxunused (Finset.mem_biUnion.mpr
+          ⟨c, Finset.mem_univ c, hzcOld.1⟩)
+      · exact (Finset.disjoint_left.mp
+          (P.cells_pairwise_disjoint hcd)) hzcOld.1 hzdOld.1
+  have hinjective : ∀ c,
+      Set.InjOn (occurrenceValue xs) (replaced c : Set (Occurrence xs)) := by
+    intro c a ha b hb hab
+    rcases (hmem a c).1 ha with hax | haOld
+    · rcases (hmem b c).1 hb with hbx | hbOld
+      · exact hax.2.trans hbx.2.symm
+      · rcases hax with ⟨hcq, hax⟩
+        subst c
+        subst a
+        exact False.elim ((hvalue b hbOld.1 hbOld.2) hab.symm)
+    · rcases (hmem b c).1 hb with hbx | hbOld
+      · rcases hbx with ⟨hcq, hbx⟩
+        subst c
+        subst b
+        exact False.elim ((hvalue a haOld.1 haOld.2) hab)
+      · exact P.value_injective c haOld.1 hbOld.1 hab
+  have hsupport : Finset.univ.biUnion replaced =
+      insert x (P.support.erase y) := by
+    ext z
+    simp only [Finset.mem_biUnion, Finset.mem_univ, true_and,
+      Finset.mem_insert, Finset.mem_erase, Theorem21SetPartition.support]
+    constructor
+    · rintro ⟨c, hzc⟩
+      rcases (hmem z c).1 hzc with hzx | hzOld
+      · exact Or.inl hzx.2
+      · exact Or.inr ⟨hzOld.2, ⟨c, hzOld.1⟩⟩
+    · rintro (hzx | ⟨hzy, c, hzc⟩)
+      · exact ⟨q, (hmem z q).2 (Or.inl ⟨rfl, hzx⟩)⟩
+      · exact ⟨c, (hmem z c).2 (Or.inr ⟨hzc, hzy⟩)⟩
+  have hySupport : y ∈ P.support :=
+    Finset.mem_biUnion.mpr ⟨q, Finset.mem_univ q, hyq⟩
+  have hxErase : x ∉ P.support.erase y :=
+    fun hx ↦ hxunused (Finset.mem_of_mem_erase hx)
+  let Q : Theorem21SetPartition xs n m := {
+    cells := replaced
+    cells_nonempty := hnonempty
+    cells_pairwise_disjoint := hdisjoint
+    value_injective := hinjective
+    card_support := by
+      rw [hsupport, Finset.card_insert_of_notMem hxErase,
+        Finset.card_erase_of_mem hySupport,
+        Nat.sub_add_cancel (Finset.card_pos.mpr ⟨y, hySupport⟩)]
+      exact P.card_support
+  }
+  exact ⟨Q, fun _ ↦ rfl, hsupport⟩
+
 omit [Fintype A] in
 /-- A doubled exception supplies all occurrence-level hypotheses needed for
 an honest move to a cell missing its quotient class.  In particular, the
@@ -1898,6 +2018,62 @@ theorem Theorem21SetPartition.valueCell_eq_of_replaceUsedWithUnused_of_ne
     if_neg hcq, if_neg hcd]
   rfl
 
+omit [AddCommGroup A] [Fintype A] in
+/-- Exact value-set formula for same-cell cross-support replacement. -/
+theorem Theorem21SetPartition.valueCell_eq_insert_erase_of_replaceSameCell
+    {xs : List A} {n m : ℕ} {P Q : Theorem21SetPartition xs n m}
+    {q : Fin n} {y x : Occurrence xs} (hyq : y ∈ P.cells q)
+    (hQcells : ∀ c,
+      Q.cells c = P.replaceUsedWithUnusedSameCell q y x c) :
+    Q.valueCell q =
+      insertValue (occurrenceValue xs x)
+        (eraseValue (P.valueCell q) (occurrenceValue xs y)) := by
+  classical
+  unfold insertValue eraseValue
+  rw [Theorem21SetPartition.valueCell, hQcells q]
+  simp only [Theorem21SetPartition.replaceUsedWithUnusedSameCell, if_pos]
+  ext a
+  constructor
+  · intro ha
+    rcases Finset.mem_image.mp ha with ⟨j, hj, hja⟩
+    rcases Finset.mem_insert.mp hj with hjx | hjOld
+    · subst j
+      exact Finset.mem_insert.mpr (Or.inl hja.symm)
+    · have hjData := Finset.mem_erase.mp hjOld
+      apply Finset.mem_insert.mpr
+      right
+      apply Finset.mem_erase.mpr
+      refine ⟨?_, Finset.mem_image.mpr ⟨j, hjData.2, hja⟩⟩
+      intro hay
+      apply hjData.1
+      apply P.value_injective q hjData.2 hyq
+      rw [hja, hay]
+  · intro ha
+    rcases Finset.mem_insert.mp ha with hax | haOld
+    · apply Finset.mem_image.mpr
+      exact ⟨x, Finset.mem_insert.mpr (Or.inl rfl), hax.symm⟩
+    · have haData := Finset.mem_erase.mp haOld
+      rcases Finset.mem_image.mp haData.2 with ⟨j, hj, hja⟩
+      apply Finset.mem_image.mpr
+      refine ⟨j, Finset.mem_insert.mpr (Or.inr
+        (Finset.mem_erase.mpr ⟨?_, hj⟩)), hja⟩
+      intro hjy
+      subst j
+      exact haData.1 hja.symm
+
+omit [AddCommGroup A] [Fintype A] in
+theorem Theorem21SetPartition.valueCell_eq_of_replaceSameCell_of_ne
+    {xs : List A} {n m : ℕ} {P Q : Theorem21SetPartition xs n m}
+    {q : Fin n} {y x : Occurrence xs}
+    (hQcells : ∀ c,
+      Q.cells c = P.replaceUsedWithUnusedSameCell q y x c)
+    {c : Fin n} (hcq : c ≠ q) :
+    Q.valueCell c = P.valueCell c := by
+  classical
+  rw [Theorem21SetPartition.valueCell, hQcells c]
+  simp only [Theorem21SetPartition.replaceUsedWithUnusedSameCell, if_neg hcq]
+  rfl
+
 omit [Fintype A] in
 /-- A same-support occurrence move stays in the literal source `Lambda_0`
 family when it enlarges the full sumset and does not erase the distinguished
@@ -1964,6 +2140,35 @@ theorem GMOReplacementAdmissible.replaceUsedWithUnused
         exact Finset.mem_insert_of_mem (hP.2 d)
       · rw [P.valueCell_eq_of_replaceUsedWithUnused_of_ne hQcells hcq hcd]
         exact hP.2 c
+
+omit [Fintype A] in
+/-- Literal source admissibility for same-cell cross-support replacement.
+The anchor condition is stated at the exact resulting value set, allowing
+the erased anchor value to be restored by the inserted occurrence. -/
+theorem GMOReplacementAdmissible.replaceUsedWithUnusedSameCell
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    {P Q : Theorem21SetPartition xs n seed.card}
+    {q : Fin n} {y x : Occurrence xs}
+    (hP : GMOReplacementAdmissible I P)
+    (hyq : y ∈ P.cells q)
+    (hanchor : occurrenceValue xs (I.anchor q) ∈
+      insertValue (occurrenceValue xs x)
+        (eraseValue (P.valueCell q) (occurrenceValue xs y)))
+    (hQcells : ∀ c,
+      Q.cells c = P.replaceUsedWithUnusedSameCell q y x c)
+    (hsumset : P.sumset ⊆ Q.sumset) :
+    GMOReplacementAdmissible I Q := by
+  classical
+  constructor
+  · exact hP.1.trans hsumset
+  · intro c
+    by_cases hcq : c = q
+    · subst c
+      rw [P.valueCell_eq_insert_erase_of_replaceSameCell hyq hQcells]
+      exact hanchor
+    · rw [P.valueCell_eq_of_replaceSameCell_of_ne hQcells hcq]
+      exact hP.2 c
 
 omit [Fintype A] in
 /-- Quotient-image form of the source-cell erase wrapper. -/
@@ -2035,6 +2240,103 @@ theorem Theorem21SetPartition.quotientIncidenceAt_move_eq_add_one
   simp
 
 omit [Fintype A] in
+/-- If the erased occurrence has another representative in its source
+quotient class and the inserted occurrence enters a missing target class,
+cross-support replacement raises the quotient-incidence objective by
+exactly one. -/
+theorem Theorem21SetPartition.quotientIncidenceAt_replace_eq_add_one
+    {xs : List A} {n m : ℕ} {P Q : Theorem21SetPartition xs n m}
+    (H : AddSubgroup A) {q d : Fin n} {y x : Occurrence xs}
+    (hqd : q ≠ d) (hyq : y ∈ P.cells q)
+    (hduplicate :
+      ∃ z ∈ P.valueCell q,
+        z ≠ occurrenceValue xs y ∧
+        QuotientAddGroup.mk' H z =
+          QuotientAddGroup.mk' H (occurrenceValue xs y))
+    (hmissing : QuotientAddGroup.mk' H (occurrenceValue xs x) ∉
+      quotientLayer H (P.valueCell d))
+    (hQcells : ∀ c,
+      Q.cells c = P.replaceUsedWithUnusedCells q d y x c) :
+    Q.quotientIncidenceAt H = P.quotientIncidenceAt H + 1 := by
+  classical
+  rcases hduplicate with ⟨z, hzq, hzy, hzquot⟩
+  have hsource : quotientLayer H (Q.valueCell q) =
+      quotientLayer H (P.valueCell q) := by
+    rw [Theorem21SetPartition.valueCell_eq_erase_of_replaceUsedWithUnused
+      (P := P) (Q := Q) hyq hQcells]
+    exact quotientLayer_eraseValue_eq_of_duplicate H (P.valueCell q)
+      hzq hzy hzquot
+  have htarget : (quotientLayer H (Q.valueCell d)).card =
+      (quotientLayer H (P.valueCell d)).card + 1 := by
+    rw [Theorem21SetPartition.valueCell_eq_insert_of_replaceUsedWithUnused
+      (P := P) (Q := Q) hqd hQcells]
+    exact card_quotientLayer_insertValue_of_not_mem H (P.valueCell d)
+      (occurrenceValue xs x) hmissing
+  have hcell (c : Fin n) :
+      (quotientLayer H (Q.valueCell c)).card =
+        (quotientLayer H (P.valueCell c)).card + if c = d then 1 else 0 := by
+    by_cases hcq : c = q
+    · subst c
+      rw [hsource]
+      simp [hqd]
+    · by_cases hcd : c = d
+      · subst c
+        simpa using htarget
+      · rw [Theorem21SetPartition.valueCell_eq_of_replaceUsedWithUnused_of_ne
+          (P := P) (Q := Q) hQcells hcq hcd]
+        simp [hcd]
+  unfold Theorem21SetPartition.quotientIncidenceAt
+  simp_rw [hcell]
+  rw [Finset.sum_add_distrib]
+  simp
+
+omit [Fintype A] in
+/-- Same-cell cross-support replacement raises quotient incidence by one
+when the erased class is duplicated and the inserted class was absent. -/
+theorem Theorem21SetPartition.quotientIncidenceAt_replaceSameCell_eq_add_one
+    {xs : List A} {n m : ℕ} {P Q : Theorem21SetPartition xs n m}
+    (H : AddSubgroup A) {q : Fin n} {y x : Occurrence xs}
+    (hyq : y ∈ P.cells q)
+    (hduplicate :
+      ∃ z ∈ P.valueCell q,
+        z ≠ occurrenceValue xs y ∧
+        QuotientAddGroup.mk' H z =
+          QuotientAddGroup.mk' H (occurrenceValue xs y))
+    (hmissing : QuotientAddGroup.mk' H (occurrenceValue xs x) ∉
+      quotientLayer H (P.valueCell q))
+    (hQcells : ∀ c,
+      Q.cells c = P.replaceUsedWithUnusedSameCell q y x c) :
+    Q.quotientIncidenceAt H = P.quotientIncidenceAt H + 1 := by
+  classical
+  rcases hduplicate with ⟨z, hzq, hzy, hzquot⟩
+  have hchanged :
+      (quotientLayer H (Q.valueCell q)).card =
+        (quotientLayer H (P.valueCell q)).card + 1 := by
+    rw [P.valueCell_eq_insert_erase_of_replaceSameCell hyq hQcells]
+    have herase : quotientLayer H
+        (eraseValue (P.valueCell q) (occurrenceValue xs y)) =
+          quotientLayer H (P.valueCell q) :=
+      quotientLayer_eraseValue_eq_of_duplicate H (P.valueCell q)
+        hzq hzy hzquot
+    rw [card_quotientLayer_insertValue_of_not_mem H
+      (eraseValue (P.valueCell q) (occurrenceValue xs y))
+      (occurrenceValue xs x)]
+    · rw [herase]
+    · simpa [herase] using hmissing
+  have hcell (c : Fin n) :
+      (quotientLayer H (Q.valueCell c)).card =
+        (quotientLayer H (P.valueCell c)).card + if c = q then 1 else 0 := by
+    by_cases hcq : c = q
+    · subst c
+      simpa using hchanged
+    · rw [P.valueCell_eq_of_replaceSameCell_of_ne hQcells hcq]
+      simp [hcq]
+  unfold Theorem21SetPartition.quotientIncidenceAt
+  simp_rw [hcell]
+  rw [Finset.sum_add_distrib]
+  simp
+
+omit [Fintype A] in
 /-- Quotient equality modulo a smaller subgroup remains quotient equality
 modulo every larger subgroup. -/
 theorem quotient_eq_of_subgroup_le
@@ -2085,6 +2387,91 @@ theorem Theorem21SetPartition.quotientImagesIncluded_moveOccurrence_of_mono
       exact Finset.mem_insert_of_mem ha
     · rw [Theorem21SetPartition.valueCell_eq_of_moveOccurrence_of_ne
         (P := P) (Q := Q) (q := q) (d := d) (i := i) hQcells hcq hcd]
+
+omit [Fintype A] in
+/-- A cross-support replacement whose erased source class is duplicated
+preserves every old cellwise quotient image modulo every larger subgroup. -/
+theorem Theorem21SetPartition.quotientImagesIncluded_replace_of_mono
+    {xs : List A} {n m : ℕ} {P Q : Theorem21SetPartition xs n m}
+    {H K : AddSubgroup A} (hHK : H ≤ K)
+    {q d : Fin n} {y x : Occurrence xs}
+    (hqd : q ≠ d) (hyq : y ∈ P.cells q)
+    (hduplicate :
+      ∃ z ∈ P.valueCell q,
+        z ≠ occurrenceValue xs y ∧
+        QuotientAddGroup.mk' H z =
+          QuotientAddGroup.mk' H (occurrenceValue xs y))
+    (hQcells : ∀ c,
+      Q.cells c = P.replaceUsedWithUnusedCells q d y x c) :
+    P.quotientImagesIncluded Q K := by
+  classical
+  rcases hduplicate with ⟨z, hzq, hzy, hzquot⟩
+  have hzquotK : QuotientAddGroup.mk' K z =
+      QuotientAddGroup.mk' K (occurrenceValue xs y) :=
+    quotient_eq_of_subgroup_le hHK hzquot
+  intro c
+  by_cases hcq : c = q
+  · subst c
+    rw [Theorem21SetPartition.valueCell_eq_erase_of_replaceUsedWithUnused
+      (P := P) (Q := Q) hyq hQcells]
+    rw [quotientLayer_eraseValue_eq_of_duplicate K (P.valueCell q)
+      hzq hzy hzquotK]
+  · by_cases hcd : c = d
+    · subst c
+      rw [Theorem21SetPartition.valueCell_eq_insert_of_replaceUsedWithUnused
+        (P := P) (Q := Q) hqd hQcells]
+      intro u hu
+      obtain ⟨a, ha, hau⟩ :=
+        (mem_quotientLayer_iff K (P.valueCell d) u).1 hu
+      apply (mem_quotientLayer_iff K
+        (insertValue (occurrenceValue xs x) (P.valueCell d)) u).2
+      refine ⟨a, ?_, hau⟩
+      unfold insertValue
+      exact Finset.mem_insert_of_mem ha
+    · rw [Theorem21SetPartition.valueCell_eq_of_replaceUsedWithUnused_of_ne
+        (P := P) (Q := Q) hQcells hcq hcd]
+
+omit [Fintype A] in
+/-- Same-cell replacement also preserves every old quotient image modulo
+all larger subgroups when the erased source class is duplicated. -/
+theorem Theorem21SetPartition.quotientImagesIncluded_replaceSameCell_of_mono
+    {xs : List A} {n m : ℕ} {P Q : Theorem21SetPartition xs n m}
+    {H K : AddSubgroup A} (hHK : H ≤ K)
+    {q : Fin n} {y x : Occurrence xs}
+    (hyq : y ∈ P.cells q)
+    (hduplicate :
+      ∃ z ∈ P.valueCell q,
+        z ≠ occurrenceValue xs y ∧
+        QuotientAddGroup.mk' H z =
+          QuotientAddGroup.mk' H (occurrenceValue xs y))
+    (hQcells : ∀ c,
+      Q.cells c = P.replaceUsedWithUnusedSameCell q y x c) :
+    P.quotientImagesIncluded Q K := by
+  classical
+  rcases hduplicate with ⟨z, hzq, hzy, hzquot⟩
+  have hzquotK : QuotientAddGroup.mk' K z =
+      QuotientAddGroup.mk' K (occurrenceValue xs y) :=
+    quotient_eq_of_subgroup_le hHK hzquot
+  intro c
+  by_cases hcq : c = q
+  · subst c
+    rw [P.valueCell_eq_insert_erase_of_replaceSameCell hyq hQcells]
+    have herase : quotientLayer K
+        (eraseValue (P.valueCell q) (occurrenceValue xs y)) =
+          quotientLayer K (P.valueCell q) :=
+      quotientLayer_eraseValue_eq_of_duplicate K (P.valueCell q)
+        hzq hzy hzquotK
+    intro u hu
+    rw [← herase] at hu
+    obtain ⟨a, ha, hau⟩ := (mem_quotientLayer_iff K
+      (eraseValue (P.valueCell q) (occurrenceValue xs y)) u).1 hu
+    apply (mem_quotientLayer_iff K
+      (insertValue (occurrenceValue xs x)
+        (eraseValue (P.valueCell q) (occurrenceValue xs y))) u).2
+    refine ⟨a, ?_, hau⟩
+    unfold insertValue
+    exact Finset.mem_insert_of_mem ha
+  · rw [P.valueCell_eq_of_replaceSameCell_of_ne hQcells hcq]
 
 omit [Fintype A] in
 /-- Cellwise quotient-image inclusion is transitive. -/
@@ -2464,6 +2851,66 @@ theorem fullLayerSumSpectrum_mono
       rcases Finset.mem_add.mp hz with ⟨b, hb, s, hs, rfl⟩
       exact Finset.mem_add.mpr ⟨b, hBC hb, s, ih hs, rfl⟩
 
+omit [Fintype A] in
+/-- A global strict deficit for a full-layer sumset must already occur at
+one genuine adjacent tail step.  The returned suffix is nonempty, so the
+step is strictly before the last layer. -/
+theorem exists_local_fullLayer_deficit
+    [DecidableEq A] (L : List (Finset A))
+    (hL : IsNonemptySetPartition L) (hlen : 2 ≤ L.length)
+    (hdeficit :
+      (fullLayerSumSpectrum L).card <
+        (L.map Finset.card).sum - L.length + 1) :
+    ∃ pre B tail,
+      L = pre ++ B :: tail ∧ tail ≠ [] ∧
+        (fullLayerSumSpectrum (B :: tail)).card <
+          (fullLayerSumSpectrum tail).card + B.card - 1 := by
+  induction L with
+  | nil => simp at hlen
+  | cons B R ih =>
+      have hB : B.Nonempty := hL B (by simp)
+      have hR : IsNonemptySetPartition R := by
+        intro C hC
+        exact hL C (by simp [hC])
+      have hRne : R ≠ [] := by
+        intro hnil
+        subst R
+        simp at hlen
+      by_cases hlocal :
+          (fullLayerSumSpectrum (B :: R)).card <
+            (fullLayerSumSpectrum R).card + B.card - 1
+      · exact ⟨[], B, R, rfl, hRne, hlocal⟩
+      · have hlocalLe :
+            (fullLayerSumSpectrum R).card + B.card - 1 ≤
+              (fullLayerSumSpectrum (B :: R)).card :=
+          Nat.le_of_not_gt hlocal
+        have hBcard : 1 ≤ B.card := Finset.card_pos.mpr hB
+        have hRguard : R.length ≤ (R.map Finset.card).sum :=
+          length_le_sum_layer_card R hR
+        have hRdeficit :
+            (fullLayerSumSpectrum R).card <
+              (R.map Finset.card).sum - R.length + 1 := by
+          by_contra hnot
+          have hRlower :
+              (R.map Finset.card).sum - R.length + 1 ≤
+                (fullLayerSumSpectrum R).card :=
+            Nat.le_of_not_gt hnot
+          simp only [List.map_cons, List.sum_cons, List.length_cons] at hdeficit
+          omega
+        by_cases hRlen : 2 ≤ R.length
+        · obtain ⟨pre, C, tail, hsplit, htail, hstep⟩ :=
+            ih hR hRlen hRdeficit
+          refine ⟨B :: pre, C, tail, ?_, htail, hstep⟩
+          simp [hsplit]
+        · have hRlenOne : R.length = 1 := by
+            have hpos : 0 < R.length := List.length_pos_iff.mpr hRne
+            omega
+          obtain ⟨C, rfl⟩ := List.length_eq_one_iff.mp hRlenOne
+          have hCcard : 1 ≤ C.card :=
+            Finset.card_pos.mpr (hR C (by simp))
+          simp [fullLayerSumSpectrum_cons] at hRdeficit
+          omega
+
 omit [AddCommGroup A] [Fintype A] in
 /-- Pointwise relations on `Fin n` functions induce `Forall₂` on their
 ordered `List.ofFn` realizations. -/
@@ -2706,6 +3153,96 @@ theorem Theorem21SetPartition.forall₂_tailValueCellsAfterErase_moveOccurrence
   exact List.forall₂_drop r
     (P.forall₂_valueCellsAfterErase_moveOccurrence hqd hiq hQcells)
 
+omit [AddCommGroup A] [Fintype A] in
+/-- The cell list with the used value erased is layerwise contained in the
+honest cross-support replacement; the target insertion can only enlarge its
+layer. -/
+theorem Theorem21SetPartition.forall₂_valueCellsAfterErase_replaceUsedWithUnused
+    {xs : List A} {n m : ℕ} {P Q : Theorem21SetPartition xs n m}
+    {q d : Fin n} {y x : Occurrence xs} (hqd : q ≠ d)
+    (hyq : y ∈ P.cells q)
+    (hQcells : ∀ c,
+      Q.cells c = P.replaceUsedWithUnusedCells q d y x c) :
+    List.Forall₂ (· ⊆ ·)
+      (P.valueCellsAfterErase q (occurrenceValue xs y)) Q.valueCells := by
+  classical
+  unfold Theorem21SetPartition.valueCellsAfterErase
+    Theorem21SetPartition.valueCells
+  apply forall₂_ofFn
+  intro c
+  by_cases hcq : c = q
+  · subst c
+    rw [Theorem21SetPartition.valueCell_eq_erase_of_replaceUsedWithUnused
+      (P := P) (Q := Q) hyq hQcells]
+    simp
+  · by_cases hcd : c = d
+    · subst c
+      simp only [if_neg hqd.symm]
+      rw [Theorem21SetPartition.valueCell_eq_insert_of_replaceUsedWithUnused
+        (P := P) (Q := Q) hqd hQcells]
+      exact Finset.subset_insert _ _
+    · simp only [if_neg hcq]
+      rw [Theorem21SetPartition.valueCell_eq_of_replaceUsedWithUnused_of_ne
+        (P := P) (Q := Q) hQcells hcq hcd]
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Every tail of the erased intermediate cell list is layerwise contained
+in the corresponding tail of the cross-support replacement. -/
+theorem Theorem21SetPartition.forall₂_tailValueCellsAfterErase_replaceUsedWithUnused
+    {xs : List A} {n m : ℕ} {P Q : Theorem21SetPartition xs n m}
+    {q d : Fin n} {y x : Occurrence xs} (hqd : q ≠ d)
+    (hyq : y ∈ P.cells q)
+    (hQcells : ∀ c,
+      Q.cells c = P.replaceUsedWithUnusedCells q d y x c)
+    (r : ℕ) :
+    List.Forall₂ (· ⊆ ·) (P.tailValueCellsAfterErase q
+      (occurrenceValue xs y) r) (Q.tailValueCells r) := by
+  unfold Theorem21SetPartition.tailValueCellsAfterErase
+    Theorem21SetPartition.tailValueCells
+  exact List.forall₂_drop r
+    (P.forall₂_valueCellsAfterErase_replaceUsedWithUnused
+      hqd hyq hQcells)
+
+omit [AddCommGroup A] [Fintype A] in
+/-- The erased intermediate list is layerwise contained in a same-cell
+cross-support replacement. -/
+theorem Theorem21SetPartition.forall₂_valueCellsAfterErase_replaceSameCell
+    {xs : List A} {n m : ℕ} {P Q : Theorem21SetPartition xs n m}
+    {q : Fin n} {y x : Occurrence xs} (hyq : y ∈ P.cells q)
+    (hQcells : ∀ c,
+      Q.cells c = P.replaceUsedWithUnusedSameCell q y x c) :
+    List.Forall₂ (· ⊆ ·)
+      (P.valueCellsAfterErase q (occurrenceValue xs y)) Q.valueCells := by
+  classical
+  unfold Theorem21SetPartition.valueCellsAfterErase
+    Theorem21SetPartition.valueCells
+  apply forall₂_ofFn
+  intro c
+  by_cases hcq : c = q
+  · subst c
+    rw [P.valueCell_eq_insert_erase_of_replaceSameCell hyq hQcells]
+    simp only [if_pos]
+    unfold insertValue
+    intro a ha
+    exact Finset.mem_insert_of_mem ha
+  · simp only [if_neg hcq]
+    rw [P.valueCell_eq_of_replaceSameCell_of_ne hQcells hcq]
+
+omit [AddCommGroup A] [Fintype A] in
+theorem Theorem21SetPartition.forall₂_tailValueCellsAfterErase_replaceSameCell
+    {xs : List A} {n m : ℕ} {P Q : Theorem21SetPartition xs n m}
+    {q : Fin n} {y x : Occurrence xs} (hyq : y ∈ P.cells q)
+    (hQcells : ∀ c,
+      Q.cells c = P.replaceUsedWithUnusedSameCell q y x c)
+    (r : ℕ) :
+    List.Forall₂ (· ⊆ ·)
+      (P.tailValueCellsAfterErase q (occurrenceValue xs y) r)
+      (Q.tailValueCells r) := by
+  unfold Theorem21SetPartition.tailValueCellsAfterErase
+    Theorem21SetPartition.tailValueCells
+  exact List.forall₂_drop r
+    (P.forall₂_valueCellsAfterErase_replaceSameCell hyq hQcells)
+
 omit [Fintype A] in
 /-- Concrete tail-inclusion consequence used for equation (3.1): whenever
 deleting the doubled representative does not change an old tail sumset, that
@@ -2726,6 +3263,45 @@ theorem Theorem21SetPartition.tailSumset_subset_moveOccurrence_of_erase_eq
     Theorem21SetPartition.tailSumset
   exact fullLayerSumSpectrum_mono
     (P.forall₂_tailValueCellsAfterErase_moveOccurrence hqd hiq hQcells r)
+
+omit [Fintype A] in
+/-- If deleting the used occurrence's value leaves an old tail sumset
+unchanged, that tail is contained in the corresponding tail of the honest
+cross-support replacement. -/
+theorem Theorem21SetPartition.tailSumset_subset_replaceUsedWithUnused_of_erase_eq
+    {xs : List A} {n m : ℕ} {P Q : Theorem21SetPartition xs n m}
+    {q d : Fin n} {y x : Occurrence xs} (hqd : q ≠ d)
+    (hyq : y ∈ P.cells q)
+    (hQcells : ∀ c,
+      Q.cells c = P.replaceUsedWithUnusedCells q d y x c)
+    (r : ℕ)
+    (herase : P.tailSumset r = P.tailSumsetAfterErase q
+      (occurrenceValue xs y) r) :
+    P.tailSumset r ⊆ Q.tailSumset r := by
+  classical
+  rw [herase]
+  unfold Theorem21SetPartition.tailSumsetAfterErase
+    Theorem21SetPartition.tailSumset
+  exact fullLayerSumSpectrum_mono
+    (P.forall₂_tailValueCellsAfterErase_replaceUsedWithUnused
+      hqd hyq hQcells r)
+
+omit [Fintype A] in
+theorem Theorem21SetPartition.tailSumset_subset_replaceSameCell_of_erase_eq
+    {xs : List A} {n m : ℕ} {P Q : Theorem21SetPartition xs n m}
+    {q : Fin n} {y x : Occurrence xs} (hyq : y ∈ P.cells q)
+    (hQcells : ∀ c,
+      Q.cells c = P.replaceUsedWithUnusedSameCell q y x c)
+    (r : ℕ)
+    (herase : P.tailSumset r = P.tailSumsetAfterErase q
+      (occurrenceValue xs y) r) :
+    P.tailSumset r ⊆ Q.tailSumset r := by
+  classical
+  rw [herase]
+  unfold Theorem21SetPartition.tailSumsetAfterErase
+    Theorem21SetPartition.tailSumset
+  exact fullLayerSumSpectrum_mono
+    (P.forall₂_tailValueCellsAfterErase_replaceSameCell hyq hQcells r)
 
 omit [AddCommGroup A] [Fintype A] in
 /-- Replacing a valid list position and then dropping an earlier prefix gives
@@ -3575,10 +4151,137 @@ theorem Definition1SourceChain.MonotoneReplacement.of_moveOccurrence_of_min_peri
         hFimagesQ hnext
 
 omit [Fintype A] in
-/-- The genuine `l = min rho q` maximal-exchange contradiction for a weak
-factor form, with the source paper's `x ≠ a_q` convention made explicit as
-the anchor-value hypothesis.  A wrapper can choose such a representative
-from a doubled quotient class. -/
+/-- A cross-support replacement survives every genuine source-chain prefix
+when erasing the used value preserves all old tails.  Quotient-image
+preservation is checked at each prefix's own stabilizer and transition. -/
+theorem Definition1SourceChain.MonotoneReplacement.of_replaceUsedWithUnused_of_erase_eq
+    {xs : List A} {seed : Selection xs} {n r k : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    {state : Definition1ExtremalState xs seed n}
+    {chain : Definition1SourceChain I r state}
+    {P Q : Theorem21SetPartition xs n seed.card}
+    {q d : Fin n} {y x : Occurrence xs}
+    (hP : P ∈ state.upsilon) (hrk : r ≤ k)
+    (hQadmissible : GMOReplacementAdmissible I Q)
+    (hqd : q ≠ d) (hyq : y ∈ P.cells q)
+    (hduplicate :
+      ∃ z ∈ P.valueCell q,
+        z ≠ occurrenceValue xs y ∧
+        QuotientAddGroup.mk' (P.tailPeriod k) z =
+          QuotientAddGroup.mk' (P.tailPeriod k) (occurrenceValue xs y))
+    (hQcells : ∀ c,
+      Q.cells c = P.replaceUsedWithUnusedCells q d y x c)
+    (herase : ∀ s, s ≤ r →
+      P.tailSumset s =
+        P.tailSumsetAfterErase q (occurrenceValue xs y) s) :
+    Definition1SourceChain.MonotoneReplacement P Q chain := by
+  induction chain with
+  | initial state valid =>
+      have htail : P.tailSumset 0 ⊆ Q.tailSumset 0 :=
+        P.tailSumset_subset_replaceUsedWithUnused_of_erase_eq
+          hqd hyq hQcells 0 (herase 0 le_rfl)
+      have hsum : P.sumset ⊆ Q.sumset := by
+        simpa [Theorem21SetPartition.tailSumset,
+          Theorem21SetPartition.tailValueCells,
+          Theorem21SetPartition.sumset] using htail
+      exact MonotoneReplacement.initial state valid hP hQadmissible hsum
+  | @next j previous prior state F step ih =>
+      have hPdata := (step.mem_next_upsilon_iff P).1 hP
+      have hprior : MonotoneReplacement P Q prior :=
+        ih hPdata.1 (by omega) (fun s hs ↦ herase s (by omega))
+      have hcurrent : P.tailSumset j ⊆ Q.tailSumset j :=
+        P.tailSumset_subset_replaceUsedWithUnused_of_erase_eq
+          hqd hyq hQcells j (herase j (by omega))
+      have hnext : P.tailSumset (j + 1) ⊆ Q.tailSumset (j + 1) :=
+        P.tailSumset_subset_replaceUsedWithUnused_of_erase_eq
+          hqd hyq hQcells (j + 1) (herase (j + 1) (by omega))
+      have hPtail : P.tailSumset j = previous.chosen.tailSumset j :=
+        hPdata.2.1
+      have hHK : P.tailPeriod k ≤
+          AddAction.stabilizer A
+            (previous.chosen.tailSumset j : Set A) := by
+        rw [← hPtail]
+        exact P.stabilizer_tailSumset_antitone (by omega)
+      have hPimagesQ : P.quotientImagesIncluded Q
+          (AddAction.stabilizer A
+            (previous.chosen.tailSumset j : Set A)) :=
+        P.quotientImagesIncluded_replace_of_mono hHK hqd hyq
+          hduplicate hQcells
+      have hFimagesQ : F.quotientImagesIncluded Q
+          (AddAction.stabilizer A
+            (previous.chosen.tailSumset j : Set A)) :=
+        Theorem21SetPartition.quotientImagesIncluded_trans
+          (P := F) (Q := P) (R := Q) hPdata.2.2.2.1 hPimagesQ
+      exact MonotoneReplacement.next_of_tail_subsets hprior hP hcurrent
+        hFimagesQ hnext
+
+omit [Fintype A] in
+/-- Same recursive preservation theorem for the case where the removed and
+inserted occurrences belong to the same indexed cell. -/
+theorem Definition1SourceChain.MonotoneReplacement.of_replaceSameCell_of_erase_eq
+    {xs : List A} {seed : Selection xs} {n r k : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    {state : Definition1ExtremalState xs seed n}
+    {chain : Definition1SourceChain I r state}
+    {P Q : Theorem21SetPartition xs n seed.card}
+    {q : Fin n} {y x : Occurrence xs}
+    (hP : P ∈ state.upsilon) (hrk : r ≤ k)
+    (hQadmissible : GMOReplacementAdmissible I Q)
+    (hyq : y ∈ P.cells q)
+    (hduplicate :
+      ∃ z ∈ P.valueCell q,
+        z ≠ occurrenceValue xs y ∧
+        QuotientAddGroup.mk' (P.tailPeriod k) z =
+          QuotientAddGroup.mk' (P.tailPeriod k) (occurrenceValue xs y))
+    (hQcells : ∀ c,
+      Q.cells c = P.replaceUsedWithUnusedSameCell q y x c)
+    (herase : ∀ s, s ≤ r →
+      P.tailSumset s =
+        P.tailSumsetAfterErase q (occurrenceValue xs y) s) :
+    Definition1SourceChain.MonotoneReplacement P Q chain := by
+  induction chain with
+  | initial state valid =>
+      have htail : P.tailSumset 0 ⊆ Q.tailSumset 0 :=
+        P.tailSumset_subset_replaceSameCell_of_erase_eq
+          hyq hQcells 0 (herase 0 le_rfl)
+      have hsum : P.sumset ⊆ Q.sumset := by
+        simpa [Theorem21SetPartition.tailSumset,
+          Theorem21SetPartition.tailValueCells,
+          Theorem21SetPartition.sumset] using htail
+      exact MonotoneReplacement.initial state valid hP hQadmissible hsum
+  | @next j previous prior state F step ih =>
+      have hPdata := (step.mem_next_upsilon_iff P).1 hP
+      have hprior : MonotoneReplacement P Q prior :=
+        ih hPdata.1 (by omega) (fun s hs ↦ herase s (by omega))
+      have hcurrent : P.tailSumset j ⊆ Q.tailSumset j :=
+        P.tailSumset_subset_replaceSameCell_of_erase_eq
+          hyq hQcells j (herase j (by omega))
+      have hnext : P.tailSumset (j + 1) ⊆ Q.tailSumset (j + 1) :=
+        P.tailSumset_subset_replaceSameCell_of_erase_eq
+          hyq hQcells (j + 1) (herase (j + 1) (by omega))
+      have hPtail : P.tailSumset j = previous.chosen.tailSumset j :=
+        hPdata.2.1
+      have hHK : P.tailPeriod k ≤
+          AddAction.stabilizer A
+            (previous.chosen.tailSumset j : Set A) := by
+        rw [← hPtail]
+        exact P.stabilizer_tailSumset_antitone (by omega)
+      have hPimagesQ : P.quotientImagesIncluded Q
+          (AddAction.stabilizer A
+            (previous.chosen.tailSumset j : Set A)) :=
+        P.quotientImagesIncluded_replaceSameCell_of_mono hHK hyq
+          hduplicate hQcells
+      have hFimagesQ : F.quotientImagesIncluded Q
+          (AddAction.stabilizer A
+            (previous.chosen.tailSumset j : Set A)) :=
+        Theorem21SetPartition.quotientImagesIncluded_trans
+          (P := F) (Q := P) (R := Q) hPdata.2.2.2.1 hPimagesQ
+      exact MonotoneReplacement.next_of_tail_subsets hprior hP hcurrent
+        hFimagesQ hnext
+
+omit [Fintype A] in
+/-- The genuine l = min rho q maximal-exchange contradiction for a weak
+factor form, with the source paper's anchor-value convention explicit. -/
 theorem WeakFactorForm.lemma1_minTail_of_anchor_ne
     {xs : List A} {seed : Selection xs} {n rho : ℕ}
     {I : GMOTheoremEInput xs seed n}
@@ -5351,6 +6054,62 @@ theorem nat_card_telescope_sub
                 (Nat.lt_succ_self rho))
       rw [Finset.sum_range_succ]
       omega
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Contrapositive form of finite tail telescoping.  If the first tail is
+strictly below the accumulated cell mass minus the number of joins, then
+one nonterminal adjacent tail step already has the same strict deficit. -/
+theorem nat_exists_local_deficit_of_telescope
+    (tail cell : ℕ → ℕ) (k : ℕ) (hk : 2 ≤ k)
+    (hcell : ∀ j < k, 1 ≤ cell j)
+    (hlast : tail (k - 1) = cell (k - 1))
+    (hglobal :
+      tail 0 < (∑ j ∈ Finset.range k, cell j) - k + 1) :
+    ∃ j, j < k - 1 ∧ tail j < tail (j + 1) + cell j - 1 := by
+  by_contra hnone
+  push Not at hnone
+  have hstep : ∀ j < k - 1,
+      tail (j + 1) + cell j - 1 ≤ tail j := by
+    intro j hj
+    exact hnone j hj
+  have htel := nat_card_telescope_sub tail cell (k - 1) hstep
+    (fun j hj ↦ hcell j (by omega))
+  let t := k - 1
+  have hkt : k = t + 1 := by
+    dsimp only [t]
+    omega
+  have hsum :
+      (∑ j ∈ Finset.range k, cell j) =
+        (∑ j ∈ Finset.range t, cell j) + cell t := by
+    rw [hkt, Finset.sum_range_succ]
+  have hmass :
+      t ≤ ∑ j ∈ Finset.range t, cell j := by
+    calc
+      t = (Finset.range t).card :=
+        (Finset.card_range t).symm
+      _ = ∑ _j ∈ Finset.range t, 1 := by simp
+      _ ≤ ∑ j ∈ Finset.range t, cell j := by
+        exact Finset.sum_le_sum fun j hj ↦
+          hcell j (by
+            have := Finset.mem_range.mp hj
+            dsimp only [t] at this
+            omega)
+  have htlt : t < k := by
+    dsimp only [t]
+    omega
+  have hlastCell : 1 ≤ cell t := hcell t htlt
+  have hguard :
+      t + 1 ≤ (∑ j ∈ Finset.range t, cell j) + cell t := by
+    omega
+  have hrewrite :
+      (∑ j ∈ Finset.range t, cell j) + cell t - (t + 1) + 1 =
+        cell t + (∑ j ∈ Finset.range t, cell j) - t := by
+    omega
+  change tail t + (∑ j ∈ Finset.range t, cell j) - t ≤ tail 0 at htel
+  change tail t = cell t at hlast
+  rw [hlast] at htel
+  rw [hsum, hkt, hrewrite] at hglobal
+  omega
 
 /-- Dissertation Lemma 4's telescoped condition (II).  Each leading index
 uses `lemma4_step` at its own true prefix transition; the finite reindexing
