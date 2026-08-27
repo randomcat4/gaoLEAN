@@ -251,6 +251,7 @@ M50 已将 13 页稿 Lemma 5.2 从外部参数改为内部定理。
 `CRITICAL_GAPS / LEAN_CONDITIONAL`。M52 将 Proposition 3.1 从不变生成元
 到增广理想幂零、系数矛盾与半界的内部证明闭合。M53 进一步从有限阿贝尔
 `p` 群分类构造循环直积，证明精确 Olson Davenport 公式，并把 Proposition 3.1
-升级为任意有限阿贝尔奇 `p` 群上的无条件 Lean 定理。当前承重边界只剩 GJM
-small-Davenport 与 GMO existence/structural 定理，见 `milestone-53.md` 和
-`pr7-13-page-map.md`。
+升级为任意有限阿贝尔奇 `p` 群上的无条件 Lean 定理。M54 又用反射路径的相邻差、
+边界抵消和平衡符号排序，直接证明任意有限阿贝尔核上的 GJM small-Davenport
+等号所需上下界，并同时解除所有商群 small-Davenport 参数。当前唯一承重边界是
+GMO existence/structural 定理，见 `milestone-54.md` 和 `pr7-13-page-map.md`。

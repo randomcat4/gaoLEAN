@@ -22,7 +22,7 @@
 |---|---|---|---|
 | Abstract, Introduction Theorem 1.1 | `E(Dih(A))=2|A|+D(A)`，奇阿贝尔 `p` 群核 | `PGStatements.PGGaoV1Statement`; `PR7ThirteenPage.PR7ThirteenPageMainStatement` | `CONDITIONAL`；完整量词与 exact `2|A|` 已冻结；exact/at-least 语义桥和 `|Dih(A)|=2|A|` 已证 |
 | Introduction, explicit invariant-factor formula | `D(A)=1+sum(p^lambda_i-1)` | `PGOlson.exists_olsonInvariantProduct`; `PGOlson.isOrdinaryDavenportConstant_invariantProduct` | `CHECKED`；从有限阿贝尔 `p` 群分类构造有限循环直积，并在 Lean 内证明精确 ordinary Davenport 常数公式 |
-| Introduction, `d(Dih(A))=D(A)` equivalence | GJM small Davenport identity | `SmallDavenportProductOneFreeAtMost`; quotient analogue | `CONDITIONAL`；只使用所需上界接口，未形式化文献等号 |
+| Introduction, `d(Dih(A))=D(A)` equivalence | GJM small Davenport identity | `PGGJM.smallDavenportProductOneFreeAtMost_of_ordinaryDavenport`; `PGDavenportBridge.smallDavenportWitness_of_isOrdinaryDavenportConstant` | `CHECKED`；长度 `D` 的 product-one-free 下界见证与任意长度至多 `D` 的上界均已 occurrence-faithfully 证明 |
 | Introduction, `C_3^2` example | 五项积一自由见证与 17 个单位元补齐 | 通用 `PGDavenportBridge` 与 `PGLowerBound` | `PARTIAL`；通用构造已核验，正文的字面五项例子未单独命名 |
 | §2 sequence semantics | 按位置选择、重复值保持、可重排积一 | `Sequence`, `Ordering`, `OccurrenceOrdering` | `CHECKED` |
 | §2 group law | 广义二面体乘法、rotation/reflection | `GDihedral`, `ConcreteGDihedral` | `CHECKED` |
@@ -30,7 +30,7 @@
 | Theorem 2.2 existence clause | GMO prescribed-length existence | `OrdinaryGMOPrescribedLengthProvider`; `WeightedGMOPrescribedLengthProvider` | `CONDITIONAL`；运输与 consumer 已核验，GMO 本身未证明 |
 | Theorem 2.2 structural clause | full spectrum / common-coset concentration | `OrdinaryGMOStructuralProvider`; `PlusMinusGMOStructuralProvider` | `CONDITIONAL`；共同陪集语义显式保留 |
 | Proposition 2.3 | 标准下界与单位元 padding | `PGDavenportBridge`; `PGLowerBound`; `PGSynthesis` | `CHECKED`，由 ordinary Davenport witness 内部构造 |
-| Lemma 2.4 | identity padding | `PGBase.exists_zeroCore_of_smallDavenport`; 两个 bot controller 基例 | `CONDITIONAL` 于 small-Davenport 上界 |
+| Lemma 2.4 | identity padding | `PGBase.exists_zeroCore_of_smallDavenport`; `PGGJM`; 两个 bot controller 基例 | `CHECKED`；GJM 上界已由 ordinary Davenport 常数内部供给 |
 | Proposition 3.1 statement | `D_pm(B) <= (D(B)+1)/2` | `PGOlson.plusMinusDavenportAtMost_half_of_isPGroup` | `CHECKED`；对任意有限阿贝尔奇 `p` 群与其精确 ordinary Davenport 常数直接导出半界 |
 | Proposition 3.1 proof | 群代数增广理想幂零证明 | `PGPlusMinusGroupAlgebra`; `PGOlson` | `CHECKED`；从分类、不变因子精确 Davenport 公式、增广理想幂零、乘积 support 与 `[0]` 系数矛盾闭合全文证明 |
 | Proposition 4.1 | `a<=1` 低反射全旋转支 | `PGOrdinaryGMOBridge`; `PGLowReflection` | `CONDITIONAL` 于 ordinary GMO |
@@ -43,15 +43,15 @@
 | Lemma 5.3 | target-length estimate | `PGCapacity`; extraction 中的 target bounds | `CHECKED` |
 | Lemma 5.4 | concentration transitivity | `PGCapacity.residual_capacity_composition*` | `CHECKED` |
 | Lemma 5.5 | quotient defect correction | `PGReflectionOrdering`; `PGReflectionChannel` | `CHECKED` |
-| Proposition 5.6 extraction | 含反射商核、自由余项、缺陷在 `K` | `PGReflectionExtraction` | `CONDITIONAL` 于 quotient small-Davenport |
+| Proposition 5.6 extraction | 含反射商核、自由余项、缺陷在 `K` | `PGReflectionExtraction`; `PGGJM` | `CHECKED`；商群 GJM 上界由其 canonical ordinary Davenport 常数内部供给 |
 | Proposition 5.6 full branch | signed GMO 修正缺陷、精确 `2Q` | `PGReflectionChannel` | `CONDITIONAL` 于 signed structural GMO |
 | Proposition 5.6 descent branch | strict `H<K` 与容量复合 | `PGReflectionChannel`; `GAOARResidualController` | `CONDITIONAL` 于 signed structural GMO |
 | Lemma 5.7 | 平移保持 quotient obstruction | `PGGuard`; `PGTranslation` | `CHECKED` |
-| Proposition 5.8 extraction | outside rotations 的 `B0/B'` 分解与缺陷 | `PGRotationExtraction` | `CONDITIONAL` 于 quotient small-Davenport |
+| Proposition 5.8 extraction | outside rotations 的 `B0/B'` 分解与缺陷 | `PGRotationExtraction`; `PGGJM` | `CHECKED`；商群 GJM 上界已内部供给 |
 | Proposition 5.8 full branch | 补集和式、全旋转 exact `2Q` | `PGSpectrum`; `PGRotationChannel` | `CONDITIONAL` 于 ordinary structural GMO |
 | Proposition 5.8 descent branch | 平移到 `H<K` 并进入通用 ZR | `PGTranslation`; `PGRotationChannel`; `GAOARResidualController` | `CONDITIONAL` 于 ordinary structural GMO |
 | Lemma 5.9 | `2Q alpha=0` 的全旋转回拉 | `PGTranslation.hasAllRotationProductOneSubsequence_pullback_translatedSequence` | `CHECKED` |
-| Theorem 5.1 base cases | `P_S(0)` 与 `Q(0)` 分别证明 | `PGBase`; `PGInduction.concreteControllerAt_bot_of_smallDavenport` | `CONDITIONAL` 于 small-Davenport |
+| Theorem 5.1 base cases | `P_S(0)` 与 `Q(0)` 分别证明 | `PGBase`; `PGInduction.concreteControllerAt_bot_of_smallDavenport`; `PGGJM` | `CHECKED`；所需 small-Davenport 上界已内部供给 |
 | Theorem 5.1 induction | 每次严格下降 `H<K`，同时强归纳 | `PGInduction`; `PGControllerClosure`; `GAOARResidualController` | `CHECKED` 的调度器，整体 `CONDITIONAL` 于 source providers |
 | §6 main completion | 三个 reflection regimes 与上下界装配 | `PGReflectionRegimes`; `PGSynthesis`; `GAOARFinal` | `CONDITIONAL`；未把 desired upper bound 作为参数 |
 | Corollary 6.1 | homocyclic / elementary-abelian 数值公式 | `PGOlson.isOrdinaryDavenportConstant_invariantProduct`（ordinary 数值核） | `PARTIAL`；不变因子 ordinary 数值公式已证，尚未把最终 Gao 条件式装配专门打包成正文的 homocyclic/elementary-abelian 展示式 |
@@ -63,12 +63,12 @@
 `LEAN_FULLY_CHECKED`：
 
 1. GMO 的 existence/structural 定理本身；
-2. GJM small-Davenport 等号（当前只保留所需 bound 接口）；
-3. homocyclic / elementary-abelian 数值 corollary 的最终展示式封装（其 ordinary Davenport 数值核已证）。
+2. homocyclic / elementary-abelian 数值 corollary 的最终展示式封装（其 ordinary Davenport 数值核已证）。
 
 两个独立审计后，主实例另行补证了 `|Dih(A)|=2|A|`、exact-length/
-at-least threshold 等价、Lemma 5.2、Olson 公式以及 Proposition 3.1；它们不再列为缺口。
-当前真正承重的数学边界只剩 GJM 与 GMO；数值 corollary 是在这些边界闭合后的封装工作。
+at-least threshold 等价、Lemma 5.2、Olson 公式、Proposition 3.1 以及 GJM
+small-Davenport 等号；它们不再列为缺口。当前唯一真正承重的数学边界是 GMO；
+数值 corollary 是在该边界闭合后的封装工作。
 
 因此当前不是该 13 页稿的无条件完整 Lean；准确状态是主证明骨架
 `LEAN_CONDITIONAL`，并有上述逐段缺口账。

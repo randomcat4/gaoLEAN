@@ -763,3 +763,21 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
   GMO existence/structural providers remain load-bearing.
 - Full server build: 8739 jobs, exit 0. The audited declarations use only
   `propext`, `Classical.choice`, and `Quot.sound`.
+
+## 2026-08-27: GJM small-Davenport closure (M54)
+
+- Added `GaoLean.PGGJM`, a direct occurrence-labelled proof of the
+  generalized-dihedral small-Davenport upper bound from the exact ordinary
+  Davenport constant of the abelian kernel.
+- The proof places the reflection occurrences on a path. A zero sum among
+  adjacent reflection differences and rotation coordinates is converted to
+  disjoint positive/negative boundary endpoints; common path endpoints cancel
+  and the existing balanced-ordering theorem produces a literal product-one
+  word.
+- Together with the existing length-`D` lower witness, this supplies the exact
+  GJM identity needed by the manuscript for every finite abelian kernel.
+- Refactored `GAOARFinal` so both the ambient and every quotient
+  small-Davenport provider are derived internally. The final source package
+  now contains only GMO existence/structural providers.
+- Full server build: 8740 jobs, exit 0. New theorem audits use only `propext`,
+  `Classical.choice`, and `Quot.sound`.

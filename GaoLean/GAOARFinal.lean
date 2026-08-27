@@ -2,14 +2,15 @@ import GaoLean.GAOARResidualController
 import GaoLean.PGSourceAssembly
 import GaoLean.PGDavenportConvolution
 import GaoLean.PGOlson
+import GaoLean.PGGJM
 
 /-!
 # Final source-facing assembly for the 13-page PR #7 manuscript
 
 The source is `randomcat4/gao0824` PR #7 at commit `6d4ab81`, whose main
 statement is the odd abelian p-group theorem `PG-GAO-v1`.  The package below
-contains the still-unformalized source-facing inputs: the cited
-small-Davenport and GMO results.  Olson's formula, Proposition 3.1, ordinary
+contains the still-unformalized source-facing inputs: the cited GMO results.
+Olson's formula, the GJM small-Davenport theorem, Proposition 3.1, ordinary
 subgroup and quotient Davenport values, and their concatenation inequality
 are now constructed internally.  The package contains no controller, branch
 output, or desired Gao upper conclusion.
@@ -24,13 +25,9 @@ universe u
 /-- Final source-theorem boundary for one finite odd abelian kernel. -/
 def PGGaoStructuralUpperInputs
     (A : Type*) [AddCommGroup A] [Fintype A] (D : ℕ) : Prop :=
-  SmallDavenportProductOneFreeAtMost (Group A) D ∧
   OrdinaryGMOPrescribedLengthProvider A D ∧
   WeightedGMOPrescribedLengthProvider A ∧
   PlusMinusGMOStructuralProvider A ∧
-  (∀ K : AddSubgroup A,
-    QuotientSmallDavenportProductOneFreeAtMost K
-      (ordinaryDavenportValue (A ⧸ K))) ∧
   (∀ (K : AddSubgroup A) [Fintype K],
     OrdinaryGMOStructuralProvider K) ∧
   (∀ (K : AddSubgroup A) [Fintype K],
@@ -48,8 +45,10 @@ theorem pgGaoUpperInputs_of_structuralUpperInputs
     PGGaoUpperInputs A D := by
   classical
   rcases hsource with
-    ⟨hsmall, hordinaryPrescribed, hweighted, hambientGMO,
-      hsmallQuotient, hordinaryGMO, hplusMinusGMO⟩
+    ⟨hordinaryPrescribed, hweighted, hambientGMO,
+      hordinaryGMO, hplusMinusGMO⟩
+  have hsmall : SmallDavenportProductOneFreeAtMost (Group A) D :=
+    smallDavenportProductOneFreeAtMost_of_ordinaryDavenport D hD
   have hDodd : Odd D :=
     odd_ordinaryDavenport_of_isPGroup A p D hp hpTwo hgroup hD
   have hrestricted : RestrictedCoefficientOutputAt A ((D + 1) / 2) :=
@@ -63,6 +62,13 @@ theorem pgGaoUpperInputs_of_structuralUpperInputs
   have hDquotSpec (K : AddSubgroup A) :
       IsOrdinaryDavenportConstant (A ⧸ K) (Dquot K) := by
     simpa [Dquot] using ordinaryDavenportValue_spec (A ⧸ K)
+  have hsmallQuotient : ∀ K : AddSubgroup A,
+      QuotientSmallDavenportProductOneFreeAtMost K (Dquot K) := by
+    intro K
+    exact quotientSmallDavenportProductOneFreeAtMost_of_smallDavenport K
+      (Dquot K)
+        (smallDavenportProductOneFreeAtMost_of_ordinaryDavenport
+          (Dquot K) (hDquotSpec K))
   have hconvolution : ∀ K : AddSubgroup A, ⊥ < K → K < ⊤ →
       Dker K + Dquot K ≤ D + 1 := by
     intro K _ _
@@ -142,8 +148,8 @@ theorem pgGaoV1_of_structuralUpperInputs_and_ordinaryDavenport
         hDQ hAodd hD hsource) hD
 
 /-- Exact remaining-input boundary under the frozen odd-prime p-group
-quantifiers.  Its fields are precisely the cited small-Davenport and GMO
-results not yet reconstructed in Lean. -/
+quantifiers.  Its fields are precisely the cited GMO results not yet
+reconstructed in Lean. -/
 def PGGaoStructuralRemainingInputs : Prop :=
   ∀ (p : ℕ) (A : Type u),
     [AddCommGroup A] → [Fintype A] → [Nontrivial A] →

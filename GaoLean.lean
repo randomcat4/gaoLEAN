@@ -59,6 +59,7 @@ import GaoLean.PGDavenportBridge
 import GaoLean.PGDavenportConvolution
 import GaoLean.PGPlusMinusGroupAlgebra
 import GaoLean.PGOlson
+import GaoLean.PGGJM
 import GaoLean.PGDavenportBound
 import GaoLean.PGOrdinaryGMOBridge
 import GaoLean.PGPGroupNumerics

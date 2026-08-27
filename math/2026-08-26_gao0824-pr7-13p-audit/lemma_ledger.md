@@ -5,7 +5,7 @@
 | P7-L01 | occurrence-labelled sequence 与 ordering | PROVED_HERE | STRICTLY_WEAKER | `Sequence`, `OccurrenceOrdering` |
 | P7-L02 | balanced sign realization | PROVED_HERE | STRICTLY_WEAKER | `PGReflectionOrdering` |
 | P7-L03 | GMO existence/structural | OPEN_AS_PARAMETER | STRICTLY_WEAKER | `GAOARGMOInterfaces` |
-| P7-L04 | GJM small Davenport | OPEN_AS_PARAMETER | STRICTLY_WEAKER | `SmallDavenportProductOneFreeAtMost` |
+| P7-L04 | GJM small Davenport | PROVED_HERE | EXACT_NEEDED_PIECES | `PGGJM.smallDavenportProductOneFreeAtMost_of_ordinaryDavenport`; matching witness in `PGDavenportBridge` |
 | P7-L05 | Olson ordinary Davenport formula | PROVED_HERE | EXACT_NEEDED_PIECE | `PGOlson.exists_olsonInvariantProduct`; `PGOlson.isOrdinaryDavenportConstant_invariantProduct` |
 | P7-L06 | plus-minus half bound | PROVED_HERE | EXACT | `PGOlson.plusMinusDavenportAtMost_half_of_isPGroup`；分类、Olson 公式与增广幂零链全部内部闭合 |
 | P7-L07 | low/high/middle reflection consumers | PROVED_HERE | STRICTLY_WEAKER | `PGLowReflection`, `PGHighReflection`, `PGMiddle*` |
