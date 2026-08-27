@@ -6684,6 +6684,150 @@ theorem dgmCrossedNumericGates_of_minimalConvergent_strongIH
       (by simpa [H, H1, S11, S12, dgmSingleSliceSaturation] using hslices)
   simpa [H] using hgates
 
+/-- Saturating a fixed coarse-coset slice is cardinal-monotone in the
+saturating subgroup.  This is the exact `H₁₂ ≤ Hε` transport needed to
+compare equation (4), proved at `Hε`, with equation (5), proved at the common
+subgroup `H₁₂`. -/
+theorem card_dgmSingleSliceSaturation_le_of_le
+    [Fintype A] (H L K : AddSubgroup A) (hLK : L ≤ K)
+    (B : Finset A) (b : A) :
+    (dgmSingleSliceSaturation H L B b).card ≤
+      (dgmSingleSliceSaturation H K B b).card := by
+  apply Finset.card_le_card
+  intro x hx
+  obtain ⟨s, hs, l, hl, rfl⟩ := Finset.mem_add.mp hx
+  apply Finset.mem_add.mpr
+  exact ⟨s, hs, l,
+    (mem_dgmSubgroupFinset_iff K l).2
+      (hLK ((mem_dgmSubgroupFinset_iff L l).1 hl)), rfl⟩
+
+/-- Complete crossed-branch contradiction for a minimum nontrivial
+convergent.  Starting only with the source initial data (`D₁₂` and the
+first pair-tail nonempty), this theorem internally derives the second
+pair-tail and quotient-separation gates, all three strict equation-(2)
+bounds, equations (4)--(5), and the final two-coset contradiction. -/
+theorem dgmCrossedContradiction_of_minimalConvergent_strongIH
+    [Fintype A] (M : DGMPatternInnerMeasure)
+    (ih : ∀ M', DGMPatternInnerLt M' M → DGMPatternAtMeasure (A := A) M')
+    {K : AddSubgroup A} {k : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (B C : Finset A) (P : List (Finset A))
+    (hP : IsNonemptySetPartition P) (hInter : (B ∩ C).Nonempty)
+    (μ : QuotientPattern K (k + 2)) (E : Finset A)
+    (hE : DGMPatternConvergent B C P μ E)
+    (hmin : ∀ E' : Finset A, DGMPatternConvergent B C P μ E' →
+      Nat.card (AddAction.stabilizer A (E : Set A)) ≤
+        Nat.card (AddAction.stabilizer A (E' : Set A)))
+    (hmeasure : dgmPatternInnerMeasure (B :: C :: P) μ = M)
+    {y : A} (base : LayerSubsumChoice (B :: C :: P) (k + 2) y)
+    (hbase : base.RealizesPattern μ)
+    {b₁ b₂ : A} (hb₁ : b₁ ∈ B) (hb₂ : b₂ ∈ C)
+    (νtail : QuotientPattern
+      (AddAction.stabilizer A (E : Set A)) k)
+    (hext : QuotientPattern.IsTwoStepExtension
+      (base.quotientPattern (AddAction.stabilizer A (E : Set A)))
+      b₁ b₂ νtail)
+    (htail : (patternSubsumSpectrum P νtail).Nonempty)
+    (hD12 : (dgmCrossedD12 B C P b₁ b₂ νtail).Nonempty)
+    (hpair1 : (dgmCrossedPairTail1 B C P b₁ b₂ νtail).Nonempty)
+    (hescape : ¬dgmCosetFiber
+      (AddAction.stabilizer A (E : Set A)) y ⊆
+        patternSubsumSpectrum (B :: C :: P) μ) :
+    False := by
+  classical
+  let H := AddAction.stabilizer A (E : Set A)
+  let ν := base.quotientPattern H
+  let H12 := dgmCrossedH12 B C P b₁ b₂ νtail
+  let H1 := dgmCrossedH1 B C P b₁ b₂ νtail
+  let H2 := dgmCrossedH2 B C P b₁ b₂ νtail
+  let S11 := dgmCosetSlice H B b₁
+  let S12 := dgmCosetSlice H C b₂
+  let S21 := dgmCosetSlice H B b₂
+  let S22 := dgmCosetSlice H C b₁
+  let D1 := dgmCrossedD1 B C P b₁ b₂ νtail
+  let D2 := dgmCrossedD2 B C P b₁ b₂ νtail
+  let D12 := dgmCrossedD12 B C P b₁ b₂ νtail
+  have hgates := dgmCrossedNumericGates_of_minimalConvergent_strongIH
+    M ih B C P hP hInter μ E hE hmin hmeasure base hbase hb₁ hb₂
+      νtail hext htail hD12 hpair1 hescape
+  rcases hgates with ⟨hpair2, hne⟩
+  have hinfeasible : patternSubsumSpectrum
+      (dgmInterUnionLayers B C P) ν = ∅ := by
+    simpa [H, ν] using
+      patternSubsumSpectrum_interUnion_quotientPattern_eq_empty_of_escape
+        B C P μ E hE base hbase hescape
+  have hgeom := dgmCrossedStabilizerGeometry
+    B C P ν b₁ b₂ νtail hext hD12 hpair1 hpair2
+  rcases hgeom with ⟨h12H, h1H, h2H, h121, h122⟩
+  have hstrict := dgmCrossedStrictEquationTwo_three
+    B C P μ E hE hmin base hbase b₁ b₂ νtail hext
+      hD12 hpair1 hpair2 hescape
+  rcases hstrict with ⟨hstrict1, hstrict2, hstrict12⟩
+  have hthree4 := dgmCrossedD1D2_threeSummand_of_strongIH
+    M ih B C P μ E hE hmeasure base hbase b₁ b₂ νtail hext
+      htail hD12 hpair1 hpair2 hescape
+  rcases hthree4 with ⟨hthree1, hthree2⟩
+  have hthree5 := dgmCrossedD12_threeSummand_of_strongIH
+    M ih B C P μ E hE hmeasure base hbase b₁ b₂ νtail hext
+      htail hD12 hpair1 hpair2 hescape
+  rcases hthree5 with ⟨hthree51, hthree52⟩
+  have h4₁ := dgmCrossedEquationFour_of_threeSummand
+    H1 H h1H B C P ν hb₁ hb₂ νtail hext htail hinfeasible
+      hP hInter S11 S12 D1
+      (by simpa [H, H1, D1] using hstrict1)
+      (by simpa [H, H1, S11, S12, D1] using hthree1)
+  have h4₂ := dgmCrossedEquationFour_of_threeSummand
+    H2 H h2H B C P ν hb₁ hb₂ νtail hext htail hinfeasible
+      hP hInter S21 S22 D2
+      (by simpa [H, H2, D2] using hstrict2)
+      (by simpa [H, H2, S21, S22, D2] using hthree2)
+  have h5₁ := dgmCrossedEquationFive_of_threeSummand
+    H12 H H1 h12H h121 B C P ν hb₁ hb₂ νtail hext htail
+      hinfeasible (by simpa [H] using hne) hP hInter S11 S12 D12
+      (by simpa [H, H12, D12] using hstrict12)
+      (by simpa [H, H12, H1, S11, S12, D12] using hthree51)
+  have h5₂ := dgmCrossedEquationFive_of_threeSummand
+    H12 H H2 h12H h122 B C P ν hb₁ hb₂ νtail hext htail
+      hinfeasible (by simpa [H] using hne) hP hInter S21 S22 D12
+      (by simpa [H, H12, D12] using hstrict12)
+      (by simpa [H, H12, H2, S21, S22, D12] using hthree52)
+  have h4₁common :
+      (dgmSingleSliceSaturation H H12 B b₁).card +
+          (dgmSingleSliceSaturation H H12 C b₂).card + Nat.card H1 ≤
+        Nat.card H := by
+    have hmB := card_dgmSingleSliceSaturation_le_of_le
+      H H12 H1 h121 B b₁
+    have hmC := card_dgmSingleSliceSaturation_le_of_le
+      H H12 H1 h121 C b₂
+    have h4₁' :
+        (dgmSingleSliceSaturation H H1 B b₁).card +
+            (dgmSingleSliceSaturation H H1 C b₂).card + Nat.card H1 ≤
+          Nat.card H := by
+      simpa [H, H1, S11, S12, dgmSingleSliceSaturation] using h4₁
+    omega
+  have h4₂common :
+      (dgmSingleSliceSaturation H H12 B b₂).card +
+          (dgmSingleSliceSaturation H H12 C b₁).card + Nat.card H2 ≤
+        Nat.card H := by
+    have hmB := card_dgmSingleSliceSaturation_le_of_le
+      H H12 H2 h122 B b₂
+    have hmC := card_dgmSingleSliceSaturation_le_of_le
+      H H12 H2 h122 C b₁
+    have h4₂' :
+        (dgmSingleSliceSaturation H H2 B b₂).card +
+            (dgmSingleSliceSaturation H H2 C b₁).card + Nat.card H2 ≤
+          Nat.card H := by
+      simpa [H, H2, S21, S22, dgmSingleSliceSaturation] using h4₂
+    omega
+  apply dgmCrossedFourBoundsContradiction_without_stab_lower
+    H H12 H1 H2 h12H B C b₁ b₂ (by simpa [H] using hne)
+  · exact h4₁common
+  · exact h4₂common
+  · simpa [H, H12, H1, S11, S12,
+      dgmSingleSliceSaturation] using h5₁
+  · simpa [H, H12, H2, S21, S22,
+      dgmSingleSliceSaturation] using h5₂
+
 /-- The unique pattern modulo the top subgroup. -/
 theorem quotientTop_subsingleton :
     Subsingleton (A ⧸ (⊤ : AddSubgroup A)) := by

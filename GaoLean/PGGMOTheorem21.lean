@@ -1163,11 +1163,68 @@ def leadingIndices (n rho : ℕ) : Finset (Fin n) :=
 def tailIndices (n rho : ℕ) : Finset (Fin n) :=
   Finset.univ.filter fun c ↦ rho ≤ c.val
 
+/-- Canonical zero-based indexing of the suffix beginning at rho. -/
+def tailIndex (n rho : ℕ) (j : Fin (n - rho)) : Fin n :=
+  ⟨rho + j.val, by omega⟩
+
+omit [AddCommGroup A] [Fintype A] in
+@[simp]
+theorem tailIndex_val {n rho : ℕ} (j : Fin (n - rho)) :
+    (tailIndex n rho j).val = rho + j.val := rfl
+
 omit [AddCommGroup A] [Fintype A] in
 @[simp]
 theorem mem_tailIndices {n rho : ℕ} (c : Fin n) :
     c ∈ tailIndices n rho ↔ rho ≤ c.val := by
   simp [tailIndices]
+
+omit [AddCommGroup A] [Fintype A] in
+/-- The suffix list is literally the ofFn enumeration of the canonical
+tail indices. -/
+theorem Theorem21SetPartition.tailValueCells_eq_ofFn_tailIndex
+    {xs : List A} {n m rho : ℕ} (P : Theorem21SetPartition xs n m) :
+    P.tailValueCells rho =
+      List.ofFn fun j : Fin (n - rho) ↦ P.valueCell (tailIndex n rho j) := by
+  classical
+  have hlenLeft : (P.tailValueCells rho).length = n - rho := by
+    simp [Theorem21SetPartition.tailValueCells, P.length_valueCells]
+  have hlenRight :
+      (List.ofFn fun j : Fin (n - rho) ↦
+        P.valueCell (tailIndex n rho j)).length = n - rho := by simp
+  apply List.ext_get (hlenLeft.trans hlenRight.symm)
+  intro j hjLeft hjRight
+  simp only [Theorem21SetPartition.tailValueCells,
+    Theorem21SetPartition.valueCells, List.get_eq_getElem,
+    List.getElem_drop, List.getElem_ofFn]
+  congr 2
+
+omit [AddCommGroup A] [Fintype A] in
+/-- The list sum of tail-cell cardinalities agrees with the indexed
+incidence sum used in factor-form conditions. -/
+theorem Theorem21SetPartition.sum_card_tailValueCells_eq_tailIndices
+    {xs : List A} {n m rho : ℕ} (P : Theorem21SetPartition xs n m) :
+    (P.tailValueCells rho |>.map Finset.card).sum =
+      ∑ c ∈ tailIndices n rho, (P.valueCell c).card := by
+  classical
+  rw [P.tailValueCells_eq_ofFn_tailIndex]
+  simp only [List.map_ofFn, List.sum_ofFn]
+  refine Finset.sum_bij (fun j _ ↦ tailIndex n rho j) ?_ ?_ ?_ ?_
+  · intro j _
+    exact mem_tailIndices (tailIndex n rho j) |>.2 (by simp)
+  · intro i _ j _ hij
+    apply Fin.ext
+    have hv := congrArg Fin.val hij
+    simp only [tailIndex_val] at hv
+    omega
+  · intro c hc
+    have hrc : rho ≤ c.val := (mem_tailIndices c).1 hc
+    let j : Fin (n - rho) := ⟨c.val - rho, by omega⟩
+    refine ⟨j, Finset.mem_univ j, ?_⟩
+    apply Fin.ext
+    simp [j, tailIndex]
+    omega
+  · intro j _
+    rfl
 
 omit [AddCommGroup A] [Fintype A] in
 /-- There are exactly `n-rho` cells in the zero-based tail. -/
@@ -2852,19 +2909,27 @@ theorem fullLayerSumSpectrum_mono
       exact Finset.mem_add.mpr ⟨b, hBC hb, s, ih hs, rfl⟩
 
 omit [Fintype A] in
+/-- Instance-independent cardinality wrapper for a full-layer sumset. -/
+noncomputable def fullLayerCard (L : List (Finset A)) : ℕ := by
+  classical
+  exact (fullLayerSumSpectrum L).card
+
+omit [Fintype A] in
 /-- A global strict deficit for a full-layer sumset must already occur at
 one genuine adjacent tail step.  The returned suffix is nonempty, so the
 step is strictly before the last layer. -/
 theorem exists_local_fullLayer_deficit
-    [DecidableEq A] (L : List (Finset A))
+    (L : List (Finset A))
     (hL : IsNonemptySetPartition L) (hlen : 2 ≤ L.length)
     (hdeficit :
-      (fullLayerSumSpectrum L).card <
+      fullLayerCard L <
         (L.map Finset.card).sum - L.length + 1) :
     ∃ pre B tail,
       L = pre ++ B :: tail ∧ tail ≠ [] ∧
-        (fullLayerSumSpectrum (B :: tail)).card <
-          (fullLayerSumSpectrum tail).card + B.card - 1 := by
+        fullLayerCard (B :: tail) <
+          fullLayerCard tail + B.card - 1 := by
+  classical
+  unfold fullLayerCard at *
   induction L with
   | nil => simp at hlen
   | cons B R ih =>
@@ -2910,6 +2975,103 @@ theorem exists_local_fullLayer_deficit
             Finset.card_pos.mpr (hR C (by simp))
           simp [fullLayerSumSpectrum_cons] at hRdeficit
           omega
+
+omit [Fintype A] in
+/-- Condition (III) of a factor form yields the exact local strict tail
+step used in Lemma 5, before choosing a labelled occurrence from that cell.
+-/
+theorem FactorForm.exists_local_tail_deficit_decomposition
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n} (F : FactorForm I rho) :
+    ∃ pre B tail,
+      F.partition.tailValueCells rho = pre ++ B :: tail ∧
+        tail ≠ [] ∧
+        fullLayerCard (B :: tail) <
+          fullLayerCard tail + B.card - 1 := by
+  classical
+  apply exists_local_fullLayer_deficit
+  · intro B hB
+    exact F.partition.valueCells_nonempty B (List.mem_of_mem_drop hB)
+  · simp only [Theorem21SetPartition.tailValueCells, List.length_drop,
+      F.partition.length_valueCells]
+    have := F.range
+    omega
+  · have hdef := F.tail_deficit
+    unfold Theorem21SetPartition.tailSumset at hdef
+    unfold fullLayerCard
+    rw [F.partition.sum_card_tailValueCells_eq_tailIndices]
+    simp only [Theorem21SetPartition.tailValueCells, List.length_drop,
+      F.partition.length_valueCells]
+    exact hdef
+
+omit [Fintype A] in
+/-- Indexed form of the local deficit: the witness is a genuine tail cell
+and is strictly before the last cell. -/
+theorem FactorForm.exists_local_tail_deficit
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n} (F : FactorForm I rho) :
+    ∃ q : Fin n,
+      rho ≤ q.val ∧ q.val + 1 < n ∧
+        (F.partition.tailSumset q.val).card <
+          (F.partition.tailSumset (q.val + 1)).card +
+            (F.partition.valueCell q).card - 1 := by
+  classical
+  obtain ⟨pre, B, tail, hsplit, htail, hdef⟩ :=
+    F.exists_local_tail_deficit_decomposition
+  have hlen := congrArg List.length hsplit
+  have htailPos : 0 < tail.length := List.length_pos_iff.mpr htail
+  have htailLength :
+      (F.partition.tailValueCells rho).length = n - rho := by
+    simp [Theorem21SetPartition.tailValueCells,
+      F.partition.length_valueCells]
+  rw [htailLength] at hlen
+  simp only [List.length_append, List.length_cons] at hlen
+  have hjlt : pre.length < n - rho := by omega
+  let j : Fin (n - rho) := ⟨pre.length, hjlt⟩
+  let q : Fin n := tailIndex n rho j
+  have hqval : q.val = rho + pre.length := by simp [q, j]
+  have hqnext : q.val + 1 < n := by
+    rw [hqval]
+    omega
+  unfold Theorem21SetPartition.tailValueCells at hsplit
+  have htailAt :
+      F.partition.tailValueCells q.val = B :: tail := by
+    unfold Theorem21SetPartition.tailValueCells
+    rw [hqval, ← List.drop_drop, hsplit]
+    simp
+  have htailNext :
+      F.partition.tailValueCells (q.val + 1) = tail := by
+    unfold Theorem21SetPartition.tailValueCells
+    rw [hqval]
+    have hsum :
+        rho + pre.length + 1 = rho + (pre.length + 1) := by omega
+    rw [hsum, ← List.drop_drop, hsplit]
+    simp
+  have hB : B = F.partition.valueCell q := by
+    have hget := congrArg
+      (fun L : List (Finset A) ↦ L[0]?) htailAt
+    simp only [List.getElem?_cons_zero] at hget
+    unfold Theorem21SetPartition.tailValueCells
+      Theorem21SetPartition.valueCells at hget
+    simp only [List.getElem?_drop, List.getElem?_ofFn] at hget
+    simp only [dif_pos (by omega : q.val + 0 < n)] at hget
+    let c : Fin n := ⟨q.val + 0, by omega⟩
+    change some (F.partition.valueCell c) = some B at hget
+    have hc : c = q := by
+      apply Fin.ext
+      simp [c]
+    rw [hc] at hget
+    have hv : F.partition.valueCell q = B := by
+      exact Option.some.inj hget
+    exact hv.symm
+  refine ⟨q, ?_, hqnext, ?_⟩
+  · rw [hqval]
+    exact Nat.le_add_right _ _
+  · change fullLayerCard (F.partition.tailValueCells q.val) <
+      fullLayerCard (F.partition.tailValueCells (q.val + 1)) +
+        (F.partition.valueCell q).card - 1
+    rw [htailAt, htailNext, ← hB]
+    exact hdef
 
 omit [AddCommGroup A] [Fintype A] in
 /-- Pointwise relations on `Fin n` functions induce `Forall₂` on their
@@ -5816,6 +5978,43 @@ structure GMOTheoremETrivialConclusion
   partition : Theorem21SetPartition xs n seed.card
   admissible : GMOReplacementAdmissible I partition
   card_lower : seed.card - n + 1 ≤ partition.sumset.card
+
+/-- Under failure of the full source Theorem E output, any factor partition
+that already has the required numerical bound must leave an unused labelled
+occurrence outside its common core.  This is the exact logical step used in
+the no-doubled branch of dissertation Lemma 5; failure of only the scalar
+trivial conclusion would not suffice. -/
+theorem FactorForm.exists_unused_outside_commonCore_of_no_sourceOutput
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (F : FactorForm I rho)
+    (hfail : ¬ Nonempty (GMOTheoremESourceOutput I))
+    (hcard :
+      ((F.partition.commonCosetCount (F.partition.tailPeriod rho) * n +
+          F.partition.exceptionDefect (F.partition.tailPeriod rho) + 1) -
+          n) * Nat.card (F.partition.tailPeriod rho) ≤
+        F.partition.sumset.card) :
+    ∃ i : Occurrence xs,
+      i ∉ F.partition.support ∧
+        occurrenceValue xs i ∉
+          F.partition.commonCore (F.partition.tailPeriod rho) := by
+  classical
+  by_contra hnone
+  have hall : ∀ i : Occurrence xs, i ∉ F.partition.support →
+      occurrenceValue xs i ∈
+        F.partition.commonCore (F.partition.tailPeriod rho) := by
+    intro i hi
+    by_contra hout
+    exact hnone ⟨i, hi, hout⟩
+  apply hfail
+  exact ⟨{
+    partition := F.partition
+    H := F.partition.tailPeriod rho
+    periodic := F.toWeakFactorForm.tailPeriod_le_sumset_stabilizer
+    admissible := F.admissible
+    card_lower := hcard
+    unused_mem_commonCore := fun _ i hi ↦ hall i hi
+  }⟩
 
 /-- Enlarging a period enlarges every thickened cell and hence the common
 core. -/
