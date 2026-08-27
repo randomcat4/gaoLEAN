@@ -4966,6 +4966,199 @@ theorem exists_dgmPatternConvergent_min_stabilizer_card
   intro D' hD'
   exact hmin D' (Finset.mem_filter.mpr ⟨Finset.mem_univ D', hD'⟩)
 
+/-- A strict inclusion of additive subgroups of a finite ambient group is
+also strict on cardinalities. -/
+theorem natCard_lt_natCard_of_addSubgroup_lt
+    [Fintype A] {L H : AddSubgroup A} (hLH : L < H) :
+    Nat.card L < Nat.card H := by
+  have hsets : (L : Set A) ⊂ (H : Set A) := hLH
+  have hcard := Set.Finite.card_lt_card (Set.toFinite (H : Set A)) hsets
+  simpa only [SetLike.coe_sort_coe] using hcard
+
+/-- If an `H`-periodic set lies in a target which does not contain one full
+`H`-coset, then that set is disjoint from the deficient coset.  This is the
+source argument `R ∩ C = ∅`, with the whole coset rather than only the chosen
+crossed subset retained. -/
+theorem disjoint_cosetFiber_of_periodic_subset_of_not_subset
+    [Fintype A] (C T : Finset A) (hC : C.Nonempty)
+    (H : AddSubgroup A)
+    (hCstab : AddAction.stabilizer A (C : Set A) = H)
+    (hCT : C ⊆ T) (y : A)
+    (hescape : ¬dgmCosetFiber H y ⊆ T) :
+    Disjoint (C : Set A) (dgmCosetFiber H y : Set A) := by
+  rw [Set.disjoint_left]
+  intro x hxC hxy
+  apply hescape
+  intro z hzy
+  apply hCT
+  apply dgmCosetFiber_subset_of_mem_of_stabilizer_eq C hC H hCstab hxC
+  apply (mem_dgmCosetFiber_iff H x z).2
+  exact ((mem_dgmCosetFiber_iff H y z).1 hzy).trans
+    ((mem_dgmCosetFiber_iff H y x).1 hxy).symm
+
+/-- Let `C` be `H`-periodic and let `D` be a nonempty proper part of one
+`H`-coset disjoint from `C`.  Then the sole partial coarse coset prevents a
+translation outside `H` from stabilizing `C ∪ D`; consequently the union has
+exactly the stabilizer of `D`.  This is the set-theoretic stabilizer identity
+used for each of `C₁,C₂,C₁₂` in the source proof. -/
+theorem stabilizer_union_eq_right_of_periodic_left_proper_fiber
+    [Fintype A] (H : AddSubgroup A) (C D : Finset A)
+    (hC : C.Nonempty) (hD : D.Nonempty)
+    (hCstab : AddAction.stabilizer A (C : Set A) = H)
+    (b : A)
+    (hDfiber : ∀ x ∈ D, (x : A ⧸ H) = (b : A ⧸ H))
+    (hdisj : Disjoint (C : Set A) (dgmCosetFiber H b : Set A))
+    {y : A} (hyfiber : (y : A ⧸ H) = (b : A ⧸ H))
+    (hyD : y ∉ D) :
+    AddAction.stabilizer A ((C ∪ D : Finset A) : Set A) =
+      AddAction.stabilizer A (D : Set A) := by
+  have hDlt : AddAction.stabilizer A (D : Set A) < H :=
+    stabilizer_lt_of_proper_quotientFiber H D hD (b : A ⧸ H)
+      hDfiber hyfiber hyD
+  have hCD : Disjoint (C : Set A) (D : Set A) := by
+    rw [Set.disjoint_left] at hdisj ⊢
+    intro x hxC hxD
+    apply hdisj hxC
+    exact (mem_dgmCosetFiber_iff H b x).2 (hDfiber x hxD)
+  have hUnionNe : (C ∪ D).Nonempty := hC.mono Finset.subset_union_left
+  have hUnionLe :
+      AddAction.stabilizer A ((C ∪ D : Finset A) : Set A) ≤ H := by
+    intro a ha
+    obtain ⟨x, hxD⟩ := hD
+    have haFin : a ∈ (C ∪ D).addStab := by
+      have haSet : a ∈
+          (AddAction.stabilizer A ((C ∪ D : Finset A) : Set A) : Set A) := ha
+      rw [← Finset.coe_addStab hUnionNe] at haSet
+      exact haSet
+    have htranslate := (Finset.mem_addStab hUnionNe).1 haFin
+    have hax : a + x ∈ C ∪ D := by
+      have : a + x ∈ a +ᵥ (C ∪ D) :=
+        Finset.mem_vadd_finset.mpr
+          ⟨x, Finset.mem_union_right C hxD, rfl⟩
+      rwa [htranslate] at this
+    rcases Finset.mem_union.mp hax with haxC | haxD
+    · have haxFiber := dgmCosetFiber_subset_of_mem_of_stabilizer_eq
+        C hC H hCstab haxC
+      have hayFiber : a + y ∈ dgmCosetFiber H (a + x) := by
+        apply (mem_dgmCosetFiber_iff H (a + x) (a + y)).2
+        change (a : A ⧸ H) + (y : A ⧸ H) =
+          (a : A ⧸ H) + (x : A ⧸ H)
+        rw [hyfiber, hDfiber x hxD]
+      have hayC : a + y ∈ C := haxFiber hayFiber
+      have hayUnion : a + y ∈ C ∪ D := Finset.mem_union_left D hayC
+      have hneg : -a ∈
+          AddAction.stabilizer A ((C ∪ D : Finset A) : Set A) :=
+        (AddAction.stabilizer A ((C ∪ D : Finset A) : Set A)).neg_mem ha
+      have hnegFin : -a ∈ (C ∪ D).addStab := by
+        have hnegSet : -a ∈
+            (AddAction.stabilizer A ((C ∪ D : Finset A) : Set A) : Set A) :=
+          hneg
+        rw [← Finset.coe_addStab hUnionNe] at hnegSet
+        exact hnegSet
+      have htranslateNeg := (Finset.mem_addStab hUnionNe).1 hnegFin
+      have hyUnion : y ∈ C ∪ D := by
+        have : -a + (a + y) ∈ (-a) +ᵥ (C ∪ D) :=
+          Finset.mem_vadd_finset.mpr ⟨a + y, hayUnion, rfl⟩
+        rw [htranslateNeg] at this
+        simpa using this
+      rcases Finset.mem_union.mp hyUnion with hyC | hyD'
+      · exact False.elim ((Set.disjoint_left.1 hdisj) hyC
+          ((mem_dgmCosetFiber_iff H b y).2 hyfiber))
+      · exact False.elim (hyD hyD')
+    · have hquot : ((a + x : A) : A ⧸ H) = (x : A ⧸ H) :=
+        (hDfiber (a + x) haxD).trans (hDfiber x hxD).symm
+      have hsub := QuotientAddGroup.eq_iff_sub_mem.mp hquot
+      simpa using hsub
+  have hUnionLeC :
+      AddAction.stabilizer A ((C ∪ D : Finset A) : Set A) ≤
+        AddAction.stabilizer A (C : Set A) := by
+    rw [hCstab]
+    exact hUnionLe
+  have hUnionLeSet :
+      AddAction.stabilizer A ((C : Set A) ∪ (D : Set A)) ≤
+        AddAction.stabilizer A (C : Set A) := by
+    simpa only [Finset.coe_union] using hUnionLeC
+  simpa only [Finset.coe_union] using
+    AddAction.stabilizer_union_eq_right hCD
+      (by simpa [hCstab] using hDlt.le) hUnionLeSet
+
+/-- Minimality of the convergent stabilizer turns every proper one-coset
+extension into the exact nonconvergence hypothesis needed by strict equation
+(2).  No numerical conclusion is assumed: properness of the crossed piece
+and the deficient ambient coset produce the smaller union stabilizer. -/
+theorem dgmPatternConvergent_union_not_convergent_of_minimal
+    [Fintype A] {K : AddSubgroup A} {n : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (B₀ C₀ : Finset A) (P : List (Finset A))
+    (μ : QuotientPattern K n) (C D : Finset A)
+    (hCconv : DGMPatternConvergent B₀ C₀ P μ C)
+    (hmin : ∀ C' : Finset A, DGMPatternConvergent B₀ C₀ P μ C' →
+      Nat.card (AddAction.stabilizer A (C : Set A)) ≤
+        Nat.card (AddAction.stabilizer A (C' : Set A)))
+    (hD : D.Nonempty) (y : A)
+    (hDfiber : ∀ x ∈ D,
+      (x : A ⧸ AddAction.stabilizer A (C : Set A)) =
+        (y : A ⧸ AddAction.stabilizer A (C : Set A)))
+    (hyD : y ∉ D)
+    (hescape : ¬dgmCosetFiber
+      (AddAction.stabilizer A (C : Set A)) y ⊆
+        patternSubsumSpectrum (B₀ :: C₀ :: P) μ) :
+    ¬DGMPatternConvergent B₀ C₀ P μ (C ∪ D) := by
+  let H := AddAction.stabilizer A (C : Set A)
+  have hCdata := hCconv
+  unfold DGMPatternConvergent at hCdata
+  dsimp only at hCdata
+  rcases hCdata with ⟨hCne, _, hCupper, _⟩
+  have hdisj : Disjoint (C : Set A) (dgmCosetFiber H y : Set A) :=
+    disjoint_cosetFiber_of_periodic_subset_of_not_subset
+      C (patternSubsumSpectrum (B₀ :: C₀ :: P) μ) hCne H rfl
+        hCupper y (by simpa [H] using hescape)
+  have hUnionStab :
+      AddAction.stabilizer A ((C ∪ D : Finset A) : Set A) =
+        AddAction.stabilizer A (D : Set A) :=
+    stabilizer_union_eq_right_of_periodic_left_proper_fiber
+      H C D hCne hD rfl y (by simpa [H] using hDfiber) hdisj rfl hyD
+  have hDlt : AddAction.stabilizer A (D : Set A) < H :=
+    stabilizer_lt_of_proper_quotientFiber H D hD
+      (y : A ⧸ H) (by simpa [H] using hDfiber) rfl hyD
+  have hcardlt : Nat.card (AddAction.stabilizer A (D : Set A)) <
+      Nat.card H := natCard_lt_natCard_of_addSubgroup_lt hDlt
+  intro hUnionConv
+  have hminimum := hmin (C ∪ D) hUnionConv
+  rw [hUnionStab] at hminimum
+  exact (not_le_of_gt (by simpa [H] using hcardlt)) hminimum
+
+/-- Choose the actual minimum-stabilizer convergent and simultaneously
+record its source-faithful behavior under every proper extension inside a
+deficient stabilizer coset.  This is the reusable `C` selected on page 13,
+not a provider carrying the desired crossed conclusion as a field. -/
+theorem exists_dgmPatternConvergent_min_with_extension_hnot
+    [Fintype A] {K : AddSubgroup A} {n : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (B C : Finset A) (P : List (Finset A))
+    (μ : QuotientPattern K n) {D₀ : Finset A}
+    (hD₀ : DGMPatternConvergent B C P μ D₀) :
+    ∃ E : Finset A,
+      DGMPatternConvergent B C P μ E ∧
+      (∀ E' : Finset A, DGMPatternConvergent B C P μ E' →
+        Nat.card (AddAction.stabilizer A (E : Set A)) ≤
+          Nat.card (AddAction.stabilizer A (E' : Set A))) ∧
+      ∀ (D : Finset A) (y : A),
+        D.Nonempty →
+        (∀ x ∈ D,
+          (x : A ⧸ AddAction.stabilizer A (E : Set A)) =
+            (y : A ⧸ AddAction.stabilizer A (E : Set A))) →
+        y ∉ D →
+        (¬dgmCosetFiber (AddAction.stabilizer A (E : Set A)) y ⊆
+          patternSubsumSpectrum (B :: C :: P) μ) →
+        ¬DGMPatternConvergent B C P μ (E ∪ D) := by
+  obtain ⟨E, hE, hmin⟩ :=
+    exists_dgmPatternConvergent_min_stabilizer_card B C P μ hD₀
+  refine ⟨E, hE, hmin, ?_⟩
+  intro D y hD hDfiber hyD hescape
+  exact dgmPatternConvergent_union_not_convergent_of_minimal
+    B C P μ E D hE hmin hD y hDfiber hyD hescape
+
 /-- Strict additive form of the paper's convergent inequality (equation (2)
 in the strict-Xi chain).  A convergent `D`, together with a
 disjoint extension `E` whose union satisfies the endpoint conditions but is
