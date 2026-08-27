@@ -63,6 +63,14 @@ import GaoLean.PGGJM
 import GaoLean.PGHomocyclic
 import GaoLean.PGGMOFoundations
 import GaoLean.PGGMOSpectrum
+import GaoLean.PGIteratedKneser
+import GaoLean.PGDGMCore
+import GaoLean.PGSetpartitionOccurrences
+import GaoLean.PGPlusMinusSetpartition
+import GaoLean.PGDGMStructuralGap
+import GaoLean.PGGMOOrdinarySource
+import GaoLean.PGGMOPlusMinusSource
+import GaoLean.PGGMOSourceAssembly
 import GaoLean.PGDavenportBound
 import GaoLean.PGOrdinaryGMOBridge
 import GaoLean.PGPGroupNumerics

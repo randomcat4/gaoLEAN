@@ -277,3 +277,14 @@ occurrence 与无逃逸项全部通过，但发现旧 Windows checkout 未同步
 随后从公库 M57 分支重新干净克隆，解析 MiscYD 完整 SHA，并在 Windows/Lean 4.32
 独立构建 8684 个目标成功。服务器全构建 8746 项成功。剩余五个 obligation 仍是
 GMO 的 prescribed-length/structural provider 家族，未被改名或隐藏。
+
+M59 已把最后边界继续打开到可核验的组合数学对象：Lean 证明 labelled
+occurrence 的 `n`-setpartition 存在准则、任意有限非空集合列的迭代 Kneser
+不等式、普通 cell sumset 到 exact-`n` 谱的无损包含，以及 `{x,-x}` layer
+spectrum 与 signed exact-`n` occurrence 谱的逐字相等。general DGM 已完成
+稳定子商群运输，并在 `n=1` 与 full-layer endpoint 闭合；唯一 DGM 内部缺口
+明确冻结为 aperiodic portion-minimality core。独立审计同时确认：DGM 基数式
+本身还不能推出 Corollary 1.3 要求的 source coset 与两个 weight coset，仍须
+论文 Theorem 2.1 和 Theorem 1.1 的结构归纳。因此终稿状态仍为
+`LEAN_CONDITIONAL`，没有把 DGM 中间进展误报为 GMO 已完成。见
+`milestone-59.md`。

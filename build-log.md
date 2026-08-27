@@ -845,3 +845,22 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
 - The server's complete project build remains 8746 jobs, exit 0. The exact
   unresolved obligations are the five visible GMO prescribed/structural
   providers in `PGGaoStructuralUpperInputs`.
+
+## 2026-08-27: Occurrence setpartitions and exact DGM boundary (M59)
+
+- Added occurrence-faithful `n`-setpartitions, iterated Kneser, literal DGM
+  exact-layer spectra and capped quotient multiplicities.
+- Proved the full-layer and `n=1` DGM endpoints and all final-stabilizer
+  quotient transport. General DGM is now reduced mechanically to the explicit
+  `AperiodicDGMSetpartitionCore`; that core is not asserted.
+- Proved exact equality between the `{x,-x}` layer spectrum and the signed
+  occurrence spectrum, plus the ordinary full-cell-spectrum inclusion.
+- Added lossless source-corollary/provider equivalences and final source
+  assembly. These are translation certificates, not inhabitants of the GMO
+  source propositions.
+- Independent review confirmed DGM alone does not imply the simultaneous
+  source/positive-weight/negative-weight cosets of Corollary 1.3. The paper's
+  structural setpartition theorem and Theorem 1.1 induction remain required.
+- Targeted server build succeeded for 8740 jobs; the full `GaoLean` build
+  succeeded for 8751 jobs. Completed declarations use only `propext`,
+  `Classical.choice`, and `Quot.sound`.
