@@ -712,3 +712,17 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
   `git diff --check` pass.
 - The overall status remains `CRITICAL_GAPS / LEAN_CONDITIONAL`; the remaining
   load-bearing boundaries are Proposition 3.1, Olson, GJM, and GMO.
+
+## 2026-08-26: Proposition 3.1 group-algebra core (M51)
+
+- Added literal `ZMod p` additive group-algebra factors and an
+  occurrence-faithful support expansion.
+- Proved the `[0]` coefficient is `(-2)^m` under absence of a nonzero
+  restricted relation, and derived the relation from product vanishing.
+- Proved the paper's square-factor identity and reduced product vanishing to
+  generator-level augmentation nilpotence at degree `D`.
+- Full server build and unified axiom audit: 8738 jobs, exit 0.  New audited
+  declarations use only `propext`, `Classical.choice`, and `Quot.sound`;
+  forbidden-declaration scan and `git diff --check` pass.
+- Proposition 3.1 remains partial only at the invariant-factor-to-`I^D=0`
+  layer; the top-level manuscript status is unchanged.

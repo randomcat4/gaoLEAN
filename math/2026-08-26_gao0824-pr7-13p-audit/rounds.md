@@ -43,3 +43,11 @@
   `D(K) + D(A/K) ≤ D(A) + 1`。
 - `GAOARFinal` 已删除外部 `hconvolution` 输入，改为内部调用该定理。
 - 总状态仍为 `CRITICAL_GAPS / LEAN_CONDITIONAL`，但 Lemma 5.2 已从承重缺口中移除。
+
+## R6：Proposition 3.1 群代数核心
+
+- 对 `ZMod p[B]` 中的实际乘积形式化 support 展开，每个 support 项都产生
+  occurrence-indexed `{-1,0,1}` 系数。
+- 证明无非零关系时 `[0]` 系数精确为 `(-2)^m`，并在奇素数特征下导出矛盾。
+- 核验因子恒等式和每个 occurrence 两个增广生成元的精确乘积分解。
+- 当前唯一剩余层是从 p 群不变因子表示得到 `I^D=0`；Proposition 3.1 因此仍为 `PARTIAL`，未冒充完成。
