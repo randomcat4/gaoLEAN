@@ -2664,6 +2664,48 @@ theorem quotientLayerMultiplicity_eq_length_of_mem_all
       simp only [List.length_cons]
       omega
 
+/-- At full weight every labelled layer is selected.  If each layer has a
+singleton image modulo `K`, the choice multiplicity is therefore the raw
+quotient-layer incidence multiplicity. -/
+theorem LayerSubsumChoice.quotientMultiplicity_eq_layerMultiplicity_of_full
+    {K : AddSubgroup A} [DecidableEq (A ⧸ K)]
+    {P : List (Finset A)} {n : ℕ} {y : A}
+    (h : LayerSubsumChoice P n y) (hfull : n = P.length)
+    (hsingle : ∀ B ∈ P, (quotientLayer K B).card = 1)
+    (q : A ⧸ K) :
+    h.quotientMultiplicity K q = quotientLayerMultiplicity K P q := by
+  classical
+  induction h with
+  | zero P =>
+      cases P with
+      | nil => simp [LayerSubsumChoice.quotientMultiplicity,
+          quotientLayerMultiplicity]
+      | cons B P => simp at hfull
+  | @skip B P n y h ih =>
+      have hle := h.weight_le_length
+      simp only [List.length_cons] at hfull
+      omega
+  | @take B P n b y hb h ih =>
+      have hfullTail : n = P.length := by
+        simpa using Nat.succ.inj hfull
+      have hsingleTail : ∀ C ∈ P, (quotientLayer K C).card = 1 := by
+        intro C hC
+        exact hsingle C (by simp [hC])
+      have hih := ih hfullTail hsingleTail
+      have hcardB := hsingle B (by simp)
+      obtain ⟨r, hr⟩ := Finset.card_eq_one.mp hcardB
+      have hbmem : (b : A ⧸ K) ∈ quotientLayer K B :=
+        (mem_quotientLayer_iff K B _).2 ⟨b, hb, rfl⟩
+      have hbr : (b : A ⧸ K) = r := by simpa [hr] using hbmem
+      have hiff : q ∈ quotientLayer K B ↔ (b : A ⧸ K) = q := by
+        simp [hr, hbr, eq_comm]
+      by_cases heq : (b : A ⧸ K) = q
+      · rw [quotientLayerMultiplicity_cons_of_mem K B P q (hiff.2 heq)]
+        simp [LayerSubsumChoice.quotientMultiplicity, heq, hih, add_comm]
+      · rw [quotientLayerMultiplicity_cons_of_not_mem K B P q
+          (fun hq ↦ heq (hiff.1 hq))]
+        simp [LayerSubsumChoice.quotientMultiplicity, heq, hih]
+
 /-- Quotient-layer incidence multiplicity depends on the multiset of
 labelled layers, not their order. -/
 theorem quotientLayerMultiplicity_eq_of_perm
@@ -2986,6 +3028,33 @@ theorem dgmCappedMultiplicitySum_cons_eq_tail_of_head_subset_all
     rw [min_eq_left hn', min_eq_left hn]
   · rw [quotientLayerMultiplicity_cons_of_not_mem K B P q hq]
 
+/-- If full weight is prescribed and every layer lies in one `K`-coset,
+the pattern is forced: the prescribed-pattern spectrum is the entire
+full-layer sumset. -/
+theorem patternSubsumSpectrum_eq_fullLayerSumSpectrum_of_singleton_quotient
+    {K : AddSubgroup A} [Fintype (A ⧸ K)]
+    [DecidableEq (A ⧸ K)] (P : List (Finset A))
+    (μ : QuotientPattern K P.length)
+    (hTarget : (patternSubsumSpectrum P μ).Nonempty)
+    (hsingle : ∀ B ∈ P, (quotientLayer K B).card = 1) :
+    patternSubsumSpectrum P μ = fullLayerSumSpectrum P := by
+  obtain ⟨y₀, hy₀⟩ := hTarget
+  obtain ⟨⟨h₀, hμ₀⟩⟩ :=
+    (mem_patternSubsumSpectrum_iff P μ y₀).1 hy₀
+  apply Finset.Subset.antisymm
+  · exact patternSubsumSpectrum_subset_layerSubsumSpectrum P μ
+  · intro y hy
+    obtain ⟨h⟩ := (nonempty_layerSubsumChoice_iff_mem
+      P P.length y).2 (by simpa [fullLayerSumSpectrum] using hy)
+    have hreal : h.RealizesPattern μ := by
+      intro q
+      have hh := h.quotientMultiplicity_eq_layerMultiplicity_of_full
+        rfl hsingle q
+      have hh₀ := h₀.quotientMultiplicity_eq_layerMultiplicity_of_full
+        rfl hsingle q
+      exact hh.trans (hh₀.symm.trans (hμ₀ q))
+    exact (mem_patternSubsumSpectrum_iff P μ y).2 ⟨⟨h, hreal⟩⟩
+
 /-- At the full-layer endpoint the cap is inactive. -/
 theorem dgmCappedMultiplicitySum_length
     (K : AddSubgroup A) [Finite (A ⧸ K)] (P : List (Finset A)) :
@@ -2996,6 +3065,25 @@ theorem dgmCappedMultiplicitySum_length
   rw [dgmCappedMultiplicitySum]
   simp_rw [min_eq_right (quotientLayerMultiplicity_le_length K P _)]
   exact sum_quotientLayerMultiplicity K P
+
+/-- Under the singleton-quotient hypothesis, the full-weight `K` incidence
+correction is exactly zero. -/
+theorem dgmCappedMultiplicitySum_full_eq_length_of_singleton_quotient
+    (K : AddSubgroup A) [Finite (A ⧸ K)]
+    (P : List (Finset A))
+    (hsingle : ∀ B ∈ P, (quotientLayer K B).card = 1) :
+    dgmCappedMultiplicitySum K P P.length = P.length := by
+  rw [dgmCappedMultiplicitySum_length]
+  induction P with
+  | nil => simp
+  | cons B P ih =>
+      have hB := hsingle B (by simp)
+      have htail : ∀ C ∈ P, (quotientLayer K C).card = 1 := by
+        intro C hC
+        exact hsingle C (by simp [hC])
+      simp only [List.map_cons, List.sum_cons, List.length_cons]
+      rw [hB, ih htail]
+      omega
 
 theorem dgmCappedMultiplicitySum_inter_union_le
     [Fintype A] (K : AddSubgroup A)
@@ -8919,6 +9007,34 @@ theorem dgmSetpartitionBound_full
       (fullLayerSumSpectrum P).card
   rw [stabilizerDgmCappedMultiplicitySum_length]
   exact fullLayer_dgm_lower_bound P hP
+
+/-- Full-weight generalized DGM when every layer lies in one `K`-coset.
+The pattern is forced, its `K` correction vanishes, and the result is exactly
+the already proved full-layer Kneser/DGM endpoint. -/
+theorem dgmPatternBound_full_of_singleton_quotient
+    [Fintype A] (K : AddSubgroup A)
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (P : List (Finset A)) (μ : QuotientPattern K P.length)
+    (hP : IsNonemptySetPartition P)
+    (hTarget : (patternSubsumSpectrum P μ).Nonempty)
+    (hsingle : ∀ B ∈ P, (quotientLayer K B).card = 1) :
+    DGMPatternBound P μ := by
+  have hspec :=
+    patternSubsumSpectrum_eq_fullLayerSumSpectrum_of_singleton_quotient
+      P μ hTarget hsingle
+  have hcap :=
+    dgmCappedMultiplicitySum_full_eq_length_of_singleton_quotient
+      K P hsingle
+  have hfullTarget : (fullLayerSumSpectrum P).Nonempty := by
+    rw [← hspec]
+    exact hTarget
+  have hfull := dgmSetpartitionBound_full P hP
+  unfold DGMSetpartitionBound at hfull
+  unfold DGMPatternBound
+  rw [hspec, hcap]
+  simp only [Nat.sub_self, Nat.mul_zero, Nat.add_zero]
+  rw [← card_addStab_eq_natCard_stabilizer _ hfullTarget]
+  simpa [fullLayerSumSpectrum, Nat.mul_comm] using hfull
 
 /-- The empty-selection endpoint is also exact.  The source DGM theorem uses
 positive `n`; this lemma is retained as a recursion boundary check. -/
