@@ -30,14 +30,13 @@ def OrdinaryGMOStructuralTrichotomy
 
 /-- A terminal source-faithful Theorem E output gives the honest recursive
 trichotomy without assuming the width needed to turn a large setpartition
-sumset into the whole ambient group.  The explicit strict-source hypothesis
-is used only to exclude the proper nontrivial count-zero endpoint. -/
+sumset into the whole ambient group.  The count-zero endpoint returns its
+direct large alternative, so no strict-source hypothesis is needed. -/
 theorem GMOTheoremESourceOutput.structuralTrichotomy_of_terminal
     {xs : List A} {seed : Selection xs} {n : ℕ}
     {I : GMOTheoremEInput xs seed n}
     (out : GMOTheoremESourceOutput I)
     (hsourceWide : Nat.card A ≤ xs.length)
-    (hseedProper : seed.card < xs.length)
     (hterminal : out.partition.commonCosetCount out.H ≤ 1) :
     OrdinaryGMOStructuralTrichotomy xs seed n := by
   classical
@@ -60,13 +59,9 @@ theorem GMOTheoremESourceOutput.structuralTrichotomy_of_terminal
         out.partition.commonCosetCount out.H = 1 := by
     omega
   rcases hcount with hzero | hone
-  · have hsupport :=
-      out.support_eq_univ_of_commonCosetCount_eq_zero hbot hzero
-    have hcard := congrArg Finset.card hsupport
-    rw [out.partition.card_support_eq] at hcard
-    have hseedFull : seed.card = xs.length := by
-      simpa using hcard
-    omega
+  · exact Or.inr (Or.inl
+      ⟨out.partition,
+        out.largeAlternative_of_commonCosetCount_eq_zero hlen hzero⟩)
   · obtain ⟨h21⟩ :=
       out.toProjected.nonempty_theorem21Output_of_count_eq_one
         hbot hproper hone

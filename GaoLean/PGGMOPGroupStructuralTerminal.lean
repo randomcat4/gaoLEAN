@@ -8,13 +8,8 @@ has common-coset count at most one.  The top and trivial periods, and the
 proper nontrivial case with count one, are discharged by the exact existing
 Theorem E / Theorem 2.1 adapters.
 
-The remaining count-zero case is deliberately not hidden: the source output
-then says that the replacement support is the whole source.  Consequently it
-is excluded here by the explicit strict-source hypothesis
-`seed.card < xs.length`.  No stronger conclusion is inferred from the
-count-zero case itself.  A later structural driver must derive this strict
-inequality separately from the frozen source-length hypotheses before using
-this terminal lemma.
+The count-zero case uses its direct large alternative.  Thus no strict-source
+hypothesis is needed at the terminal boundary.
 -/
 
 namespace GaoLean
@@ -26,16 +21,14 @@ universe u
 variable {A : Type u} [AddCommGroup A] [Fintype A]
 
 /-- A terminal source-faithful Theorem E output gives the exact structural
-ordinary alternative.  The strict-source hypothesis is used only to rule out
-the proper nontrivial `N = 0` endpoint, where Theorem E otherwise proves only
-that the replacement support exhausts the source. -/
+ordinary alternative.  At `N = 0` the direct large alternative becomes full
+under the same explicit width hypothesis used by every large branch. -/
 theorem GMOTheoremESourceOutput.full_or_concentrated_of_terminal
     {xs : List A} {seed : Selection xs} {n : ℕ}
     {I : GMOTheoremEInput xs seed n}
     (out : GMOTheoremESourceOutput I)
     (hwide : Nat.card A ≤ seed.card - n + 1)
     (hsourceWide : Nat.card A ≤ xs.length)
-    (hseedProper : seed.card < xs.length)
     (hterminal : out.partition.commonCosetCount out.H ≤ 1) :
     OrdinarySpectrumFull xs n ∨
       Nonempty (OrdinaryGMOConcentration xs) := by
@@ -59,13 +52,9 @@ theorem GMOTheoremESourceOutput.full_or_concentrated_of_terminal
         out.partition.commonCosetCount out.H = 1 := by
     omega
   rcases hcount with hzero | hone
-  · have hsupport :=
-      out.support_eq_univ_of_commonCosetCount_eq_zero hbot hzero
-    have hcard := congrArg Finset.card hsupport
-    rw [out.partition.card_support_eq] at hcard
-    have hseedFull : seed.card = xs.length := by
-      simpa using hcard
-    omega
+  · have hlarge :=
+      out.largeAlternative_of_commonCosetCount_eq_zero hlen hzero
+    exact Or.inl (hlarge.ordinarySpectrumFull hwide)
   · obtain ⟨h21⟩ :=
       out.toProjected.nonempty_theorem21Output_of_count_eq_one
         hbot hproper hone
