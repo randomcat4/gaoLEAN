@@ -116,15 +116,39 @@ theorem selectionMultiplicityAtMost_mono
     SelectionMultiplicityAtMost xs I r := by
   classical
   intro a
-  exact (Finset.card_le_card (Finset.filter_mono hIJ)).trans (hJ a)
+  apply (Finset.card_le_card ?_).trans (hJ a)
+  intro i hi
+  have hi' := Finset.mem_filter.mp hi
+  exact Finset.mem_filter.mpr ⟨hIJ hi'.1, hi'.2⟩
+
+/-- The labelled part of `I` lying in one value fiber. -/
+noncomputable def selectionValueFiber
+    (xs : List A) (I : Selection xs) (a : A) : Selection xs := by
+  classical
+  exact I.filter fun i ↦ occurrenceValue xs i = a
+
+@[simp]
+theorem mem_selectionValueFiber_iff
+    (xs : List A) (I : Selection xs) (a : A) (i : Occurrence xs) :
+    i ∈ selectionValueFiber xs I a ↔
+      i ∈ I ∧ occurrenceValue xs i = a := by
+  classical
+  simp [selectionValueFiber]
 
 theorem selection_eq_biUnion_valueFibers
     (xs : List A) (I : Selection xs) :
     (Finset.univ : Finset A).biUnion
-        (fun a ↦ I.filter fun i ↦ occurrenceValue xs i = a) = I := by
+        (selectionValueFiber xs I) = I := by
   classical
   ext i
-  simp
+  constructor
+  · intro hi
+    obtain ⟨a, _ha, hia⟩ := Finset.mem_biUnion.mp hi
+    exact (mem_selectionValueFiber_iff xs I a i).1 hia |>.1
+  · intro hi
+    apply Finset.mem_biUnion.mpr
+    refine ⟨occurrenceValue xs i, Finset.mem_univ _, ?_⟩
+    exact (mem_selectionValueFiber_iff xs I _ i).2 ⟨hi, rfl⟩
 
 theorem selection_card_le_cappedFiberMass
     (xs : List A) (I : Selection xs) (r : ℕ)
@@ -132,22 +156,25 @@ theorem selection_card_le_cappedFiberMass
     I.card ≤ cappedFiberMass xs r := by
   classical
   have hpair : ((Finset.univ : Finset A) : Set A).PairwiseDisjoint
-      (fun a ↦ I.filter fun i ↦ occurrenceValue xs i = a) := by
+      (selectionValueFiber xs I) := by
     intro a _ha b _hb hab
+    change Disjoint
+      (selectionValueFiber xs I a) (selectionValueFiber xs I b)
     rw [Finset.disjoint_left]
     intro i hia hib
-    have ha := (Finset.mem_filter.mp hia).2
-    have hb := (Finset.mem_filter.mp hib).2
+    have ha := (mem_selectionValueFiber_iff xs I a i).1 hia |>.2
+    have hb := (mem_selectionValueFiber_iff xs I b i).1 hib |>.2
     exact hab (ha.symm.trans hb)
   rw [← selection_eq_biUnion_valueFibers xs I,
     Finset.card_biUnion hpair, cappedFiberMass]
   apply Finset.sum_le_sum
   intro a _ha
-  apply Nat.le_min
-  · exact hcap a
+  apply (Nat.le_min).2
+  constructor
+  · simpa [selectionValueFiber] using hcap a
   · apply Finset.card_le_card
     intro i hi
-    have hi' := Finset.mem_filter.mp hi
+    have hi' := (mem_selectionValueFiber_iff xs I a i).1 hi
     simpa [occurrenceFiber] using hi'.2
 
 /-- The capped mass criterion is sufficient and necessary for an exact-card
@@ -180,7 +207,7 @@ theorem exists_excess_occurrenceFiber_of_cappedFiberMass_lt
     ∃ a : A, r < (occurrenceFiber xs a).card := by
   classical
   by_contra hno
-  push_neg at hno
+  push Not at hno
   have hunivCap : SelectionMultiplicityAtMost xs
       (Finset.univ : Selection xs) r := by
     intro a
@@ -226,3 +253,7 @@ theorem exists_excess_occurrenceFiber_of_no_capped_seed
 
 end GaoLean
 
+#print axioms GaoLean.exists_selection_card_eq_and_multiplicityAtMost_iff
+#print axioms GaoLean.exists_excess_occurrenceFiber_of_cappedFiberMass_lt
+#print axioms GaoLean.exists_capped_seed_or_excess_occurrenceFiber
+#print axioms GaoLean.exists_excess_occurrenceFiber_of_no_capped_seed
