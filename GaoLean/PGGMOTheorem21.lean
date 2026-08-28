@@ -9441,6 +9441,183 @@ theorem FactorForm.exists_reindexed_succ
   exact ⟨sigma, ⟨Wsucc.toFactorForm
     (not_nonempty_trivialConclusion_of_no_sourceOutput hfail')⟩⟩
 
+/-- If the stage-zero tail stabilizer is trivial, the full-layer DGM bound
+is already the scalar CDT conclusion.  Value-injectivity of each labelled
+cell rules out doubled classes modulo `bot`. -/
+theorem nonempty_trivialConclusion_of_tailPeriod_zero_eq_bot
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (P : Theorem21SetPartition xs n seed.card)
+    (hadmissible : GMOReplacementAdmissible I P)
+    (hbot : P.tailPeriod 0 = ⊥) :
+    Nonempty (GMOTheoremETrivialConclusion I) := by
+  classical
+  have hstab : AddAction.stabilizer A (P.sumset : Set A) = ⊥ := by
+    simpa [Theorem21SetPartition.tailPeriod,
+      Theorem21SetPartition.tailSumset,
+      Theorem21SetPartition.tailValueCells,
+      Theorem21SetPartition.sumset] using hbot
+  have hno : ∀ x : A, ¬ P.IsHDoubledException
+      (AddAction.stabilizer A (P.sumset : Set A)) x := by
+    intro x hx
+    obtain ⟨_hex, q, hxq, y, hyq, hyx, hyquot⟩ := hx
+    have hyxEq : y = x := by
+      apply sub_eq_zero.mp
+      have hsub := QuotientAddGroup.eq_iff_sub_mem.mp hyquot
+      rw [hstab] at hsub
+      simpa using hsub
+    exact hyx hyxEq
+  have hcard := P.theoremE_card_lower_of_no_doubled hno
+  let out : GMOTheoremEOutput xs seed n := {
+    partition := P
+    H := ⊥
+    periodic := bot_le
+    card_lower := by simpa [hstab] using hcard
+    unused_in_core := by intro h; exact (h rfl).elim
+  }
+  have hlen : n ≤ seed.card := by
+    have hmass := length_le_sum_layer_card P.valueCells
+      P.valueCells_nonempty
+    rw [P.length_valueCells] at hmass
+    simpa [Theorem21SetPartition.valueCells, List.map_ofFn,
+      List.sum_ofFn, P.sum_card_valueCell] using hmass
+  exact ⟨{
+    partition := P
+    admissible := hadmissible
+    card_lower := out.card_lower_of_H_eq_bot rfl hlen
+  }⟩
+
+/-- Under failure of the literal source theorem, Definition 1 supplies the
+honest zero-factor base whenever at least two cells are present. -/
+theorem exists_factorForm_zero_of_no_sourceOutput
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (htwo : 2 ≤ n)
+    (hfail : ¬ Nonempty (GMOTheoremESourceOutput I)) :
+    Nonempty (FactorForm I 0) := by
+  classical
+  obtain ⟨previous, valid⟩ := exists_definition1InitialStateUnder I
+  obtain ⟨next, P, step⟩ := exists_definition1Transition 0 previous
+  have hPadmissible : GMOReplacementAdmissible I P :=
+    ((valid.mem_upsilon_iff P).1 step.F_mem_previous).1
+  have hPtail : P.tailSumset 0 = previous.chosen.tailSumset 0 :=
+    step.F_tail_fixed
+  have hPperiod : P.tailPeriod 0 =
+      previous.chosen.tailPeriod 0 := by
+    unfold Theorem21SetPartition.tailPeriod
+    rw [hPtail]
+  have hbot : P.tailPeriod 0 ≠ ⊥ := by
+    intro hb
+    apply hfail
+    exact (nonempty_trivialConclusion_of_tailPeriod_zero_eq_bot
+      P hPadmissible hb).elim fun trivial ↦ ⟨trivial.toSourceOutput⟩
+  have htop : P.tailPeriod 0 ≠ ⊤ := by
+    intro ht
+    exact hfail (nonempty_gmoTheoremESourceOutput_of_tailPeriod_eq_top
+      P hPadmissible ht)
+  let W : WeakFactorForm I 0 := {
+    range := by omega
+    partition := P
+    admissible := hPadmissible
+    previous := previous
+    chain := Definition1SourceChain.initial previous valid
+    next := next
+    F := P
+    transition := step
+    partition_inLambda :=
+      ⟨step.F_mem_previous, step.F_tail_fixed, rfl⟩
+    tail_actual := by
+      intro r hr
+      have hr0 : r = 0 := by omega
+      subst r
+      exact ⟨bot_lt_iff_ne_bot.mpr hbot, lt_top_iff_ne_top.mpr htop⟩
+    leading_exception := by
+      intro c hc
+      omega
+  }
+  exact ⟨W.toFactorForm
+    (not_nonempty_trivialConclusion_of_no_sourceOutput hfail)⟩
+
+/-- Iterating the proved Lemma-5 successor strictly decreases the remaining
+tail length, so a factor form cannot coexist with failure of the literal
+source output.  Every reindexing step transports failure by inverse
+reindexing the hypothetical output. -/
+theorem FactorForm.false_of_no_sourceOutput
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (F : FactorForm I rho)
+    (hfail : ¬ Nonempty (GMOTheoremESourceOutput I)) : False := by
+  obtain ⟨sigma, ⟨Fs⟩⟩ := F.exists_reindexed_succ hfail
+  have hfail' : ¬ Nonempty
+      (GMOTheoremESourceOutput (I.reindex sigma)) := by
+    rintro ⟨out⟩
+    exact hfail ⟨out.inverseReindex sigma⟩
+  exact Fs.false_of_no_sourceOutput hfail'
+termination_by n - rho
+decreasing_by
+  have := F.range
+  omega
+
+omit [Fintype A] in
+/-- For one cell the full-layer sumset is that cell itself, whose value map
+is injective on exactly the selected labelled occurrences. -/
+theorem nonempty_trivialConclusion_of_n_eq_one
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    (I : GMOTheoremEInput xs seed n) (hn : n = 1) :
+    Nonempty (GMOTheoremETrivialConclusion I) := by
+  classical
+  subst n
+  let q : Fin 1 := ⟨0, by omega⟩
+  have htailOne : I.initial.tailSumset 1 = ({0} : Finset A) := by
+    simp [Theorem21SetPartition.tailSumset,
+      Theorem21SetPartition.tailValueCells,
+      Theorem21SetPartition.valueCells, fullLayerSumSpectrum]
+  have hsumset : I.initial.sumset = I.initial.valueCell q := by
+    have hrec := I.initial.tailSumset_eq_valueCell_add_succ q
+    rw [htailOne] at hrec
+    change I.initial.tailSumset 0 =
+      I.initial.valueCell q + (0 : Finset A) at hrec
+    have htailZero : I.initial.tailSumset 0 = I.initial.sumset := by
+      simp [Theorem21SetPartition.tailSumset,
+        Theorem21SetPartition.tailValueCells,
+        Theorem21SetPartition.sumset]
+    rw [htailZero, add_zero] at hrec
+    exact hrec
+  have hcellCard : (I.initial.valueCell q).card = seed.card := by
+    have hsum := I.initial.sum_card_valueCell
+    have hq : q = (0 : Fin 1) := by
+      apply Fin.ext
+      rfl
+    rw [hq]
+    simpa using hsum
+  have hseedPos : 0 < seed.card := by
+    rw [← hcellCard]
+    exact Finset.card_pos.mpr (I.initial.valueCells_nonempty
+      (I.initial.valueCell q) (by
+        rw [Theorem21SetPartition.valueCells]
+        exact List.mem_ofFn.mpr ⟨q, rfl⟩))
+  refine ⟨{
+    partition := I.initial
+    admissible := I.initial_admissible
+    card_lower := ?_
+  }⟩
+  rw [hsumset, hcellCard]
+  omega
+
+/-- The source-faithful ordinary Theorem E, now with no provider or external
+boundary: the one-cell case is direct, while every larger positive `n`
+would otherwise generate an impossible finite chain of factor forms. -/
+theorem gmoTheoremESourceStatement : GMOTheoremESourceStatement A := by
+  intro xs seed n I hn
+  by_contra hfail
+  have hfail' : ¬ Nonempty (GMOTheoremESourceOutput I) := hfail
+  by_cases hone : n = 1
+  · exact hfail' ((nonempty_trivialConclusion_of_n_eq_one I hone).map
+      GMOTheoremETrivialConclusion.toSourceOutput)
+  · have htwo : 2 ≤ n := by omega
+    obtain ⟨F0⟩ := exists_factorForm_zero_of_no_sourceOutput htwo hfail'
+    exact F0.false_of_no_sourceOutput hfail'
+
 /-- Honest proved DGM endpoint for a source whose own occurrences already
 satisfy the setpartition criterion.  This is strictly weaker than Theorem
 2.1: it does not perform the replacement/structural induction, but it does
