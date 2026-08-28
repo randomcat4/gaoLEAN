@@ -5,9 +5,8 @@ import GaoLean.PGGMOClaimBQuotientLargeNonfull
 # Honest recursive data for the padded Claim-B quotient
 
 This module packages only the conditions that follow from the genuine
-quotient ledger.  The proper parent branch is explicit: it is exactly what
-makes the quotient nontrivial and hence makes the padded source strictly
-longer than its genuine seed.
+quotient ledger.  The proper parent branch is explicit: it makes the quotient
+nontrivial and hence makes its canonical `d*` positive.
 
 The large-alternative width inequality is deliberately absent.  After the
 exact seed-cardinality rewrite it is `|A/K| ≤ e + 1`, which is independent
@@ -29,9 +28,9 @@ noncomputable local instance quotientRecursiveInputFintype
 /-- Exact decomposition of the padded source length into its genuine seed
 and the artificial zero suffix. -/
 theorem OrdinaryGMOClaimBOutput.length_paddedQuotientRValues_eq_seed_add
-    {xs : List A} {seed : Selection xs} {n dQ : ℕ}
+    {xs : List A} {seed : Selection xs} {n : ℕ}
     (W : OrdinaryGMOClaimBOutput xs seed n)
-    (hzero : dQ ≤ (W.quotientFiber 0).card) :
+    (hzero : pGroupDStar (A ⧸ W.K) ≤ (W.quotientFiber 0).card) :
     (W.paddedQuotientRValues hzero).length =
       (W.paddedQuotientRSeed hzero).card +
         (Nat.card (A ⧸ W.K) - 1) := by
@@ -41,9 +40,9 @@ theorem OrdinaryGMOClaimBOutput.length_paddedQuotientRValues_eq_seed_add
 /-- Equivalently, removing the genuine seed leaves exactly `|A/K|-1`
 artificial positions. -/
 theorem OrdinaryGMOClaimBOutput.length_paddedQuotientRValues_sub_seed
-    {xs : List A} {seed : Selection xs} {n dQ : ℕ}
+    {xs : List A} {seed : Selection xs} {n : ℕ}
     (W : OrdinaryGMOClaimBOutput xs seed n)
-    (hzero : dQ ≤ (W.quotientFiber 0).card) :
+    (hzero : pGroupDStar (A ⧸ W.K) ≤ (W.quotientFiber 0).card) :
     (W.paddedQuotientRValues hzero).length -
         (W.paddedQuotientRSeed hzero).card =
       Nat.card (A ⧸ W.K) - 1 := by
@@ -54,11 +53,12 @@ theorem OrdinaryGMOClaimBOutput.length_paddedQuotientRValues_sub_seed
 consequence of padding: it asks for `|A/K| ≤ e+1`, not for a source-length
 bound. -/
 theorem OrdinaryGMOClaimBOutput.paddedQuotientR_largeWidth_iff
-    {xs : List A} {seed : Selection xs} {n dQ : ℕ}
+    {xs : List A} {seed : Selection xs} {n : ℕ}
     (W : OrdinaryGMOClaimBOutput xs seed n)
-    (hzero : dQ ≤ (W.quotientFiber 0).card) :
+    (hzero : pGroupDStar (A ⧸ W.K) ≤ (W.quotientFiber 0).card) :
     Nat.card (A ⧸ W.K) ≤
-        (W.paddedQuotientRSeed hzero).card - dQ + 1 ↔
+        (W.paddedQuotientRSeed hzero).card -
+            pGroupDStar (A ⧸ W.K) + 1 ↔
       Nat.card (A ⧸ W.K) ≤ W.quotientRExceptionCount + 1 := by
   rw [W.card_paddedQuotientRSeed hzero]
   omega
@@ -72,31 +72,30 @@ structure OrdinaryGMOClaimBQuotientRecursiveInput
   oddPrime : p ≠ 2
   quotientPGroup : IsPGroup p (Multiplicative (A ⧸ W.K))
   quotientCardLt : Nat.card (A ⧸ W.K) < Nat.card A
-  dQPos : 1 ≤ pGroupDStar W.K
+  dQPos : 1 ≤ pGroupDStar (A ⧸ W.K)
   zeroCapacity :
-    pGroupDStar W.K ≤ (W.quotientFiber 0).card
+    pGroupDStar (A ⧸ W.K) ≤ (W.quotientFiber 0).card
   seedCardLower :
-    pGroupDStar W.K ≤
+    pGroupDStar (A ⧸ W.K) ≤
       (W.paddedQuotientRSeed zeroCapacity).card
   seedMultiplicity :
     SelectionMultiplicityAtMost
       (W.paddedQuotientRValues zeroCapacity)
       (W.paddedQuotientRSeed zeroCapacity)
-      (pGroupDStar W.K)
+      (pGroupDStar (A ⧸ W.K))
   theoremEInput : Nonempty
     (GMOTheoremEInput
       (W.paddedQuotientRValues zeroCapacity)
       (W.paddedQuotientRSeed zeroCapacity)
-      (pGroupDStar W.K))
+      (pGroupDStar (A ⧸ W.K)))
   sourceWide :
     Nat.card (A ⧸ W.K) ≤
       (W.paddedQuotientRValues zeroCapacity).length
   recursiveSourceLength :
-    pGroupDStar W.K + Nat.card (A ⧸ W.K) - 1 ≤
+    pGroupDStar (A ⧸ W.K) + Nat.card (A ⧸ W.K) - 1 ≤
       (W.paddedQuotientRValues zeroCapacity).length
-  seedStrictSource :
-    (W.paddedQuotientRSeed zeroCapacity).card <
-      (W.paddedQuotientRValues zeroCapacity).length
+  liftBudget :
+    pGroupDStar W.K + pGroupDStar (A ⧸ W.K) ≤ n
 
 /-- The proper Claim-B branch and the low quotient-multiplicity ledger
 construct every field of the honest recursive package. -/
@@ -106,14 +105,19 @@ theorem OrdinaryGMOClaimBOutput.nonempty_quotientRecursiveInput
     {xs : List A} {seed : Selection xs} {n : ℕ}
     (W : OrdinaryGMOClaimBOutput xs seed n)
     (hproper : W.K < ⊤)
-    (hzero : pGroupDStar W.K ≤ (W.quotientFiber 0).card)
+    (hambient : pGroupDStar A ≤ n)
+    (hzero : pGroupDStar (A ⧸ W.K) ≤ (W.quotientFiber 0).card)
     (hlow : ∀ z : A ⧸ W.K, z ≠ 0 →
-      (W.quotientFiber z).card ≤ pGroupDStar W.K) :
+      (W.quotientFiber z).card ≤ pGroupDStar (A ⧸ W.K)) :
     Nonempty (OrdinaryGMOClaimBQuotientRecursiveInput p W) := by
-  let dQ : ℕ := pGroupDStar W.K
+  let dQ : ℕ := pGroupDStar (A ⧸ W.K)
+  letI : Nontrivial (A ⧸ W.K) :=
+    W.nontrivial_quotient_of_ne_top (ne_of_lt hproper)
   have hdQPos : 1 ≤ dQ := by
     dsimp [dQ]
-    exact one_le_pGroupDStar_of_addSubgroup_ne_bot W.K W.nontrivial
+    have hgt := one_lt_ordinaryDavenportValue (B := A ⧸ W.K)
+    have hrecover := pGroupDStar_add_one (A ⧸ W.K)
+    omega
   have hseedLower : dQ ≤ (W.paddedQuotientRSeed hzero).card :=
     W.dQ_le_card_paddedQuotientRSeed hzero
   have hmultiplicity : SelectionMultiplicityAtMost
@@ -126,8 +130,6 @@ theorem OrdinaryGMOClaimBOutput.nonempty_quotientRecursiveInput
         (W.paddedQuotientRSeed hzero) dQ) :=
     W.nonempty_gmoTheoremEInput_paddedQuotientR hzero hlow
   have hqPos : 0 < Nat.card (A ⧸ W.K) := Nat.card_pos
-  have hqTwo : 2 ≤ Nat.card (A ⧸ W.K) :=
-    two_le_natCard_quotient_of_lt_top W.K hproper
   have hsourceWide : Nat.card (A ⧸ W.K) ≤
       (W.paddedQuotientRValues hzero).length := by
     rw [W.length_paddedQuotientRValues hzero]
@@ -137,10 +139,10 @@ theorem OrdinaryGMOClaimBOutput.nonempty_quotientRecursiveInput
         (W.paddedQuotientRValues hzero).length := by
     rw [W.length_paddedQuotientRValues hzero]
     omega
-  have hseedStrict : (W.paddedQuotientRSeed hzero).card <
-      (W.paddedQuotientRValues hzero).length := by
-    rw [W.length_paddedQuotientRValues_eq_seed_add hzero]
-    omega
+  have hliftBudget : pGroupDStar W.K + dQ ≤ n := by
+    have hconv := pGroupDStar_subgroup_quotient_le W.K
+    dsimp [dQ]
+    exact hconv.trans hambient
   refine ⟨{
     prime := hp
     oddPrime := hpTwo
@@ -153,14 +155,14 @@ theorem OrdinaryGMOClaimBOutput.nonempty_quotientRecursiveInput
     theoremEInput := ?_
     sourceWide := ?_
     recursiveSourceLength := ?_
-    seedStrictSource := ?_
+    liftBudget := ?_
   }⟩
   · simpa [dQ] using hseedLower
   · simpa [dQ] using hmultiplicity
   · simpa [dQ] using hinput
   · exact hsourceWide
   · simpa [dQ] using hrecursiveLength
-  · exact hseedStrict
+  · simpa [dQ] using hliftBudget
 
 end GaoLean
 
