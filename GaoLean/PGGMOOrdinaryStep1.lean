@@ -46,7 +46,8 @@ theorem exists_nonempty_zeroSum_finset_subset
       inj' := by
         intro i j hij
         apply Fin.ext
-        exact R.nodup_toList.injective_get hij }
+        exact congrArg (fun q : Fin R.toList.length => q.val)
+          (R.nodup_toList.injective_get hij) }
   let J : Finset X := I.map source
   have hsource_mem (i : Occurrence w) : source i ∈ R := by
     exact Finset.mem_toList.mp (List.get_mem R.toList _)
@@ -117,14 +118,14 @@ theorem exists_zeroSum_padded_selection
   obtain ⟨F, hFsub, hFcard⟩ :=
     Finset.exists_subset_card_eq (s := reserve) hk
   have hIF : Disjoint I F :=
-    (Finset.Disjoint.mono hIsub hFsub hdis)
+    hdis.mono hIsub hFsub
   refine ⟨I ∪ F, ?_, ?_, ?_⟩
   · exact Finset.union_subset
       (hIsub.trans (Finset.subset_union_left))
       (hFsub.trans (Finset.subset_union_right))
   · rw [Finset.card_union_of_disjoint hIF, hFcard]
     dsimp only [k]
-    exact Nat.sub_add_cancel (Finset.card_le_card hIsub)
+    exact Nat.add_sub_of_le (Finset.card_le_card hIsub)
   · rw [Finset.sum_union hIF, hIz]
     have hFz : (∑ x ∈ F, f x) = 0 := by
       apply Finset.sum_eq_zero
@@ -175,6 +176,7 @@ theorem exists_package {xs : List A} (C : OrdinaryGMOStep1Core xs) :
     dsimp only [available]
     rw [Finset.card_sdiff, Finset.inter_eq_left.mpr C.core_subset_container]
   have hconv := pGroupDStar_subgroup_quotient_le C.H
+  have hcontainer := C.container_card_lower
   have hqAvail : pGroupDStar (A ⧸ C.H) ≤ available.card := by
     rw [havailCard, C.core_card]
     omega
@@ -216,13 +218,14 @@ theorem nonempty_target {xs : List A} (P : OrdinaryGMOStep1Package xs)
   let dQ := pGroupDStar (A ⧸ P.H)
   let used : Selection xs := P.core ∪ P.reserve
   let available : Selection xs := Finset.univ \ used
-  have hHn : Nat.card P.H ≤ n :=
-    (natCard_addSubgroup_le_ambient P.H).trans hnA
+  have hHcard : Nat.card P.H ≤ Nat.card A :=
+    Nat.card_le_card_of_injective (fun x : P.H => (x.1 : A))
+      (fun x y hxy => Subtype.ext hxy)
+  have hHn : Nat.card P.H ≤ n := hHcard.trans hnA
   have husedDis : Disjoint P.core P.reserve := P.disjoint_core_reserve
   have husedCard : used.card = Nat.card P.H + dH + dQ := by
     rw [show used = P.core ∪ P.reserve by rfl,
       Finset.card_union_of_disjoint husedDis, P.core_card, P.reserve_card]
-    rfl
   have havailableCard : available.card = xs.length - used.card := by
     dsimp only [available]
     rw [Finset.card_sdiff_of_subset (Finset.subset_univ used)]
@@ -261,17 +264,16 @@ theorem nonempty_target {xs : List A} (P : OrdinaryGMOStep1Package xs)
     · exact (Finset.disjoint_left.mp husedDis) hiCore hiReserve
   let tailSum : A := ∑ i ∈ tail, occurrenceValue xs i
   have htailMem : tailSum - tail.card • P.beta ∈ P.H := by
-    apply QuotientAddGroup.eq_zero_iff.mp
     have hq : QuotientAddGroup.mk' P.H
         (tailSum - tail.card • P.beta) = 0 := by
       simpa [qvalue, quotientDisplacement, tailSum,
         Finset.sum_sub_distrib] using htailQSum
-    exact hq
+    exact (QuotientAddGroup.eq_zero_iff _).1 hq
   obtain ⟨coreSel, hcoreSub, hcoreCard, hcoreSum⟩ :=
     P.core_full (-(tailSum - tail.card • P.beta))
       (P.H.neg_mem htailMem)
   have hcoreTail : Disjoint coreSel tail :=
-    Finset.Disjoint.mono hcoreSub (Finset.Subset.rfl) htailCore
+    htailCore.mono_left hcoreSub
   refine ⟨{
     selected := coreSel ∪ tail
     card_selected := ?_
