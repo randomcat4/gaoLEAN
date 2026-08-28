@@ -102,7 +102,7 @@ theorem OrdinaryGMOClaimBOutput.map_quotientFiber_eq_sourceQuotientFiber
     refine ⟨q, ?_, hqi⟩
     apply (W.mem_quotientFiber_iff z q).2
     rw [W.occurrenceValue_quotientDisplacementSequence q]
-    change W.centeredQuotientValue (W.quotientSourceOccurrence q) = z
+    change W.centeredQuotientValue (W.quotientSourceEmbedding q) = z
     rw [hqi]
     exact hiEq
 
