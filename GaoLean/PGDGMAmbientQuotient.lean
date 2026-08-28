@@ -359,6 +359,22 @@ theorem rawDgmCappedMultiplicitySum_image_quotient_eq
   unfold rawDgmCappedMultiplicitySum dgmCappedMultiplicitySum
   simp_rw [rawLayerMultiplicity_image_quotient_eq J P]
 
+/-- Instance-polymorphic form of the preceding equality.  This is useful
+inside a theorem whose quotient `Fintype` instance is already fixed by a
+projected pattern. -/
+theorem rawDgmCappedMultiplicitySum_image_quotient_eq'
+    [Fintype A] (J : AddSubgroup A) [Fintype (A ⧸ J)]
+    [DecidableEq (A ⧸ J)] (P : List (Finset A)) (n : ℕ) :
+    rawDgmCappedMultiplicitySum
+        (P.map fun B ↦ B.image (QuotientAddGroup.mk' J)) n =
+      dgmCappedMultiplicitySum J P n := by
+  classical
+  unfold rawDgmCappedMultiplicitySum dgmCappedMultiplicitySum
+  simp_rw [rawLayerMultiplicity_image_quotient_eq J P]
+  congr 1
+  ext z
+  simp
+
 /-- Pointwise pattern-subgroup incidence is unchanged by the ambient
 quotient, after identifying `(A/J)/(K/J)` with `A/K`. -/
 theorem quotientLayerMultiplicity_image_ambientQuotient_eq
@@ -469,5 +485,118 @@ theorem natCard_mul_natCard_map_quotient
   have hc : Nat.card K = Nat.card Kbar * Nat.card J :=
     Nat.mul_left_cancel Nat.card_pos hmul
   exact (Nat.mul_comm _ _).trans hc.symm
+
+/-- `Finset.image` is propositionally independent of the chosen
+`DecidableEq` instance on its codomain. -/
+theorem finset_image_eq_of_decidableEq
+    {X Y : Type*} (d₁ d₂ : DecidableEq Y) (f : X → Y) (s : Finset X) :
+    @Finset.image X Y d₁ f s = @Finset.image X Y d₂ f s := by
+  ext y
+  simp
+
+/-- Lift the generalized DGM inequality from the quotient by the complete
+stabilizer of its target spectrum.  No combinatorial DGM input is hidden
+here: the sole substantive premise is the already-proved quotient bound.
+-/
+theorem dgmPatternBound_of_ambientStabilizerQuotient
+    [Fintype A] (J K : AddSubgroup A) [Fintype (A ⧸ J)]
+    [DecidableEq (A ⧸ J)] [Fintype (A ⧸ K)]
+    [DecidableEq (A ⧸ K)]
+    [Fintype ((A ⧸ J) ⧸ K.map (QuotientAddGroup.mk' J))]
+    [DecidableEq ((A ⧸ J) ⧸ K.map (QuotientAddGroup.mk' J))]
+    (hJK : J ≤ K) (P : List (Finset A)) {n : ℕ}
+    (mu : QuotientPattern K n)
+    (hT : (patternSubsumSpectrum P mu).Nonempty)
+    (hJ : J = AddAction.stabilizer A
+      (patternSubsumSpectrum P mu : Set A))
+    (hQ : DGMPatternBound
+      (P.map fun B ↦ B.image (QuotientAddGroup.mk' J))
+      (mu.ambientQuotient J K hJK)) :
+    DGMPatternBound P mu := by
+  classical
+  subst J
+  let J : AddSubgroup A := AddAction.stabilizer A
+    (patternSubsumSpectrum P mu : Set A)
+  let T : Finset A := patternSubsumSpectrum P mu
+  let qJ : A →+ A ⧸ J := QuotientAddGroup.mk' J
+  let q0 : A →+ A ⧸ AddAction.stabilizer A
+      (patternSubsumSpectrum P mu : Set A) :=
+    QuotientAddGroup.mk' _
+  let Pbar : List (Finset (A ⧸ J)) :=
+    P.map fun B ↦ B.image qJ
+  let Kbar : AddSubgroup (A ⧸ J) := K.map qJ
+  let mubar : QuotientPattern Kbar n := mu.ambientQuotient J K hJK
+  let Tbar : Finset (A ⧸ J) := patternSubsumSpectrum Pbar mubar
+  have hspec : Tbar = T.image qJ := by
+    simpa [T, Tbar, Pbar, Kbar, mubar, qJ] using
+      (image_patternSubsumSpectrum_ambientQuotient
+        J K hJK P mu).symm
+  have hTbar : Tbar.Nonempty := by
+    rw [hspec]
+    exact hT.image qJ
+  have himageEq : T.image qJ = T.image q0 := by
+    ext z
+    simp [T, qJ, q0, J]
+  have hdec : (inferInstance : DecidableEq
+      (A ⧸ AddAction.stabilizer A
+        (patternSubsumSpectrum P mu : Set A))) =
+      QuotientAddGroup.instDecidableEqQuotientAddSubgroupOfDecidablePredMem _ :=
+    Subsingleton.elim _ _
+  cases hdec
+  have hTbarStab : Tbar.addStab = {0} := by
+    change Tbar.addStab = (0 : Finset (A ⧸ J))
+    rw [hspec, himageEq]
+    have himage := Finset.addStab_image_coe_quotient hT
+    simpa [T, q0, J] using himage
+  have hTbarGroupCard :
+      Nat.card (AddAction.stabilizer (A ⧸ J) (Tbar : Set (A ⧸ J))) = 1 := by
+    rw [← card_addStab_eq_natCard_stabilizer Tbar hTbar, hTbarStab]
+    simp
+  have hTbarCap : stabilizerDgmCappedMultiplicitySum Tbar Pbar n =
+      rawDgmCappedMultiplicitySum Pbar n :=
+    dgmStabilizerCappedMultiplicitySum_eq_raw_of_addStab_eq_singleton
+      Tbar hTbar hTbarStab Pbar n
+  have hraw : rawDgmCappedMultiplicitySum Pbar n =
+      dgmCappedMultiplicitySum J P n := by
+    simpa [Pbar, qJ] using
+      rawDgmCappedMultiplicitySum_image_quotient_eq' J P n
+  have hKcap : dgmCappedMultiplicitySum Kbar Pbar n =
+      dgmCappedMultiplicitySum K P n := by
+    simpa [Kbar, Pbar, qJ] using
+      dgmCappedMultiplicitySum_image_ambientQuotient_eq J K hJK P n
+  have hTcap : stabilizerDgmCappedMultiplicitySum T P n =
+      dgmCappedMultiplicitySum J P n := by
+    have h := (dgmCappedMultiplicitySum_stabilizer_eq T P n).symm
+    simpa [T, J] using h
+  have hTcard : Nat.card J * Tbar.card = T.card := by
+    rw [hspec, himageEq]
+    have h := natCard_stabilizer_mul_card_image_quotient T hT
+    simpa [T, J, q0] using h
+  have hKcard : Nat.card J * Nat.card Kbar = Nat.card K := by
+    simpa [Kbar, qJ] using natCard_mul_natCard_map_quotient J K hJK
+  unfold DGMPatternBound at hQ
+  dsimp only at hQ
+  have hQ' : Nat.card
+        (AddAction.stabilizer (A ⧸ J) (Tbar : Set (A ⧸ J))) *
+      (stabilizerDgmCappedMultiplicitySum Tbar Pbar n - n + 1) ≤
+        Tbar.card + Nat.card Kbar *
+          (dgmCappedMultiplicitySum Kbar Pbar n - n) := by
+    simpa [Tbar, mubar, Kbar, Pbar, qJ, J] using hQ
+  rw [hTbarGroupCard, one_mul, hTbarCap, hraw, hKcap] at hQ'
+  have hmul := Nat.mul_le_mul_left (Nat.card J) hQ'
+  unfold DGMPatternBound
+  dsimp only
+  change Nat.card (AddAction.stabilizer A (T : Set A)) *
+      (stabilizerDgmCappedMultiplicitySum T P n - n + 1) ≤
+        T.card + Nat.card K * (dgmCappedMultiplicitySum K P n - n)
+  rw [hTcap]
+  calc
+    Nat.card J * (dgmCappedMultiplicitySum J P n - n + 1) ≤
+        Nat.card J *
+          (Tbar.card + Nat.card Kbar *
+            (dgmCappedMultiplicitySum K P n - n)) := hmul
+    _ = T.card + Nat.card K *
+          (dgmCappedMultiplicitySum K P n - n) := by
+      rw [Nat.mul_add, hTcard, ← Nat.mul_assoc, hKcard]
 
 end GaoLean

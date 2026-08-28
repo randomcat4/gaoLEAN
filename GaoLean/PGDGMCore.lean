@@ -9036,6 +9036,328 @@ theorem dgmPatternBound_full_of_singleton_quotient
   rw [← card_addStab_eq_natCard_stabilizer _ hfullTarget]
   simpa [fullLayerSumSpectrum, Nat.mul_comm] using hfull
 
+/-! ### The full-weight convergent branch -/
+
+/-- Restrict each selected labelled layer to the `K`-coset of the value
+chosen by `h`.  Unselected layers are represented by an empty layer.  In the
+full-weight branch there are no unselected layers, but defining the object on
+all choices makes its occurrence bookkeeping structural. -/
+noncomputable def LayerSubsumChoice.cosetSliceLayers
+    (K : AddSubgroup A) [DecidableEq (A ⧸ K)] :
+    {P : List (Finset A)} → {n : ℕ} → {y : A} →
+      LayerSubsumChoice P n y → List (Finset A)
+  | P, _, _, .zero _ => P.map fun _ ↦ ∅
+  | _, _, _, .skip h => ∅ :: h.cosetSliceLayers K
+  | _, _, _, .take (B := B) (b := b) _ h =>
+      dgmCosetSlice K B b :: h.cosetSliceLayers K
+
+@[simp]
+theorem LayerSubsumChoice.length_cosetSliceLayers
+    (K : AddSubgroup A) [DecidableEq (A ⧸ K)]
+    {P : List (Finset A)} {n : ℕ} {y : A}
+    (h : LayerSubsumChoice P n y) :
+    (h.cosetSliceLayers K).length = P.length := by
+  induction h with
+  | zero P => simp [LayerSubsumChoice.cosetSliceLayers]
+  | skip h ih => simp [LayerSubsumChoice.cosetSliceLayers, ih]
+  | take _ h ih => simp [LayerSubsumChoice.cosetSliceLayers, ih]
+
+/-- The sliced list is occurrence-by-occurrence contained in the source
+list.  No layer is deduplicated. -/
+theorem LayerSubsumChoice.cosetSliceLayers_forall₂_subset
+    (K : AddSubgroup A) [DecidableEq (A ⧸ K)]
+    {P : List (Finset A)} {n : ℕ} {y : A}
+    (h : LayerSubsumChoice P n y) :
+    List.Forall₂ (· ⊆ ·) (h.cosetSliceLayers K) P := by
+  induction h with
+  | zero P =>
+      induction P with
+      | nil => simp [LayerSubsumChoice.cosetSliceLayers]
+      | cons B P ih =>
+          have ih' : List.Forall₂ (· ⊆ ·)
+              (List.replicate P.length (∅ : Finset A)) P := by
+            simpa [LayerSubsumChoice.cosetSliceLayers] using ih
+          simpa [LayerSubsumChoice.cosetSliceLayers] using
+            List.Forall₂.cons (show (∅ : Finset A) ⊆ B by simp) ih'
+  | @skip B P n y h ih =>
+      exact List.Forall₂.cons (by simp) ih
+  | @take B P n b y hb h ih =>
+      exact List.Forall₂.cons (dgmCosetSlice_subset K B b) ih
+
+/-- Every proof-relevant choice transports through a layerwise enlargement.
+This is the list-level counterpart of `patternSubsumSpectrum_cons_mono`. -/
+theorem LayerSubsumChoice.exists_mono_of_forall₂
+    (K : AddSubgroup A) [DecidableEq (A ⧸ K)]
+    {P Q : List (Finset A)}
+    (hPQ : List.Forall₂ (· ⊆ ·) P Q)
+    {n : ℕ} {y : A} (h : LayerSubsumChoice P n y) :
+    ∃ h' : LayerSubsumChoice Q n y,
+      ∀ q : A ⧸ K, h'.quotientMultiplicity K q =
+        h.quotientMultiplicity K q := by
+  induction hPQ generalizing n y with
+  | nil =>
+      cases h
+      exact ⟨LayerSubsumChoice.zero [], by simp [quotientMultiplicity]⟩
+  | @cons B C P Q hBC hPQ ih =>
+      cases h with
+      | zero =>
+          exact ⟨LayerSubsumChoice.zero (C :: Q), by
+            simp [quotientMultiplicity]⟩
+      | skip htail =>
+          obtain ⟨h', hmult⟩ := ih htail
+          exact ⟨LayerSubsumChoice.skip h', by
+            intro q
+            simpa [quotientMultiplicity] using hmult q⟩
+      | take hb htail =>
+          obtain ⟨h', hmult⟩ := ih htail
+          exact ⟨LayerSubsumChoice.take (hBC hb) h', by
+            intro q
+            simp only [quotientMultiplicity]
+            rw [hmult q]⟩
+
+/-- Prescribed-pattern spectra are monotone under aligned, labelled cell
+enlargement. -/
+theorem patternSubsumSpectrum_mono_of_forall₂
+    {K : AddSubgroup A} {n : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    {P Q : List (Finset A)} (hPQ : List.Forall₂ (· ⊆ ·) P Q)
+    (mu : QuotientPattern K n) :
+    patternSubsumSpectrum P mu ⊆ patternSubsumSpectrum Q mu := by
+  intro z hz
+  obtain ⟨⟨h, hmu⟩⟩ := (mem_patternSubsumSpectrum_iff P mu z).1 hz
+  obtain ⟨h', hmult⟩ := h.exists_mono_of_forall₂ K hPQ
+  exact (mem_patternSubsumSpectrum_iff Q mu z).2 ⟨⟨h', by
+    intro q
+    exact (hmult q).trans (hmu q)⟩⟩
+
+/-- A literal slice of a layer through a selected value meets exactly that
+one quotient coset. -/
+theorem quotientLayer_dgmCosetSlice_eq_singleton
+    (K : AddSubgroup A) [DecidableEq (A ⧸ K)]
+    (B : Finset A) {b : A} (hb : b ∈ B) :
+    quotientLayer K (dgmCosetSlice K B b) = {(b : A ⧸ K)} := by
+  ext q
+  simp only [Finset.mem_singleton]
+  constructor
+  · intro hq
+    obtain ⟨x, hx, hxq⟩ := (mem_quotientLayer_iff K _ q).1 hq
+    have hxb := (mem_dgmCosetSlice_iff K B b x).1 hx
+    exact hxq.symm.trans hxb.2
+  · intro hq
+    subst q
+    exact (mem_quotientLayer_iff K _ _).2
+      ⟨b, mem_dgmCosetSlice_self K B hb, rfl⟩
+
+/-- The original choice itself survives in its occurrence-labelled slice
+list, with exactly the same quotient multiplicities. -/
+theorem LayerSubsumChoice.exists_choice_cosetSliceLayers
+    (K : AddSubgroup A) [DecidableEq (A ⧸ K)]
+    {P : List (Finset A)} {n : ℕ} {y : A}
+    (h : LayerSubsumChoice P n y) :
+    ∃ h' : LayerSubsumChoice (h.cosetSliceLayers K) n y,
+      ∀ q : A ⧸ K, h'.quotientMultiplicity K q =
+        h.quotientMultiplicity K q := by
+  induction h with
+  | zero P =>
+      exact ⟨LayerSubsumChoice.zero _, by simp [quotientMultiplicity]⟩
+  | @skip B P n y h ih =>
+      obtain ⟨h', hmult⟩ := ih
+      exact ⟨LayerSubsumChoice.skip h', by
+        intro q
+        simpa [quotientMultiplicity] using hmult q⟩
+  | @take B P n b y hb h ih =>
+      obtain ⟨h', hmult⟩ := ih
+      exact ⟨LayerSubsumChoice.take
+          (mem_dgmCosetSlice_self K B hb) h', by
+        intro q
+        simp only [quotientMultiplicity]
+        rw [hmult q]⟩
+
+/-- At full weight every slice layer is nonempty: a skipped labelled layer
+would contradict `n = P.length`. -/
+theorem LayerSubsumChoice.isNonemptySetPartition_cosetSliceLayers_of_full
+    (K : AddSubgroup A) [DecidableEq (A ⧸ K)]
+    {P : List (Finset A)} {n : ℕ} {y : A}
+    (h : LayerSubsumChoice P n y) (hfull : n = P.length) :
+    IsNonemptySetPartition (h.cosetSliceLayers K) := by
+  induction h with
+  | zero P =>
+      have hP : P = [] := List.length_eq_zero_iff.mp hfull.symm
+      subst P
+      intro C hC
+      simp [LayerSubsumChoice.cosetSliceLayers] at hC
+  | @skip B P n y h ih =>
+      have hle := h.weight_le_length
+      simp only [List.length_cons] at hfull
+      omega
+  | @take B P n b y hb h ih =>
+      have htail : n = P.length := by
+        simpa using Nat.succ.inj hfull
+      have htailNe := ih htail
+      intro C hC
+      change C ∈ dgmCosetSlice K B b :: h.cosetSliceLayers K at hC
+      obtain hC | hC := List.mem_cons.mp hC
+      · rw [hC]
+        exact ⟨b, mem_dgmCosetSlice_self K B hb⟩
+      · exact htailNe C hC
+
+/-- At full weight every sliced layer has singleton image modulo `K`. -/
+theorem LayerSubsumChoice.quotientLayer_card_cosetSliceLayers_of_full
+    (K : AddSubgroup A) [DecidableEq (A ⧸ K)]
+    {P : List (Finset A)} {n : ℕ} {y : A}
+    (h : LayerSubsumChoice P n y) (hfull : n = P.length) :
+    ∀ B ∈ h.cosetSliceLayers K, (quotientLayer K B).card = 1 := by
+  induction h with
+  | zero P =>
+      have hP : P = [] := List.length_eq_zero_iff.mp hfull.symm
+      subst P
+      intro B hB
+      simp [LayerSubsumChoice.cosetSliceLayers] at hB
+  | @skip B P n y h ih =>
+      have hle := h.weight_le_length
+      simp only [List.length_cons] at hfull
+      omega
+  | @take B P n b y hb h ih =>
+      have htail : n = P.length := by
+        simpa using Nat.succ.inj hfull
+      have htailSingle := ih htail
+      intro C hC
+      change C ∈ dgmCosetSlice K B b :: h.cosetSliceLayers K at hC
+      obtain hC | hC := List.mem_cons.mp hC
+      · rw [hC, quotientLayer_dgmCosetSlice_eq_singleton K B hb]
+        simp
+      · exact htailSingle C hC
+
+/-- The sliced full-pattern spectrum is a nonempty subset of the original
+target, using the actual source choice and preserving its pattern exactly. -/
+theorem LayerSubsumChoice.cosetSlicePattern_nonempty_and_subset
+    (K : AddSubgroup A) [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    {P : List (Finset A)} {n : ℕ} {y : A}
+    (h : LayerSubsumChoice P n y) (mu : QuotientPattern K n)
+    (hmu : h.RealizesPattern mu) :
+    (patternSubsumSpectrum (h.cosetSliceLayers K) mu).Nonempty ∧
+      patternSubsumSpectrum (h.cosetSliceLayers K) mu ⊆
+        patternSubsumSpectrum P mu := by
+  obtain ⟨h', hmult⟩ := h.exists_choice_cosetSliceLayers K
+  have hy : y ∈ patternSubsumSpectrum (h.cosetSliceLayers K) mu :=
+    (mem_patternSubsumSpectrum_iff _ mu y).2 ⟨⟨h', by
+      intro q
+      exact (hmult q).trans (hmu q)⟩⟩
+  exact ⟨⟨y, hy⟩,
+    patternSubsumSpectrum_mono_of_forall₂
+      (h.cosetSliceLayers_forall₂_subset K) mu⟩
+
+/-- Removing the complete `K`-slice through `b` removes exactly the quotient
+value of `b`, and no other quotient value. -/
+theorem quotientLayer_sdiff_dgmCosetSlice
+    (K : AddSubgroup A) [DecidableEq (A ⧸ K)]
+    (B : Finset A) {b : A} (hb : b ∈ B) :
+    quotientLayer K (B \ dgmCosetSlice K B b) =
+      (quotientLayer K B).erase (b : A ⧸ K) := by
+  ext q
+  simp only [Finset.mem_erase]
+  constructor
+  · intro hq
+    obtain ⟨x, hx, hxq⟩ := (mem_quotientLayer_iff K _ q).1 hq
+    have hxdata := Finset.mem_sdiff.mp hx
+    refine ⟨?_, (mem_quotientLayer_iff K B q).2 ⟨x, hxdata.1, hxq⟩⟩
+    intro hqb
+    apply hxdata.2
+    exact (mem_dgmCosetSlice_iff K B b x).2
+      ⟨hxdata.1, hxq.trans hqb⟩
+  · rintro ⟨hqb, hq⟩
+    obtain ⟨x, hxB, hxq⟩ := (mem_quotientLayer_iff K B q).1 hq
+    apply (mem_quotientLayer_iff K _ q).2
+    refine ⟨x, Finset.mem_sdiff.mpr ⟨hxB, ?_⟩, hxq⟩
+    intro hxslice
+    have hxb := (mem_dgmCosetSlice_iff K B b x).1 hxslice |>.2
+    exact hqb (hxq.symm.trans hxb)
+
+/-- Layerwise source accounting for the full-weight convergent.  Refining
+from `K` to `H ≤ K`, every fine quotient incidence outside the chosen
+`K`-slice is paid for by one of the omitted coarse cosets.  This is the
+literal finite-set version of the comparison on page 8 of the paper. -/
+theorem fullCosetSlice_weighted_incidence_le
+    [Fintype A] (H K : AddSubgroup A) (hHK : H ≤ K)
+    [Fintype (A ⧸ H)] [DecidableEq (A ⧸ H)]
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (B : Finset A) {b : A} (hb : b ∈ B) :
+    Nat.card H * (quotientLayer H B).card + Nat.card K ≤
+      Nat.card H * (quotientLayer H (dgmCosetSlice K B b)).card +
+        Nat.card K * (quotientLayer K B).card := by
+  classical
+  let R := dgmCosetSlice K B b
+  have hsubset : B + dgmSubgroupFinset H ⊆
+      (R + dgmSubgroupFinset H) ∪
+        ((B \ R) + dgmSubgroupFinset K) := by
+    intro z hz
+    obtain ⟨x, hxB, h, hhH, rfl⟩ := Finset.mem_add.mp hz
+    by_cases hxR : x ∈ R
+    · exact Finset.mem_union_left _
+        (Finset.mem_add.mpr ⟨x, hxR, h, hhH, rfl⟩)
+    · exact Finset.mem_union_right _
+        (Finset.mem_add.mpr ⟨x, Finset.mem_sdiff.mpr ⟨hxB, hxR⟩,
+          h, (mem_dgmSubgroupFinset_iff K h).2
+            (hHK ((mem_dgmSubgroupFinset_iff H h).1 hhH)), rfl⟩)
+  have hcard := (Finset.card_le_card hsubset).trans
+    (Finset.card_union_le (R + dgmSubgroupFinset H)
+      ((B \ R) + dgmSubgroupFinset K))
+  rw [card_add_dgmSubgroupFinset_eq H B,
+    card_add_dgmSubgroupFinset_eq H R,
+    card_add_dgmSubgroupFinset_eq K (B \ R),
+    quotientLayer_sdiff_dgmCosetSlice K B hb,
+    Finset.card_erase_of_mem
+      ((mem_quotientLayer_iff K B _).2 ⟨b, hb, rfl⟩)] at hcard
+  have hqpos : 1 ≤ (quotientLayer K B).card :=
+    Finset.one_le_card.mpr
+      ⟨(b : A ⧸ K), (mem_quotientLayer_iff K B _).2 ⟨b, hb, rfl⟩⟩
+  have hsplit : Nat.card K * (quotientLayer K B).card =
+      Nat.card K * ((quotientLayer K B).card - 1) + Nat.card K := by
+    conv_lhs =>
+      rw [show (quotientLayer K B).card =
+          ((quotientLayer K B).card - 1) + 1 by omega]
+    simp [Nat.mul_add]
+  dsimp only [R] at hcard ⊢
+  rw [hsplit]
+  omega
+
+/-- Summed, occurrence-labelled version of the preceding layer inequality.
+The left `|K| * P.length` records the one selected coarse coset in every
+labelled layer; no set-valued layer is deduplicated. -/
+theorem LayerSubsumChoice.fullCosetSlices_weighted_incidence_le
+    [Fintype A] (H K : AddSubgroup A) (hHK : H ≤ K)
+    [Fintype (A ⧸ H)] [DecidableEq (A ⧸ H)]
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    {P : List (Finset A)} {n : ℕ} {y : A}
+    (h : LayerSubsumChoice P n y) (hfull : n = P.length) :
+    Nat.card H *
+          (P.map fun B ↦ (quotientLayer H B).card).sum +
+        Nat.card K * P.length ≤
+      Nat.card H *
+          ((h.cosetSliceLayers K).map fun B ↦
+            (quotientLayer H B).card).sum +
+        Nat.card K *
+          (P.map fun B ↦ (quotientLayer K B).card).sum := by
+  classical
+  induction h with
+  | zero P =>
+      have hP : P = [] := List.length_eq_zero_iff.mp hfull.symm
+      subst P
+      simp [LayerSubsumChoice.cosetSliceLayers]
+  | @skip B P n y h ih =>
+      have hle := h.weight_le_length
+      simp only [List.length_cons] at hfull
+      omega
+  | @take B P n b y hb h ih =>
+      have htail : n = P.length := by
+        simpa using Nat.succ.inj hfull
+      have hhead := fullCosetSlice_weighted_incidence_le H K hHK B hb
+      have htailBound := ih htail
+      simp only [LayerSubsumChoice.cosetSliceLayers, List.map_cons,
+        List.sum_cons, List.length_cons]
+      rw [Nat.mul_add, Nat.mul_add, Nat.mul_add, Nat.mul_add]
+      omega
+
 /-- The empty-selection endpoint is also exact.  The source DGM theorem uses
 positive `n`; this lemma is retained as a recursion boundary check. -/
 theorem dgmSetpartitionBound_zero [Fintype A]

@@ -7453,6 +7453,234 @@ theorem FactorForm.exists_reindexed_recentered_doubled
   · exact hzException'
   · exact hzDouble'
 
+omit [Fintype A] in
+/-- Cellwise quotient inclusion plus equality of total quotient incidence
+forces equality in every cell.  This is the finite counting step hidden in
+the source phrase “from the definitions of Lambda and Upsilon”. -/
+theorem Theorem21SetPartition.quotientLayer_eq_of_imagesIncluded_of_incidence_eq
+    {xs : List A} {n m : ℕ}
+    (F P : Theorem21SetPartition xs n m) (H : AddSubgroup A)
+    (hsub : F.quotientImagesIncluded P H)
+    (hinc : P.quotientIncidenceAt H = F.quotientIncidenceAt H) :
+    ∀ c : Fin n,
+      quotientLayer H (P.valueCell c) =
+        quotientLayer H (F.valueCell c) := by
+  classical
+  have hle (c : Fin n) :
+      (quotientLayer H (F.valueCell c)).card ≤
+        (quotientLayer H (P.valueCell c)).card :=
+    Finset.card_le_card (hsub c)
+  have hsum :
+      (∑ c : Fin n, (quotientLayer H (F.valueCell c)).card) =
+        ∑ c : Fin n, (quotientLayer H (P.valueCell c)).card := by
+    simpa only [Theorem21SetPartition.quotientIncidenceAt] using hinc.symm
+  have hcard (c : Fin n) :
+      (quotientLayer H (F.valueCell c)).card =
+        (quotientLayer H (P.valueCell c)).card :=
+    (Finset.sum_eq_sum_iff_of_le
+      (s := (Finset.univ : Finset (Fin n)))
+      (fun c _ ↦ hle c)).1 hsum c (Finset.mem_univ c)
+  intro c
+  exact (Finset.eq_of_subset_of_card_le (hsub c) (by
+    rw [hcard c])).symm
+
+omit [Fintype A] in
+/-- In a recentered Definition 1 stage, every member of the newly selected
+`Upsilon_{rho+1}` has exactly the same quotient image in every indexed cell
+as the current factor partition. -/
+theorem WeakFactorForm.quotientLayer_eq_of_mem_next_of_recentered
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (W : WeakFactorForm I rho) (hF : W.F = W.partition)
+    (P : Theorem21SetPartition xs n seed.card)
+    (hP : P ∈ W.next.upsilon) (c : Fin n) :
+    quotientLayer (W.partition.tailPeriod rho) (P.valueCell c) =
+      quotientLayer (W.partition.tailPeriod rho)
+        (W.partition.valueCell c) := by
+  classical
+  have hdata := (W.transition.mem_next_upsilon_iff P).1 hP
+  have hH : W.partition.tailPeriod rho =
+      AddAction.stabilizer A
+        (W.previous.chosen.tailSumset rho : Set A) := by
+    unfold Theorem21SetPartition.tailPeriod
+    rw [W.inLambda.2.1]
+  have hsub : W.partition.quotientImagesIncluded P
+      (AddAction.stabilizer A
+        (W.previous.chosen.tailSumset rho : Set A)) := by
+    rw [← hF]
+    exact hdata.2.2.2.1
+  have hinc : P.quotientIncidenceAt
+        (AddAction.stabilizer A
+          (W.previous.chosen.tailSumset rho : Set A)) =
+      W.partition.quotientIncidenceAt
+        (AddAction.stabilizer A
+          (W.previous.chosen.tailSumset rho : Set A)) := by
+    rw [← hF]
+    exact hdata.2.2.1
+  rw [hH]
+  exact W.partition.quotientLayer_eq_of_imagesIncluded_of_incidence_eq
+    P _ hsub hinc c
+
+omit [Fintype A] in
+/-- Consequently, every exception of the recentered factor partition stays
+an exception in every member of the new `Upsilon` family. -/
+theorem WeakFactorForm.isHException_of_mem_next_of_recentered
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (W : WeakFactorForm I rho) (hF : W.F = W.partition)
+    (P : Theorem21SetPartition xs n seed.card)
+    (hP : P ∈ W.next.upsilon) (x : A)
+    (hx : W.partition.IsHException (W.partition.tailPeriod rho) x) :
+    P.IsHException (W.partition.tailPeriod rho) x := by
+  classical
+  obtain ⟨d, hd⟩ := hx
+  refine ⟨d, ?_⟩
+  rw [W.quotientLayer_eq_of_mem_next_of_recentered hF P hP d]
+  exact hd
+
+omit [Fintype A] in
+/-- Every member of a source-chain extremal family remains in the literal
+initial admissible family. -/
+theorem Definition1SourceChain.admissible_of_mem
+    {xs : List A} {seed : Selection xs} {n r : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    {state : Definition1ExtremalState xs seed n}
+    (chain : Definition1SourceChain I r state)
+    (P : Theorem21SetPartition xs n seed.card)
+    (hP : P ∈ state.upsilon) : GMOReplacementAdmissible I P := by
+  induction chain with
+  | initial state valid =>
+      exact ((valid.mem_upsilon_iff P).1 hP).1
+  | @next r previous prior state F step ih =>
+      exact ih (((step.mem_next_upsilon_iff P).1 hP).1)
+
+omit [Fintype A] in
+/-- Two members of the same depth-`r` source family have the same earlier
+tail sumset at every genuine transition stage. -/
+theorem Definition1SourceChain.tailSumset_eq_of_mem
+    {xs : List A} {seed : Selection xs} {n r : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    {state : Definition1ExtremalState xs seed n}
+    (chain : Definition1SourceChain I r state)
+    (P Q : Theorem21SetPartition xs n seed.card)
+    (hP : P ∈ state.upsilon) (hQ : Q ∈ state.upsilon)
+    {j : ℕ} (hj : j < r) :
+    P.tailSumset j = Q.tailSumset j := by
+  induction chain with
+  | initial state valid => omega
+  | @next r previous prior state F step ih =>
+      have hPdata := (step.mem_next_upsilon_iff P).1 hP
+      have hQdata := (step.mem_next_upsilon_iff Q).1 hQ
+      by_cases hjr : j = r
+      · subst j
+        exact hPdata.2.1.trans hQdata.2.1.symm
+      · exact ih hPdata.1 hQdata.1 (by omega)
+
+omit [Fintype A] in
+/-- The cellwise quotient images of two members of one source extremal
+family agree at every earlier stage.  This is proved at the actual stored
+transition for that stage, not by substituting the final transition. -/
+theorem Definition1SourceChain.quotientLayer_eq_of_mem
+    {xs : List A} {seed : Selection xs} {n r : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    {state : Definition1ExtremalState xs seed n}
+    (chain : Definition1SourceChain I r state)
+    (P Q : Theorem21SetPartition xs n seed.card)
+    (hP : P ∈ state.upsilon) (hQ : Q ∈ state.upsilon)
+    {j : ℕ} (hj : j < r) (c : Fin n) :
+    quotientLayer (P.tailPeriod j) (P.valueCell c) =
+      quotientLayer (P.tailPeriod j) (Q.valueCell c) := by
+  classical
+  induction chain with
+  | initial state valid => omega
+  | @next r previous prior state F step ih =>
+      have hPdata := (step.mem_next_upsilon_iff P).1 hP
+      have hQdata := (step.mem_next_upsilon_iff Q).1 hQ
+      by_cases hjr : j = r
+      · subst j
+        let H : AddSubgroup A := AddAction.stabilizer A
+          (previous.chosen.tailSumset r : Set A)
+        have hPF : quotientLayer H (P.valueCell c) =
+            quotientLayer H (F.valueCell c) :=
+          F.quotientLayer_eq_of_imagesIncluded_of_incidence_eq P H
+            hPdata.2.2.2.1 hPdata.2.2.1 c
+        have hQF : quotientLayer H (Q.valueCell c) =
+            quotientLayer H (F.valueCell c) :=
+          F.quotientLayer_eq_of_imagesIncluded_of_incidence_eq Q H
+            hQdata.2.2.2.1 hQdata.2.2.1 c
+        have hperiod : P.tailPeriod r = H := by
+          unfold Theorem21SetPartition.tailPeriod
+          rw [hPdata.2.1]
+        rw [hperiod]
+        exact hPF.trans hQF.symm
+      · exact ih hPdata.1 hQdata.1 (by omega)
+
+omit [Fintype A] in
+/-- The chosen member of a recentered `Upsilon_{rho+1}` is again an honest
+weak `rho`-factor form.  Earlier periods and exceptions are transported
+through the real prefix chain, while the stage-`rho` data come from literal
+membership in the recentered family. -/
+noncomputable def WeakFactorForm.nextChosenWeak_of_recentered
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (W : WeakFactorForm I rho) (_hF : W.F = W.partition) :
+    WeakFactorForm I rho := by
+  classical
+  let G := W.next.chosen
+  have hGnext : G ∈ W.next.upsilon := W.next.chosen_mem
+  have hGdata := (W.transition.mem_next_upsilon_iff G).1 hGnext
+  have hGprevious : G ∈ W.previous.upsilon := hGdata.1
+  refine {
+    range := W.range
+    partition := G
+    admissible := W.chain.admissible_of_mem G hGprevious
+    previous := W.previous
+    chain := W.chain
+    next := W.next
+    F := W.F
+    transition := W.transition
+    partition_inLambda := W.transition.inLambda_of_mem_next hGnext
+    tail_actual := ?_
+    leading_exception := ?_
+  }
+  · intro s hs
+    have htail : G.tailSumset s = W.partition.tailSumset s := by
+      by_cases hsrho : s = rho
+      · subst s
+        exact hGdata.2.1.trans W.inLambda.2.1.symm
+      · exact W.chain.tailSumset_eq_of_mem G W.partition
+          hGprevious W.inLambda.1 (by omega)
+    have hperiod : G.tailPeriod s = W.partition.tailPeriod s := by
+      unfold Theorem21SetPartition.tailPeriod
+      rw [htail]
+    rw [hperiod]
+    exact W.tail_actual s hs
+  · intro c hc
+    obtain ⟨x, hx, hxException⟩ := W.leading_exception c hc
+    obtain ⟨y, hy, hyq⟩ := (mem_quotientLayer_iff
+      (W.partition.tailPeriod c.val) (G.valueCell c)
+      (QuotientAddGroup.mk' (W.partition.tailPeriod c.val) x)).1 (by
+        have hqeq := W.chain.quotientLayer_eq_of_mem W.partition G
+          W.inLambda.1 hGprevious hc c
+        rw [← hqeq]
+        exact (mem_quotientLayer_iff _ _ _).2 ⟨x, hx, rfl⟩)
+    have hyException : G.IsHException (G.tailPeriod c.val) y := by
+      have htail := W.chain.tailSumset_eq_of_mem G W.partition
+        hGprevious W.inLambda.1 hc
+      have hperiod : G.tailPeriod c.val = W.partition.tailPeriod c.val := by
+        unfold Theorem21SetPartition.tailPeriod
+        rw [htail]
+      rw [hperiod]
+      obtain ⟨d, hd⟩ := hxException
+      refine ⟨d, ?_⟩
+      intro hyMem
+      have hqeq := W.chain.quotientLayer_eq_of_mem W.partition G
+        W.inLambda.1 hGprevious hc d
+      apply hd
+      rw [hqeq]
+      simpa [hyq] using hyMem
+    exact ⟨y, hy, hyException⟩
+
 /-- Enlarging a period enlarges every thickened cell and hence the common
 core. -/
 theorem Theorem21SetPartition.commonCore_mono
@@ -8418,6 +8646,58 @@ theorem Theorem21SetPartition.exceptionDefect_bot_add_core_incidence
     Theorem21SetPartition.cellExceptionDefect, hinter, k,
     P.sum_card_valueCell, Nat.mul_comm] using hsum
 
+/-- A scalar CDT conclusion is already a literal Theorem E output with the
+trivial witness period.  This bridge is what allows Lemma 3 to be used under
+failure of the full source output, without silently replacing that failure
+by a stronger assumption. -/
+noncomputable def GMOTheoremETrivialConclusion.toSourceOutput
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (h : GMOTheoremETrivialConclusion I) :
+    GMOTheoremESourceOutput I := by
+  classical
+  have hlen : n ≤ seed.card := by
+    have hmass := length_le_sum_layer_card h.partition.valueCells
+      h.partition.valueCells_nonempty
+    rw [h.partition.length_valueCells] at hmass
+    simpa [Theorem21SetPartition.valueCells, List.map_ofFn,
+      List.sum_ofFn, h.partition.sum_card_valueCell] using hmass
+  refine {
+    partition := h.partition
+    H := ⊥
+    periodic := bot_le
+    admissible := h.admissible
+    card_lower := ?_
+    unused_mem_commonCore := ?_
+  }
+  · have hincidence :=
+      h.partition.exceptionDefect_bot_add_core_incidence
+    have htotal :
+        (h.partition.commonCore (⊥ : AddSubgroup A)).card * n +
+            h.partition.exceptionDefect (⊥ : AddSubgroup A) = seed.card := by
+      simpa [Nat.add_comm, Nat.mul_comm] using hincidence
+    have hcoeff :
+        ((h.partition.commonCosetCount (⊥ : AddSubgroup A) * n +
+            h.partition.exceptionDefect (⊥ : AddSubgroup A) + 1) - n) *
+              Nat.card (⊥ : AddSubgroup A) = seed.card - n + 1 := by
+      simp only [h.partition.commonCosetCount_bot, Nat.card_unique, mul_one]
+      rw [htotal]
+      omega
+    rw [hcoeff]
+    exact h.card_lower
+  · intro hbot
+    exact (hbot rfl).elim
+
+/-- Full source-output failure therefore entails the scalar failure required
+by the Lemma-3-to-factor-form constructor. -/
+theorem not_nonempty_trivialConclusion_of_no_sourceOutput
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (hfail : ¬ Nonempty (GMOTheoremESourceOutput I)) :
+    ¬ Nonempty (GMOTheoremETrivialConclusion I) := by
+  rintro ⟨h⟩
+  exact hfail ⟨h.toSourceOutput⟩
+
 /-- The trivial-period specialization of Theorem E's numerical bound is at
 least the large-branch threshold `|S'| - n + 1`.  Encoding the source
 coefficient by subtracting `n` only after the full incidence sum makes this
@@ -8608,6 +8888,209 @@ theorem GMOTheorem21Output.full_or_concentrated
     exact Or.inr
       ⟨hperiodic.toOrdinaryGMOConcentration
         (hquotientLe.trans hsourceWide)⟩
+
+omit [Fintype A] in
+/-- Omitting the first cell of the `rho`-tail leaves exactly the
+`rho+1`-tail. -/
+theorem Theorem21SetPartition.tailSumsetWithoutCell_rho_eq_succ
+    {xs : List A} {n m rho : ℕ} (P : Theorem21SetPartition xs n m)
+    (hrhon : rho < n) :
+    P.tailSumsetWithoutCell ⟨rho, hrhon⟩ rho =
+      P.tailSumset (rho + 1) := by
+  unfold Theorem21SetPartition.tailSumsetWithoutCell
+    Theorem21SetPartition.tailValueCellsWithoutCell
+    Theorem21SetPartition.tailSumset
+    Theorem21SetPartition.tailValueCells
+  simp
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Removing index `rho` from the `rho`-tail index set leaves exactly the
+next tail index set. -/
+theorem tailIndices_erase_rho_eq_succ {n rho : ℕ} (hrhon : rho < n) :
+    (tailIndices n rho).erase ⟨rho, hrhon⟩ =
+      tailIndices n (rho + 1) := by
+  classical
+  ext c
+  simp only [Finset.mem_erase, mem_tailIndices]
+  constructor
+  · rintro ⟨hcne, hrc⟩
+    have hcval : c.val ≠ rho := by
+      intro h
+      apply hcne
+      apply Fin.ext
+      exact h
+    omega
+  · intro hsucc
+    refine ⟨?_, by omega⟩
+    intro hc
+    have hv := congrArg Fin.val hc
+    change c.val = rho at hv
+    omega
+
+/-- Equation (3.5), with both source branches explicit.  If the transported
+exception is doubled, Lemma 2 applies.  Otherwise its quotient fiber in the
+new first tail cell is a singleton, so quotient Kneser/Scherk supplies the
+same equation-(3.3) input and Lemma 2's arithmetic closes the deficit. -/
+theorem FactorForm.next_tail_deficit_of_exception_at_rho
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (F : FactorForm I rho) (x : A)
+    (hx : x ∈ F.partition.valueCell ⟨rho, by
+      have := F.range; omega⟩)
+    (hxException : F.partition.IsHException
+      (F.partition.tailPeriod rho) x) :
+    (F.partition.tailSumset (rho + 1)).card <
+      (∑ c ∈ tailIndices n (rho + 1),
+        (F.partition.valueCell c).card) - (n - (rho + 1)) + 1 := by
+  classical
+  have hrhon : rho < n := by
+    have := F.range
+    omega
+  let q : Fin n := ⟨rho, hrhon⟩
+  have hqval : q.val = rho := rfl
+  have hrhoq : rho ≤ q.val := le_rfl
+  have hraw :
+      (F.partition.tailSumsetWithoutCell q rho).card <
+        (∑ c ∈ (tailIndices n rho).erase q,
+          (F.partition.valueCell c).card) - ((n - rho) - 1) + 1 := by
+    by_cases hdouble : F.partition.IsHDoubledInCell
+        (F.partition.tailPeriod rho) q x
+    · exact F.toWeakFactorForm.lemma2 F.tail_deficit q x
+        hxException hdouble
+    · have hB : (F.partition.tailSumset (rho + 1)).Nonempty :=
+        F.partition.tailSumset_nonempty (rho + 1)
+      have hC : (F.partition.valueCell q).Nonempty :=
+        F.partition.valueCells_nonempty (F.partition.valueCell q) (by
+          simp [Theorem21SetPartition.valueCells])
+      have hsum : F.partition.tailSumset (rho + 1) +
+          F.partition.valueCell q = F.partition.tailSumset rho := by
+        rw [add_comm]
+        simpa only [q, hqval] using
+          (F.partition.tailSumset_eq_valueCell_add_succ q).symm
+      have hunique : ∀ y ∈ F.partition.valueCell q,
+          y - x ∈ AddAction.stabilizer A
+            ((F.partition.tailSumset (rho + 1) +
+              F.partition.valueCell q : Finset A) : Set A) → y = x := by
+        intro y hy hystab
+        by_contra hyx
+        apply hdouble
+        refine ⟨hx, y, hy, hyx, ?_⟩
+        apply QuotientAddGroup.eq_iff_sub_mem.mpr
+        unfold Theorem21SetPartition.tailPeriod
+        simpa only [hsum] using hystab
+      have hkneser := card_add_sub_one_le_of_unique_addStab_fiber
+        (F.partition.tailSumset (rho + 1)) (F.partition.valueCell q)
+        hB hC hx hunique
+      have h33 :
+          (F.partition.tailSumsetWithoutCell q rho).card +
+              (F.partition.valueCell q).card - 1 ≤
+            (F.partition.tailSumset rho).card := by
+        rw [F.partition.tailSumsetWithoutCell_rho_eq_succ hrhon]
+        rw [hsum] at hkneser
+        exact hkneser
+      exact F.toWeakFactorForm.lemma2_of_equation33 F.tail_deficit
+        q hrhoq h33
+  rw [F.partition.tailSumsetWithoutCell_rho_eq_succ hrhon] at hraw
+  rw [show q = ⟨rho, hrhon⟩ by rfl,
+    tailIndices_erase_rho_eq_succ hrhon] at hraw
+  have harith : (n - rho) - 1 = n - (rho + 1) := by omega
+  rwa [harith] at hraw
+
+omit [Fintype A] in
+/-- A strict full-layer deficit cannot occur in a one-cell tail. -/
+theorem Theorem21SetPartition.two_le_tail_length_of_deficit
+    {xs : List A} {n m s : ℕ} (P : Theorem21SetPartition xs n m)
+    (hsn : s < n)
+    (hdeficit : (P.tailSumset s).card <
+      (∑ c ∈ tailIndices n s, (P.valueCell c).card) - (n - s) + 1) :
+    2 ≤ n - s := by
+  classical
+  by_contra hnot
+  have hn : n = s + 1 := by omega
+  let q : Fin n := ⟨s, by omega⟩
+  have htailNext : P.tailSumset (s + 1) = ({0} : Finset A) := by
+    subst n
+    simp [Theorem21SetPartition.tailSumset,
+      Theorem21SetPartition.tailValueCells,
+      Theorem21SetPartition.valueCells, fullLayerSumSpectrum]
+  have htail : P.tailSumset s = P.valueCell q := by
+    have hrec := P.tailSumset_eq_valueCell_add_succ q
+    rw [htailNext] at hrec
+    change P.tailSumset s = P.valueCell q + (0 : Finset A) at hrec
+    simpa only [add_zero] using hrec
+  have hindices : tailIndices n s = {q} := by
+    ext c
+    simp only [mem_tailIndices, Finset.mem_singleton]
+    constructor
+    · intro hc
+      apply Fin.ext
+      have hcLt := c.isLt
+      simp only [q]
+      omega
+    · rintro rfl
+      exact le_rfl
+  rw [htail, hindices] at hdeficit
+  have hns : n - s = 1 := by omega
+  rw [hns] at hdeficit
+  simp only [Finset.sum_singleton] at hdeficit
+  have hcell : 1 ≤ (P.valueCell q).card :=
+    Finset.card_pos.mpr (P.valueCells_nonempty
+      (P.valueCell q) (by
+        simp [Theorem21SetPartition.valueCells]))
+  omega
+
+omit [Fintype A] in
+@[simp]
+theorem card_quotientLayer_bot (B : Finset A) :
+    (quotientLayer (⊥ : AddSubgroup A) B).card = B.card := by
+  classical
+  unfold quotientLayer
+  apply Finset.card_image_iff.mpr
+  intro x _ y _ hxy
+  have hsub : x - y ∈ (⊥ : AddSubgroup A) :=
+    QuotientAddGroup.eq_iff_sub_mem.mp hxy
+  exact sub_eq_zero.mp hsub
+
+/-- The actual stabilizer of a strict full-layer-deficit tail is nontrivial.
+This is the DGM/Kneser step immediately following equation (3.5). -/
+theorem Theorem21SetPartition.tailPeriod_ne_bot_of_deficit
+    {xs : List A} {n m s : ℕ} (P : Theorem21SetPartition xs n m)
+    (hdeficit : (P.tailSumset s).card <
+      (∑ c ∈ tailIndices n s, (P.valueCell c).card) - (n - s) + 1) :
+    P.tailPeriod s ≠ ⊥ := by
+  classical
+  intro hbot
+  have htailNonempty : IsNonemptySetPartition (P.tailValueCells s) := by
+    simpa [Theorem21SetPartition.tailValueCells] using
+      P.valueCells_nonempty.drop s
+  have hdgm := fullLayer_dgm_lower_bound
+    (P.tailValueCells s) htailNonempty
+  change
+    (((P.tailValueCells s).map fun B ↦
+          (stabilizerQuotientLayer (P.tailSumset s) B).card).sum -
+        (P.tailValueCells s).length + 1) *
+        (P.tailSumset s).addStab.card ≤
+      (P.tailSumset s).card at hdgm
+  simp_rw [← quotientLayer_eq_stabilizerQuotientLayer
+    (P.tailSumset s)] at hdgm
+  have hperiod : AddAction.stabilizer A
+      (P.tailSumset s : Set A) = (⊥ : AddSubgroup A) := by
+    simpa [Theorem21SetPartition.tailPeriod] using hbot
+  have hstabCard : (P.tailSumset s).addStab.card = 1 := by
+    have h := card_addStab_eq_natCard_stabilizer
+      (P.tailSumset s) (P.tailSumset_nonempty s)
+    rw [hperiod] at h
+    simpa using h
+  rw [hperiod] at hdgm
+  rw [hstabCard] at hdgm
+  simp only [card_quotientLayer_bot, mul_one] at hdgm
+  have hlength : (P.tailValueCells s).length = n - s := by
+    simp [Theorem21SetPartition.tailValueCells, P.length_valueCells]
+  have hsum : (P.tailValueCells s |>.map Finset.card).sum =
+      ∑ c ∈ tailIndices n s, (P.valueCell c).card :=
+    P.sum_card_tailValueCells_eq_tailIndices
+  rw [hlength, hsum] at hdgm
+  omega
 
 /-- Honest proved DGM endpoint for a source whose own occurrences already
 satisfy the setpartition criterion.  This is strictly weaker than Theorem
