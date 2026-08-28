@@ -158,14 +158,14 @@ theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.oldReserve_sdiff_consumed_
         ((W.partition.mem_unusedInAddCoset_iff W.K W.g i).1 hiOld |>.2))
 
 /-- Exact remaining-occurrence lower bound for the enlarged plain witness.
-The standard driver hypothesis `Nat.card A ≤ n` supplies `d*(L) ≤ n`; no
+The canonical ambient budget `d*(A) ≤ n` supplies `d*(L) ≤ n`; no
 separate length premise is added. -/
 theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.remaining_in_extensionCoset
     {xs : List A} {seed : Selection xs} {n : ℕ}
     {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
     {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D)
-    (hnA : Nat.card A ≤ n) :
+    (hambient : pGroupDStar A ≤ n) :
     n - W.highMultiplicityExtensionLength z +
         (xs.length - seed.card) ≤
       (M.partition.unusedInAddCoset
@@ -199,8 +199,8 @@ theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.remaining_in_extensionCose
     simpa only [consumed] using M.card_consumedKReserve
   have hnL : W.highMultiplicityExtensionLength z ≤ n := by
     simpa only [OrdinaryGMOClaimBOutput.highMultiplicityExtensionLength] using
-      pGroupDStar_addSubgroup_le_of_natCard_le
-        (W.highMultiplicityExtensionSubgroup z) hnA
+      pGroupDStar_addSubgroup_le_of_ambient_le
+        (W.highMultiplicityExtensionSubgroup z) hambient
   have hdKLe : W.highMultiplicityOldLength ≤
       W.highMultiplicityExtensionLength z := by
     have h := W.old_add_pair_le_extensionLength z
@@ -247,7 +247,7 @@ noncomputable def
     {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
     {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D)
-    (hnA : Nat.card A ≤ n) : OrdinaryGMOClaimBOutput xs seed n := {
+    (hambient : pGroupDStar A ≤ n) : OrdinaryGMOClaimBOutput xs seed n := {
   K := W.highMultiplicityExtensionSubgroup z
   nontrivial := D.extensionSubgroup_ne_bot
   g := W.g
@@ -255,7 +255,7 @@ noncomputable def
   partition := M.partition
   support_in_coset := M.support_value_mem_extensionCoset
   saturation := M.saturation
-  remaining_in_coset := M.remaining_in_extensionCoset hnA
+  remaining_in_coset := M.remaining_in_extensionCoset hambient
 }
 
 @[simp]
@@ -264,8 +264,8 @@ theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.enlargedOutput_K
     {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
     {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D)
-    (hnA : Nat.card A ≤ n) :
-    (M.enlargedOutput hnA).K =
+    (hambient : pGroupDStar A ≤ n) :
+    (M.enlargedOutput hambient).K =
       W.highMultiplicityExtensionSubgroup z := rfl
 
 /-- The assembled witness is a strict plain Claim-B enlargement. -/
@@ -274,8 +274,8 @@ theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.old_K_lt_enlarged_K
     {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
     {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D)
-    (hnA : Nat.card A ≤ n) :
-    W.K < (M.enlargedOutput hnA).K := by
+    (hambient : pGroupDStar A ≤ n) :
+    W.K < (M.enlargedOutput hambient).K := by
   change W.K < W.highMultiplicityExtensionSubgroup z
   exact W.K_lt_highMultiplicityExtensionSubgroup D.nonzero
 
@@ -285,9 +285,9 @@ theorem exists_strictly_enlarged_ordinaryGMOClaimBOutput
     {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
     {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D)
-    (hnA : Nat.card A ≤ n) :
+    (hambient : pGroupDStar A ≤ n) :
     ∃ W' : OrdinaryGMOClaimBOutput xs seed n, W.K < W'.K :=
-  ⟨M.enlargedOutput hnA, M.old_K_lt_enlarged_K hnA⟩
+  ⟨M.enlargedOutput hambient, M.old_K_lt_enlarged_K hambient⟩
 
 /-- The honest high-multiplicity assembly contradicts cardinal maximality of
 the old plain Claim-B witness. -/
@@ -296,11 +296,11 @@ theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.not_card_maximal
     {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
     {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D)
-    (hnA : Nat.card A ≤ n)
+    (hambient : pGroupDStar A ≤ n)
     (hmax : ∀ W' : OrdinaryGMOClaimBOutput xs seed n,
       Nat.card W'.K ≤ Nat.card W.K) : False :=
-  W.not_subgroup_lt_of_card_maximal hmax (M.enlargedOutput hnA)
-    (M.old_K_lt_enlarged_K hnA)
+  W.not_subgroup_lt_of_card_maximal hmax (M.enlargedOutput hambient)
+    (M.old_K_lt_enlarged_K hambient)
 
 end GaoLean
 

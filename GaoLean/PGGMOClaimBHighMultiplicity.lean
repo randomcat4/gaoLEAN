@@ -238,21 +238,13 @@ theorem OrdinaryGMOClaimBOutput.pGroupDStar_internalQuotient_le_ambientQuotient
   have heq := W.pGroupDStar_internalQuotient_eq_cyclic z
   omega
 
-/-- Every subgroup of the ambient finite group has `d*` at most the ambient
-cardinality, hence at most `n` under the source hypothesis `|A| ≤ n`. -/
-theorem pGroupDStar_addSubgroup_le_of_natCard_le
-    (L : AddSubgroup A) {n : ℕ} (hn : Nat.card A ≤ n) :
+/-- Every subgroup has canonical `d*` at most the ambient canonical `d*`,
+hence at most `n` under the ambient Davenport-star budget. -/
+theorem pGroupDStar_addSubgroup_le_of_ambient_le
+    (L : AddSubgroup A) {n : ℕ} (hn : pGroupDStar A ≤ n) :
     pGroupDStar L ≤ n := by
-  letI : Fintype L := Fintype.ofFinite L
-  have hD : ordinaryDavenportValue L ≤ Nat.card L :=
-    ordinaryDavenportConstant_le_natCard
-      (ordinaryDavenportValue L) (ordinaryDavenportValue_spec L)
-  have hrecover := pGroupDStar_add_one L
-  have hstar : pGroupDStar L ≤ Nat.card L := by omega
-  have hLcard : Nat.card L ≤ Nat.card A :=
-    Nat.card_le_card_of_injective (fun x : L ↦ (x.1 : A))
-      (fun x y hxy ↦ Subtype.ext hxy)
-  exact hstar.trans (hLcard.trans hn)
+  have hconv := pGroupDStar_subgroup_quotient_le L
+  omega
 
 end CyclicExtension
 
@@ -322,7 +314,7 @@ same number of distinct zero-fiber reserve positions. -/
 theorem exists_ordinaryGMOClaimBHighMultiplicityCore
     {xs : List A} {seed : Selection xs} {n : ℕ}
     (W : OrdinaryGMOClaimBOutput xs seed n)
-    (hKtop : W.K ≠ ⊤) (hnA : Nat.card A ≤ n)
+    (hKtop : W.K ≠ ⊤) (hambient : pGroupDStar A ≤ n)
     (z : A ⧸ W.K) (hz : z ≠ 0)
     (hmult : pGroupDStar (A ⧸ W.K) ≤
       (W.sourceQuotientFiber z).card) :
@@ -342,8 +334,8 @@ theorem exists_ordinaryGMOClaimBHighMultiplicityCore
   have hhigh (t : Fin r) : highSource t ∈ W.sourceQuotientFiber z := by
     exact hhighSub ((highSet.equivFinOfCardEq hhighCard).symm t).property
   have hLlen : pGroupDStar (W.highMultiplicityExtensionSubgroup z) ≤ n :=
-    pGroupDStar_addSubgroup_le_of_natCard_le
-      (W.highMultiplicityExtensionSubgroup z) hnA
+    pGroupDStar_addSubgroup_le_of_ambient_le
+      (W.highMultiplicityExtensionSubgroup z) hambient
   have hconv := W.pGroupDStar_K_add_internalQuotient_le_extension z
   have hrSub : r ≤ n - pGroupDStar W.K := by
     dsimp only [r, OrdinaryGMOClaimBOutput.highMultiplicityLength]
