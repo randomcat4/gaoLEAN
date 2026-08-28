@@ -231,7 +231,8 @@ theorem exists_selected_theorem21SetPartition
     (xs : List A) (seed : Selection xs) (n : ℕ)
     (hcap : SelectionMultiplicityAtMost xs seed n)
     (hlen : n ≤ seed.card) :
-    Nonempty (Theorem21SetPartition xs n seed.card) := by
+    ∃ P : Theorem21SetPartition xs n seed.card,
+      Finset.univ.biUnion P.cells = seed := by
   classical
   let value : (↥seed) → A := fun i ↦ occurrenceValue xs i.1
   have hcap' (a : A) :
@@ -254,7 +255,7 @@ theorem exists_selected_theorem21SetPartition
     cells_pairwise_disjoint := ?_
     value_injective := ?_
     card_support := ?_
-  }⟩
+  }, ?_⟩
   · intro c
     obtain ⟨i, hi⟩ := hsurj c
     exact ⟨i.1, (mem_selectedColorCell_iff seed color c i.1).2
@@ -290,6 +291,16 @@ theorem exists_selected_theorem21SetPartition
         exact (mem_selectedColorCell_iff seed color (color ⟨i, hi⟩) i).2
           ⟨hi, rfl⟩
     rw [hunion]
+  · ext i
+    constructor
+    · intro hi
+      obtain ⟨c, -, hic⟩ := Finset.mem_biUnion.mp hi
+      exact ((mem_selectedColorCell_iff seed color c i).1 hic).1
+    · intro hi
+      apply Finset.mem_biUnion.mpr
+      refine ⟨color ⟨i, hi⟩, Finset.mem_univ _, ?_⟩
+      exact (mem_selectedColorCell_iff seed color (color ⟨i, hi⟩) i).2
+        ⟨hi, rfl⟩
 
 omit [AddCommGroup A] [Fintype A] in
 @[ext]
@@ -915,7 +926,7 @@ theorem exists_theoremEMaximalReplacement
     Nonempty (TheoremEMaximalReplacement xs seed n) := by
   classical
   letI : Fintype (Theorem21SetPartition xs n seed.card) := Fintype.ofFinite _
-  obtain ⟨initial⟩ :=
+  obtain ⟨initial, _⟩ :=
     exists_selected_theorem21SetPartition xs seed n hcap hlen
   let all : Finset (Theorem21SetPartition xs n seed.card) := Finset.univ
   obtain ⟨P, _hPall, hPmax⟩ := Finset.exists_max_image all
@@ -1148,7 +1159,7 @@ theorem exists_definition1InitialState
       Definition1InitialValid state := by
   classical
   letI : Fintype (Theorem21SetPartition xs n seed.card) := Fintype.ofFinite _
-  obtain ⟨initial⟩ :=
+  obtain ⟨initial, _⟩ :=
     exists_selected_theorem21SetPartition xs seed n hcap hlen
   let all : Finset (Theorem21SetPartition xs n seed.card) := Finset.univ
   obtain ⟨G, _hGall, hGmax⟩ := Finset.exists_max_image all
@@ -9617,6 +9628,93 @@ theorem gmoTheoremESourceStatement : GMOTheoremESourceStatement A := by
   · have htwo : 2 ≤ n := by omega
     obtain ⟨F0⟩ := exists_factorForm_zero_of_no_sourceOutput htwo hfail'
     exact F0.false_of_no_sourceOutput hfail'
+
+omit [AddCommGroup A] [Fintype A] in
+/-- The selected-subsequence coloring now supplies the literal source input,
+including exact labelled support rather than only its cardinality. -/
+theorem exists_gmoTheoremEInput
+    (xs : List A) (seed : Selection xs) (n : ℕ)
+    (hcap : SelectionMultiplicityAtMost xs seed n)
+    (hlen : n ≤ seed.card) :
+    Nonempty (GMOTheoremEInput xs seed n) := by
+  classical
+  obtain ⟨P, hsupport⟩ :=
+    exists_selected_theorem21SetPartition xs seed n hcap hlen
+  let anchor : Fin n → Occurrence xs := fun c ↦
+    Classical.choose (P.cells_nonempty c)
+  refine ⟨{
+    initial := P
+    initial_support := ?_
+    anchor := anchor
+    anchor_mem := ?_
+  }⟩
+  · exact hsupport
+  · intro c
+    exact Classical.choose_spec (P.cells_nonempty c)
+
+/-- Unconditional projected Theorem E.  The zero-cell case is the empty
+Definition-1 layer, whose tail-period convention is bottom; positive `n` uses the fully
+proved source-faithful theorem and then forgets its base-family data. -/
+theorem gmoTheoremEStatement : GMOTheoremEStatement A := by
+  intro xs seed n hcap hlen
+  obtain ⟨I⟩ := exists_gmoTheoremEInput xs seed n hcap hlen
+  by_cases hn : 0 < n
+  · obtain ⟨out⟩ := gmoTheoremESourceStatement xs seed n I hn
+    exact ⟨out.toProjected⟩
+  · have hn0 : n = 0 := by omega
+    have hbot : I.initial.tailPeriod 0 = ⊥ := by
+      subst n
+      simp [Theorem21SetPartition.tailPeriod,
+        Theorem21SetPartition.tailSumset,
+        Theorem21SetPartition.tailValueCells,
+        Theorem21SetPartition.valueCells, fullLayerSumSpectrum]
+    obtain ⟨trivial⟩ :=
+      nonempty_trivialConclusion_of_tailPeriod_zero_eq_bot
+        I.initial I.initial_admissible hbot
+    exact ⟨trivial.toSourceOutput.toProjected⟩
+
+/-- The well-founded cardinal data used by the genuine proper-subgroup
+induction in Theorems 2.4/2.5. -/
+structure GMOProperSubgroupInductionData (H : AddSubgroup A) : Prop where
+  nontrivial : H ≠ ⊥
+  proper : H < ⊤
+  factorization : Nat.card A = Nat.card (A ⧸ H) * Nat.card H
+  subgroup_lt : Nat.card H < Nat.card A
+  quotient_lt : Nat.card (A ⧸ H) < Nat.card A
+
+/-- Every proper nontrivial subgroup gives strict descent on both recursive
+groups; no external induction provider is involved. -/
+theorem gmoProperSubgroupInductionData
+    (H : AddSubgroup A) (hHbot : H ≠ ⊥) (hHtop : H < ⊤) :
+    GMOProperSubgroupInductionData H := by
+  have hfactor :=
+    AddSubgroup.card_eq_card_quotient_mul_card_addSubgroup H
+  have hHtwo : 2 ≤ Nat.card H := by
+    letI : Fintype H := Fintype.ofFinite H
+    by_contra hnot
+    have hsub : Subsingleton H :=
+      Fintype.card_le_one_iff_subsingleton.mp (by
+        simpa [Nat.card_eq_fintype_card] using (Nat.lt_of_not_ge hnot))
+    apply hHbot
+    ext x
+    constructor
+    · intro hx
+      have heq : (⟨x, hx⟩ : H) = 0 := hsub.elim _ _
+      simpa using congrArg Subtype.val heq
+    · intro hx
+      subst x
+      exact H.zero_mem
+  have hQtwo : 2 ≤ Nat.card (A ⧸ H) :=
+    two_le_natCard_quotient_of_lt_top H hHtop
+  refine {
+    nontrivial := hHbot
+    proper := hHtop
+    factorization := hfactor
+    subgroup_lt := ?_
+    quotient_lt := ?_
+  }
+  · nlinarith [Nat.card_pos (α := H), Nat.card_pos (α := A ⧸ H)]
+  · nlinarith [Nat.card_pos (α := H), Nat.card_pos (α := A ⧸ H)]
 
 /-- Honest proved DGM endpoint for a source whose own occurrences already
 satisfy the setpartition criterion.  This is strictly weaker than Theorem

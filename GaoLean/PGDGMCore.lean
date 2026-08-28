@@ -9358,6 +9358,593 @@ theorem LayerSubsumChoice.fullCosetSlices_weighted_incidence_le
       rw [Nat.mul_add, Nat.mul_add, Nat.mul_add, Nat.mul_add]
       omega
 
+/-- Every full sum of the occurrence-labelled slice list realizes the same
+prescribed pattern in the source list. -/
+theorem LayerSubsumChoice.fullLayerSumSpectrum_cosetSliceLayers_subset
+    (K : AddSubgroup A) [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    {P : List (Finset A)} {n : ℕ} {y : A}
+    (h : LayerSubsumChoice P n y) (hfull : n = P.length)
+    (mu : QuotientPattern K n) (hmu : h.RealizesPattern mu) :
+    fullLayerSumSpectrum (h.cosetSliceLayers K) ⊆
+      patternSubsumSpectrum P mu := by
+  classical
+  let R := h.cosetSliceLayers K
+  have hlen : R.length = n := by
+    exact (h.length_cosetSliceLayers K).trans hfull.symm
+  have hsingle : ∀ B ∈ R, (quotientLayer K B).card = 1 := by
+    simpa [R] using h.quotientLayer_card_cosetSliceLayers_of_full K hfull
+  obtain ⟨hR, hRmult⟩ := h.exists_choice_cosetSliceLayers K
+  have hRfull : n = R.length := hlen.symm
+  intro z hz
+  obtain ⟨g⟩ := (nonempty_layerSubsumChoice_iff_mem
+    R R.length z).2 (by
+      simpa [R, fullLayerSumSpectrum, hlen] using hz)
+  let g' : LayerSubsumChoice R n z := hlen ▸ g
+  have hgfull : n = R.length := hlen.symm
+  have hgreal : g'.RealizesPattern mu := by
+    intro q
+    have hgq := g'.quotientMultiplicity_eq_layerMultiplicity_of_full
+      hgfull hsingle q
+    have hRq := hR.quotientMultiplicity_eq_layerMultiplicity_of_full
+      hRfull hsingle q
+    exact hgq.trans (hRq.symm.trans ((hRmult q).trans (hmu q)))
+  have hzR : z ∈ patternSubsumSpectrum R mu :=
+    (mem_patternSubsumSpectrum_iff R mu z).2 ⟨⟨g', hgreal⟩⟩
+  exact patternSubsumSpectrum_mono_of_forall₂
+    (h.cosetSliceLayers_forall₂_subset K) mu hzR
+
+/-- Natural-number normalization used to keep the source DGM inequalities
+additive without integer-valued subtraction. -/
+theorem nat_mul_sub_add_one_add_mul_eq
+    (a x m : ℕ) (hm : m ≤ x) :
+    a * (x - m + 1) + a * m = a * x + a := by
+  have hmul : a * m ≤ a * x := Nat.mul_le_mul_left a hm
+  rw [Nat.mul_add, Nat.mul_one, Nat.mul_sub_left_distrib]
+  omega
+
+/-- The natural-number bookkeeping in the full-weight convergent construction.
+The three lower bounds are precisely the nonemptiness guards that make every
+truncated subtraction an honest difference. -/
+theorem nat_full_convergent_bound
+    (a k x y z m c : ℕ) (hx : m ≤ x) (hy : m ≤ y) (hz : m ≤ z)
+    (hweighted : a * x + k * m ≤ a * y + k * z)
+    (hfull : a * (y - m + 1) ≤ c) :
+    a * (x - m + 1) ≤ c + k * (z - m) := by
+  have ha := nat_mul_sub_add_one_add_mul_eq a x m hx
+  have hb := nat_mul_sub_add_one_add_mul_eq a y m hy
+  have hk : k * (z - m) + k * m = k * z := by
+    rw [Nat.mul_sub_left_distrib]
+    have : k * m ≤ k * z := Nat.mul_le_mul_left k hz
+    omega
+  omega
+
+/-- The source paper's convergent for its special full-weight branch.  Unlike
+the crossed convergent, this has no intersection--union lower endpoint: it is
+exactly a nonempty subset of the current prescribed target satisfying the
+original `K`-corrected bound. -/
+def DGMFullConvergent
+    [Fintype A] {K : AddSubgroup A}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (P : List (Finset A)) (mu : QuotientPattern K P.length)
+    (C : Finset A) : Prop :=
+  let T := patternSubsumSpectrum P mu
+  C.Nonempty ∧ C ⊆ T ∧
+    Nat.card (AddAction.stabilizer A (C : Set A)) *
+        ((P.map fun B ↦ (stabilizerQuotientLayer C B).card).sum -
+          P.length + 1) ≤
+      C.card + Nat.card K *
+        ((P.map fun B ↦ (quotientLayer K B).card).sum - P.length)
+
+/-- Arithmetic/Kneser assembler for the initial full convergent.  Keeping
+`C` and `R` as explicit parameters prevents the kernel from repeatedly
+unfolding the large occurrence-slice expression. -/
+theorem dgmFullConvergent_of_fullLayer_weightedIncidence
+    [Fintype A] (K : AddSubgroup A)
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (P : List (Finset A)) (mu : QuotientPattern K P.length)
+    (hP : IsNonemptySetPartition P) (R : List (Finset A)) (C : Finset A)
+    (hR : IsNonemptySetPartition R) (hlen : R.length = P.length)
+    (hCfull : layerSubsumSpectrum R R.length = C)
+    (hCne : C.Nonempty) (hCsub : C ⊆ patternSubsumSpectrum P mu)
+    (hweighted :
+      Nat.card (AddAction.stabilizer A (C : Set A)) *
+            (P.map fun B ↦ (stabilizerQuotientLayer C B).card).sum +
+          Nat.card K * P.length ≤
+        Nat.card (AddAction.stabilizer A (C : Set A)) *
+            (R.map fun B ↦ (stabilizerQuotientLayer C B).card).sum +
+          Nat.card K *
+            (P.map fun B ↦ (quotientLayer K B).card).sum) :
+    DGMFullConvergent P mu C := by
+  classical
+  have hfull0 := dgmSetpartitionBound_full R hR
+  unfold DGMSetpartitionBound at hfull0
+  dsimp only at hfull0
+  rw [stabilizerDgmCappedMultiplicitySum_length, hCfull,
+    card_addStab_eq_natCard_stabilizer C hCne] at hfull0
+  have hfull : Nat.card (AddAction.stabilizer A (C : Set A)) *
+      ((R.map fun B ↦ (stabilizerQuotientLayer C B).card).sum -
+        P.length + 1) ≤ C.card := by
+    calc
+      Nat.card (AddAction.stabilizer A (C : Set A)) *
+          ((R.map fun B ↦ (stabilizerQuotientLayer C B).card).sum -
+            P.length + 1) =
+          ((R.map fun B ↦ (stabilizerQuotientLayer C B).card).sum -
+            P.length + 1) *
+              Nat.card (AddAction.stabilizer A (C : Set A)) :=
+            Nat.mul_comm _ _
+      _ = ((R.map fun B ↦ (stabilizerQuotientLayer C B).card).sum -
+          R.length + 1) *
+            Nat.card (AddAction.stabilizer A (C : Set A)) := by rw [hlen]
+      _ ≤ C.card := hfull0
+  have hma : P.length ≤
+      (P.map fun B ↦ (stabilizerQuotientLayer C B).card).sum := by
+    have hcap := length_le_sum_quotientLayer_card
+      (AddAction.stabilizer A (C : Set A)) P hP
+    simpa only [quotientLayer_eq_stabilizerQuotientLayer] using hcap
+  have hmb : P.length ≤
+      (R.map fun B ↦ (stabilizerQuotientLayer C B).card).sum := by
+    have hcap := length_le_sum_quotientLayer_card
+      (AddAction.stabilizer A (C : Set A)) R hR
+    have hcap' : R.length ≤
+        (R.map fun B ↦ (stabilizerQuotientLayer C B).card).sum := by
+      simpa only [quotientLayer_eq_stabilizerQuotientLayer] using hcap
+    rwa [hlen] at hcap'
+  have hmc : P.length ≤
+      (P.map fun B ↦ (quotientLayer K B).card).sum := by
+    have hcap := le_dgmCappedMultiplicitySum K P hP P.length le_rfl
+    simpa only [dgmCappedMultiplicitySum_length] using hcap
+  unfold DGMFullConvergent
+  dsimp only
+  refine ⟨hCne, hCsub, ?_⟩
+  exact nat_full_convergent_bound
+    (Nat.card (AddAction.stabilizer A (C : Set A))) (Nat.card K)
+    (P.map fun B ↦ (stabilizerQuotientLayer C B).card).sum
+    (R.map fun B ↦ (stabilizerQuotientLayer C B).card).sum
+    (P.map fun B ↦ (quotientLayer K B).card).sum P.length C.card
+    hma hmb hmc hweighted hfull
+
+/-- The full sumset of the actual `K`-coset slices is an initial full-weight
+convergent.  Its proof uses only full-layer Kneser and the already established
+slice-defect accounting; the bound for the current target is not assumed. -/
+theorem fullCosetSlices_is_DGMFullConvergent
+    [Fintype A] (K : AddSubgroup A)
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (P : List (Finset A)) (mu : QuotientPattern K P.length)
+    (hP : IsNonemptySetPartition P) {y : A}
+    (h : LayerSubsumChoice P P.length y) (hmu : h.RealizesPattern mu) :
+    DGMFullConvergent P mu
+      (fullLayerSumSpectrum (h.cosetSliceLayers K)) := by
+  classical
+  let R := h.cosetSliceLayers K
+  let C := fullLayerSumSpectrum R
+  have hR : IsNonemptySetPartition R := by
+    simpa only [R] using
+      h.isNonemptySetPartition_cosetSliceLayers_of_full K rfl
+  have hlen : R.length = P.length := by
+    simpa only [R] using h.length_cosetSliceLayers K
+  have hCne : C.Nonempty := by
+    exact layerSubsumSpectrum_nonempty R hR R.length le_rfl
+  have hCsub : C ⊆ patternSubsumSpectrum P mu := by
+    simpa only [C, R] using
+      h.fullLayerSumSpectrum_cosetSliceLayers_subset K rfl mu hmu
+  have hJK : AddAction.stabilizer A (C : Set A) ≤ K := by
+    apply stabilizer_le_of_nonempty_subset_quotientFiber
+      K C hCne mu.quotientSum
+    intro x hx
+    exact patternSubsumSpectrum_quotient_eq P mu (hCsub hx)
+  have hw0 := h.fullCosetSlices_weighted_incidence_le
+    (AddAction.stabilizer A (C : Set A)) K hJK rfl
+  have hw :
+      Nat.card (AddAction.stabilizer A (C : Set A)) *
+            (P.map fun B ↦ (stabilizerQuotientLayer C B).card).sum +
+          Nat.card K * P.length ≤
+        Nat.card (AddAction.stabilizer A (C : Set A)) *
+            (R.map fun B ↦ (stabilizerQuotientLayer C B).card).sum +
+          Nat.card K *
+            (P.map fun B ↦ (quotientLayer K B).card).sum := by
+    simpa only [R, quotientLayer_eq_stabilizerQuotientLayer] using hw0
+  exact dgmFullConvergent_of_fullLayer_weightedIncidence
+    K P mu hP R C hR hlen rfl hCne hCsub hw
+
+/-- A full-weight convergent still lies in one prescribed `K`-coset, so its
+actual stabilizer refines `K`. -/
+theorem dgmFullConvergent_stabilizer_le_original
+    [Fintype A] {K : AddSubgroup A}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (P : List (Finset A)) (mu : QuotientPattern K P.length)
+    (C : Finset A) (hC : DGMFullConvergent P mu C) :
+    AddAction.stabilizer A (C : Set A) ≤ K := by
+  unfold DGMFullConvergent at hC
+  dsimp only at hC
+  rcases hC with ⟨hCne, hCsub, _⟩
+  apply stabilizer_le_of_nonempty_subset_quotientFiber
+    K C hCne mu.quotientSum
+  intro x hx
+  exact patternSubsumSpectrum_quotient_eq P mu (hCsub hx)
+
+/-- A nonempty finite family of full-weight convergents has a member with
+minimum stabilizer cardinality. -/
+theorem exists_dgmFullConvergent_min_stabilizer_card
+    [Fintype A] {K : AddSubgroup A}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (P : List (Finset A)) (mu : QuotientPattern K P.length)
+    {C₀ : Finset A} (hC₀ : DGMFullConvergent P mu C₀) :
+    ∃ C : Finset A, DGMFullConvergent P mu C ∧
+      ∀ D : Finset A, DGMFullConvergent P mu D →
+        Nat.card (AddAction.stabilizer A (C : Set A)) ≤
+          Nat.card (AddAction.stabilizer A (D : Set A)) := by
+  classical
+  let convergents := (Finset.univ : Finset (Finset A)).filter
+    fun C ↦ DGMFullConvergent P mu C
+  have hconvergents : convergents.Nonempty :=
+    ⟨C₀, Finset.mem_filter.mpr ⟨Finset.mem_univ C₀, hC₀⟩⟩
+  obtain ⟨C, hCmem, hmin⟩ := Finset.exists_min_image convergents
+    (fun C ↦ Nat.card (AddAction.stabilizer A (C : Set A))) hconvergents
+  refine ⟨C, (Finset.mem_filter.mp hCmem).2, ?_⟩
+  intro D hD
+  exact hmin D (Finset.mem_filter.mpr ⟨Finset.mem_univ D, hD⟩)
+
+/-- If the full prescribed target is aperiodic and still violates DGM, every
+full-weight convergent has nontrivial stabilizer. -/
+theorem dgmFullConvergent_stabilizer_ne_bot_of_target_failure
+    [Fintype A] {K : AddSubgroup A}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (P : List (Finset A)) (mu : QuotientPattern K P.length)
+    (hTargetStab : (patternSubsumSpectrum P mu).addStab = {0})
+    (hfailure : ¬DGMPatternBound P mu)
+    (C : Finset A) (hCconv : DGMFullConvergent P mu C) :
+    AddAction.stabilizer A (C : Set A) ≠ ⊥ := by
+  classical
+  intro hCbot
+  have hCdata := hCconv
+  unfold DGMFullConvergent at hCdata
+  dsimp only at hCdata
+  rcases hCdata with ⟨hCne, hCupper, hCbound⟩
+  let T := patternSubsumSpectrum P mu
+  have hTne : T.Nonempty := hCne.mono (by simpa [T] using hCupper)
+  have hCadd : C.addStab = {0} := by
+    ext a
+    have hcoe := Finset.coe_addStab hCne
+    rw [← Finset.mem_coe, hcoe, hCbot]
+    simp
+  have hCcap :=
+    dgmStabilizerCappedMultiplicitySum_eq_raw_of_addStab_eq_singleton
+      C hCne hCadd P P.length
+  have hTcap :=
+    dgmStabilizerCappedMultiplicitySum_eq_raw_of_addStab_eq_singleton
+      T hTne (by simpa [T] using hTargetStab) P P.length
+  have hCcard : C.card ≤ T.card :=
+    Finset.card_le_card (by simpa [T] using hCupper)
+  have hCgroupCard : Nat.card (AddAction.stabilizer A (C : Set A)) = 1 := by
+    rw [hCbot]
+    exact Nat.card_unique
+  have hTgroupCard : Nat.card (AddAction.stabilizer A (T : Set A)) = 1 := by
+    rw [← card_addStab_eq_natCard_stabilizer T hTne,
+      show T.addStab = {0} by simpa [T] using hTargetStab]
+    simp
+  have hCbound' :
+      Nat.card (AddAction.stabilizer A (C : Set A)) *
+          (stabilizerDgmCappedMultiplicitySum C P P.length -
+            P.length + 1) ≤
+        C.card + Nat.card K *
+          (dgmCappedMultiplicitySum K P P.length - P.length) := by
+    rw [stabilizerDgmCappedMultiplicitySum_length,
+      dgmCappedMultiplicitySum_length]
+    exact hCbound
+  apply hfailure
+  unfold DGMPatternBound
+  dsimp only
+  change Nat.card (AddAction.stabilizer A (T : Set A)) *
+      (stabilizerDgmCappedMultiplicitySum T P P.length -
+        P.length + 1) ≤
+    T.card + Nat.card K *
+      (dgmCappedMultiplicitySum K P P.length - P.length)
+  rw [hTgroupCard, one_mul, hTcap]
+  rw [hCgroupCard, one_mul, hCcap] at hCbound'
+  exact hCbound'.trans (Nat.add_le_add_right hCcard _)
+
+/-- The aperiodic full target supplies an actual full source choice whose
+coset modulo a nontrivial convergent stabilizer is not contained in the
+target. -/
+theorem exists_escape_fullPatternChoice_of_nontrivial_convergent
+    [Fintype A] {K : AddSubgroup A}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (P : List (Finset A)) (mu : QuotientPattern K P.length)
+    (hTargetStab : (patternSubsumSpectrum P mu).addStab = {0})
+    (C : Finset A) (hC : DGMFullConvergent P mu C)
+    (hCnontrivial : AddAction.stabilizer A (C : Set A) ≠ ⊥) :
+    ∃ (y : A) (base : LayerSubsumChoice P P.length y),
+      base.RealizesPattern mu ∧
+      ¬dgmCosetFiber (AddAction.stabilizer A (C : Set A)) y ⊆
+        patternSubsumSpectrum P mu := by
+  classical
+  let T := patternSubsumSpectrum P mu
+  let H := AddAction.stabilizer A (C : Set A)
+  have hCdata := hC
+  unfold DGMFullConvergent at hCdata
+  dsimp only at hCdata
+  rcases hCdata with ⟨hCne, hCupper, _⟩
+  have hTne : T.Nonempty := hCne.mono (by simpa [T] using hCupper)
+  have haexists : ∃ a : A, a ∈ H ∧ a ≠ 0 := by
+    by_contra h
+    push Not at h
+    apply hCnontrivial
+    apply le_antisymm
+    · intro a ha
+      show a ∈ (⊥ : AddSubgroup A)
+      simpa using h a ha
+    · exact bot_le
+  obtain ⟨a, haH, ha0⟩ := haexists
+  have haT : a ∉ T.addStab := by
+    rw [show T.addStab = {0} by simpa [T] using hTargetStab]
+    simpa using ha0
+  obtain ⟨y, hyT, hayT⟩ :=
+    exists_mem_add_not_mem_of_not_mem_addStab T hTne a haT
+  obtain ⟨⟨base, hbase⟩⟩ :=
+    (mem_patternSubsumSpectrum_iff P mu y).1 (by simpa [T] using hyT)
+  refine ⟨y, base, hbase, ?_⟩
+  intro hcoset
+  apply hayT
+  apply hcoset
+  apply (mem_dgmCosetFiber_iff H y (a + y)).2
+  change (a : A ⧸ H) + (y : A ⧸ H) = (y : A ⧸ H)
+  rw [(QuotientAddGroup.eq_zero_iff a).2 haH, zero_add]
+
+/-- A convergent's extra `+1` pays for the complete correction of a finer
+pattern piece. -/
+theorem nat_full_convergent_extension_bound
+    (h x m c correction d z : ℕ)
+    (hC : h * (x - m + 1) ≤ c + correction)
+    (hD : z ≤ d + h * (x - m)) :
+    z ≤ c + d + correction := by
+  have hmono : h * (x - m) ≤ h * (x - m + 1) :=
+    Nat.mul_le_mul_left h (Nat.le_add_right _ _)
+  omega
+
+/-- A smaller fine-pattern DGM bound extends a full convergent inside the
+escaping stabilizer coset.  The union is again a full convergent and has
+strictly smaller stabilizer, exactly the page-8 extension contradiction. -/
+theorem dgmFullConvergent_extension_of_fine_bound
+    [Fintype A] {K : AddSubgroup A}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (P : List (Finset A)) (mu : QuotientPattern K P.length)
+    (C : Finset A) (hCconv : DGMFullConvergent P mu C)
+    {y : A} (base : LayerSubsumChoice P P.length y)
+    (hbase : base.RealizesPattern mu)
+    (hescape : ¬dgmCosetFiber
+      (AddAction.stabilizer A (C : Set A)) y ⊆
+        patternSubsumSpectrum P mu)
+    (hfine : DGMPatternBound P
+      (base.quotientPattern (AddAction.stabilizer A (C : Set A)))) :
+    let D := patternSubsumSpectrum P
+      (base.quotientPattern (AddAction.stabilizer A (C : Set A)))
+    DGMFullConvergent P mu (C ∪ D) ∧
+      AddAction.stabilizer A ((C ∪ D : Finset A) : Set A) <
+        AddAction.stabilizer A (C : Set A) := by
+  classical
+  let H := AddAction.stabilizer A (C : Set A)
+  let nu := base.quotientPattern H
+  let T := patternSubsumSpectrum P mu
+  let D := patternSubsumSpectrum P nu
+  have hCdata := hCconv
+  unfold DGMFullConvergent at hCdata
+  dsimp only at hCdata
+  rcases hCdata with ⟨hCne, hCupper, hCbound⟩
+  have hHle : H ≤ K := by
+    simpa [H] using dgmFullConvergent_stabilizer_le_original P mu C hCconv
+  have hyD : y ∈ D := by
+    exact (mem_patternSubsumSpectrum_iff P nu y).2
+      ⟨⟨base, by simpa [nu] using base.realizes_quotientPattern H⟩⟩
+  have hDne : D.Nonempty := ⟨y, hyD⟩
+  have hDupper : D ⊆ T := by
+    simpa [D, nu, T] using
+      (patternSubsumSpectrum_quotientPattern_subset_of_realizes_of_le
+        H K hHle base mu hbase :
+          patternSubsumSpectrum P (base.quotientPattern H) ⊆
+            patternSubsumSpectrum P mu)
+  have hDfiber : ∀ x ∈ D, (x : A ⧸ H) = (y : A ⧸ H) := by
+    intro x hx
+    exact (patternSubsumSpectrum_quotient_eq P nu hx).trans
+      (patternSubsumSpectrum_quotient_eq P nu hyD).symm
+  have hex : ∃ z : A, z ∈ dgmCosetFiber H y ∧ z ∉ T := by
+    by_contra h
+    apply hescape
+    intro z hz
+    by_contra hzT
+    exact h ⟨z, hz, by simpa [T] using hzT⟩
+  obtain ⟨z, hzfiber, hzT⟩ := hex
+  have hzquot : (z : A ⧸ H) = (y : A ⧸ H) :=
+    (mem_dgmCosetFiber_iff H y z).1 hzfiber
+  have hzD : z ∉ D := fun hz ↦ hzT (hDupper hz)
+  have hdisjFiber : Disjoint (C : Set A) (dgmCosetFiber H y : Set A) :=
+    disjoint_cosetFiber_of_periodic_subset_of_not_subset
+      C T hCne H rfl (by simpa [T] using hCupper) y
+        (by simpa [H, T] using hescape)
+  have hCD : Disjoint C D := by
+    rw [Finset.disjoint_left]
+    intro x hxC hxD
+    exact (Set.disjoint_left.1 hdisjFiber) hxC
+      ((mem_dgmCosetFiber_iff H y x).2 (hDfiber x hxD))
+  have hUnionStab :
+      AddAction.stabilizer A ((C ∪ D : Finset A) : Set A) =
+        AddAction.stabilizer A (D : Set A) :=
+    stabilizer_union_eq_right_of_periodic_left_proper_fiber
+      H C D hCne hDne rfl y hDfiber hdisjFiber hzquot hzD
+  have hDlt : AddAction.stabilizer A (D : Set A) < H :=
+    stabilizer_lt_of_proper_quotientFiber H D hDne (y : A ⧸ H)
+      hDfiber (y := z) hzquot hzD
+  have hfine' := hfine
+  unfold DGMPatternBound at hfine'
+  dsimp only at hfine'
+  have hDbound :
+      Nat.card (AddAction.stabilizer A (D : Set A)) *
+          ((P.map fun B ↦ (stabilizerQuotientLayer D B).card).sum -
+            P.length + 1) ≤
+        D.card + Nat.card H *
+          ((P.map fun B ↦ (quotientLayer H B).card).sum - P.length) := by
+    simpa only [D, nu, stabilizerDgmCappedMultiplicitySum_length,
+      dgmCappedMultiplicitySum_length] using hfine'
+  have hsumUnion :
+      (P.map fun B ↦ (stabilizerQuotientLayer (C ∪ D) B).card).sum =
+        (P.map fun B ↦ (stabilizerQuotientLayer D B).card).sum := by
+    apply congrArg List.sum
+    apply List.map_congr_left
+    intro B hB
+    rw [← quotientLayer_eq_stabilizerQuotientLayer (C ∪ D) B,
+      ← quotientLayer_eq_stabilizerQuotientLayer D B, hUnionStab]
+  have hCsum :
+      (P.map fun B ↦ (stabilizerQuotientLayer C B).card).sum =
+        (P.map fun B ↦ (quotientLayer H B).card).sum := by
+    apply congrArg List.sum
+    apply List.map_congr_left
+    intro B hB
+    rw [← quotientLayer_eq_stabilizerQuotientLayer C B]
+  have hCbound' : Nat.card H *
+        ((P.map fun B ↦ (quotientLayer H B).card).sum -
+          P.length + 1) ≤
+      C.card + Nat.card K *
+        ((P.map fun B ↦ (quotientLayer K B).card).sum - P.length) := by
+    simpa only [H, hCsum] using hCbound
+  have hfinal :
+      Nat.card (AddAction.stabilizer A (D : Set A)) *
+          ((P.map fun B ↦ (stabilizerQuotientLayer D B).card).sum -
+            P.length + 1) ≤
+        C.card + D.card + Nat.card K *
+          ((P.map fun B ↦ (quotientLayer K B).card).sum - P.length) :=
+    nat_full_convergent_extension_bound
+      (Nat.card H)
+      (P.map fun B ↦ (quotientLayer H B).card).sum P.length C.card
+      (Nat.card K *
+        ((P.map fun B ↦ (quotientLayer K B).card).sum - P.length))
+      D.card
+      (Nat.card (AddAction.stabilizer A (D : Set A)) *
+        ((P.map fun B ↦ (stabilizerQuotientLayer D B).card).sum -
+          P.length + 1)) hCbound' hDbound
+  dsimp only
+  constructor
+  · unfold DGMFullConvergent
+    dsimp only
+    refine ⟨hCne.mono Finset.subset_union_left, ?_, ?_⟩
+    · intro x hx
+      rcases Finset.mem_union.mp hx with hxC | hxD
+      · exact hCupper hxC
+      · exact hDupper hxD
+    · rw [hsumUnion, hUnionStab, Finset.card_union_of_disjoint hCD]
+      exact hfinal
+  · rw [hUnionStab]
+    simpa [H] using hDlt
+
+/-- The full-weight branch of the inner minimal-counterexample induction.  An
+actual full source choice constructs the initial convergent.  If the target
+bound failed, a minimum nontrivial stabilizer would yield a strictly smaller
+fine pattern; its induction bound extends the convergent while strictly
+decreasing that stabilizer, a contradiction. -/
+theorem dgmPatternBound_fullWeight_strongIH
+    [Fintype A] (M : DGMPatternInnerMeasure)
+    (ih : ∀ M', DGMPatternInnerLt M' M → DGMPatternAtMeasure (A := A) M')
+    {K : AddSubgroup A}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (P : List (Finset A)) (hP : IsNonemptySetPartition P)
+    (mu : QuotientPattern K P.length)
+    (hmeasure : dgmPatternInnerMeasure P mu = M)
+    (hTarget : (patternSubsumSpectrum P mu).Nonempty)
+    (hTargetStab : (patternSubsumSpectrum P mu).addStab = {0}) :
+    DGMPatternBound P mu := by
+  classical
+  obtain ⟨y₀, hy₀⟩ := hTarget
+  obtain ⟨⟨base₀, hbase₀⟩⟩ :=
+    (mem_patternSubsumSpectrum_iff P mu y₀).1 hy₀
+  have hC₀ : DGMFullConvergent P mu
+      (fullLayerSumSpectrum (base₀.cosetSliceLayers K)) :=
+    fullCosetSlices_is_DGMFullConvergent K P mu hP base₀ hbase₀
+  by_contra hfailure
+  obtain ⟨C, hCconv, hmin⟩ :=
+    exists_dgmFullConvergent_min_stabilizer_card P mu hC₀
+  have hCnontrivial : AddAction.stabilizer A (C : Set A) ≠ ⊥ :=
+    dgmFullConvergent_stabilizer_ne_bot_of_target_failure
+      P mu hTargetStab hfailure C hCconv
+  obtain ⟨y, base, hbase, hescape⟩ :=
+    exists_escape_fullPatternChoice_of_nontrivial_convergent
+      P mu hTargetStab C hCconv hCnontrivial
+  let H := AddAction.stabilizer A (C : Set A)
+  let nu := base.quotientPattern H
+  let T := patternSubsumSpectrum P mu
+  let D := patternSubsumSpectrum P nu
+  have hCdata := hCconv
+  unfold DGMFullConvergent at hCdata
+  dsimp only at hCdata
+  rcases hCdata with ⟨hCne, hCupper, _⟩
+  have hHle : H ≤ K := by
+    simpa [H] using dgmFullConvergent_stabilizer_le_original P mu C hCconv
+  have hyD : y ∈ D := by
+    exact (mem_patternSubsumSpectrum_iff P nu y).2
+      ⟨⟨base, by simpa [nu] using base.realizes_quotientPattern H⟩⟩
+  have hDne : D.Nonempty := ⟨y, hyD⟩
+  have hDupper : D ⊆ T := by
+    simpa [D, nu, T] using
+      (patternSubsumSpectrum_quotientPattern_subset_of_realizes_of_le
+        H K hHle base mu hbase :
+          patternSubsumSpectrum P (base.quotientPattern H) ⊆
+            patternSubsumSpectrum P mu)
+  have hDfiber : ∀ x ∈ D, (x : A ⧸ H) = (y : A ⧸ H) := by
+    intro x hx
+    exact (patternSubsumSpectrum_quotient_eq P nu hx).trans
+      (patternSubsumSpectrum_quotient_eq P nu hyD).symm
+  have hdisjFiber : Disjoint (C : Set A) (dgmCosetFiber H y : Set A) :=
+    disjoint_cosetFiber_of_periodic_subset_of_not_subset
+      C T hCne H rfl (by simpa [T] using hCupper) y
+        (by simpa [H, T] using hescape)
+  have hCD : Disjoint C D := by
+    rw [Finset.disjoint_left]
+    intro x hxC hxD
+    exact (Set.disjoint_left.1 hdisjFiber) hxC
+      ((mem_dgmCosetFiber_iff H y x).2 (hDfiber x hxD))
+  have hcardlt : D.card < T.card := by
+    apply Finset.card_lt_card
+    refine ⟨hDupper, ?_⟩
+    intro hTD
+    obtain ⟨c, hcC⟩ := hCne
+    exact (Finset.disjoint_left.1 hCD) hcC
+      (hTD (by simpa [T] using hCupper hcC))
+  have hmeasureLt : DGMPatternInnerLt
+      (dgmPatternInnerMeasure P nu) (dgmPatternInnerMeasure P mu) :=
+    dgmPatternInnerMeasure_lt_of_patternSpectrum_card_lt
+      P nu P mu (by simpa [D, T] using hcardlt)
+  have hmeasureLtM : DGMPatternInnerLt (dgmPatternInnerMeasure P nu) M := by
+    rw [← hmeasure]
+    exact hmeasureLt
+  have hsmall := ih (dgmPatternInnerMeasure P nu) hmeasureLtM
+  have hfine : DGMPatternBound P nu :=
+    hsmall H P.length inferInstance inferInstance P nu rfl hDne
+  obtain ⟨hUnionConv, hUnionLt⟩ :=
+    dgmFullConvergent_extension_of_fine_bound
+      P mu C hCconv base hbase hescape (by simpa [H, nu] using hfine)
+  have hminCard := hmin (C ∪ D) (by simpa [D, H, nu] using hUnionConv)
+  have hstrictCard :
+      Nat.card (AddAction.stabilizer A ((C ∪ D : Finset A) : Set A)) <
+        Nat.card (AddAction.stabilizer A (C : Set A)) :=
+    natCard_lt_natCard_of_addSubgroup_lt
+      (by simpa [D, H, nu] using hUnionLt)
+  exact (not_le_of_gt hstrictCard) hminCard
+
+/-- Source-facing name for the cross-`K`-coset side of the paper's `ell = m`
+split.  The proof above actually closes the entire full-weight case, so the
+cross-coset guard is recorded but no stronger hypothesis is needed. -/
+theorem dgmPatternBound_fullWeight_crossK_strongIH
+    [Fintype A] (M : DGMPatternInnerMeasure)
+    (ih : ∀ M', DGMPatternInnerLt M' M → DGMPatternAtMeasure (A := A) M')
+    {K : AddSubgroup A}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (P : List (Finset A)) (hP : IsNonemptySetPartition P)
+    (mu : QuotientPattern K P.length)
+    (hmeasure : dgmPatternInnerMeasure P mu = M)
+    (hTarget : (patternSubsumSpectrum P mu).Nonempty)
+    (hTargetStab : (patternSubsumSpectrum P mu).addStab = {0})
+    (_hcross : ¬∀ B ∈ P, (quotientLayer K B).card = 1) :
+    DGMPatternBound P mu :=
+  dgmPatternBound_fullWeight_strongIH
+    M ih P hP mu hmeasure hTarget hTargetStab
+
 /-- The empty-selection endpoint is also exact.  The source DGM theorem uses
 positive `n`; this lemma is retained as a recursion boundary check. -/
 theorem dgmSetpartitionBound_zero [Fintype A]
