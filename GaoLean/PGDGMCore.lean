@@ -314,6 +314,102 @@ theorem exists_of_perm
       obtain ⟨hR, hRmult⟩ := ihQR hQ
       exact ⟨hR, fun q ↦ (hRmult q).trans (hQmult q)⟩
 
+/-- If a value belongs to every labelled layer and a choice leaves some
+layer unused, insert that same value into one unused occurrence. -/
+theorem exists_insert_common_value
+    {P : List (Finset A)} {n : ℕ} {y b : A}
+    (h : LayerSubsumChoice P n y)
+    (hall : ∀ C ∈ P, b ∈ C) (hlt : n < P.length)
+    (K : AddSubgroup A) [DecidableEq (A ⧸ K)] :
+    ∃ h' : LayerSubsumChoice P (n + 1) (b + y),
+      ∀ q : A ⧸ K, quotientMultiplicity K h' q =
+        (if (b : A ⧸ K) = q then 1 else 0) +
+          quotientMultiplicity K h q := by
+  induction h with
+  | zero P =>
+      cases P with
+      | nil => simp at hlt
+      | cons C P =>
+          have hbC : b ∈ C := hall C (by simp)
+          exact ⟨LayerSubsumChoice.take hbC (LayerSubsumChoice.zero P), by
+            intro q
+            simp [quotientMultiplicity]⟩
+  | @skip C P n y h ih =>
+      have hbC : b ∈ C := hall C (by simp)
+      exact ⟨LayerSubsumChoice.take hbC h, by
+        intro q
+        simp [quotientMultiplicity]⟩
+  | @take C P n c y hc h ih =>
+      have hallTail : ∀ D ∈ P, b ∈ D := by
+        intro D hD
+        exact hall D (by simp [hD])
+      have hltTail : n < P.length := by simpa using hlt
+      obtain ⟨h', h'mult⟩ := ih hallTail hltTail
+      have hsum : c + (b + y) = b + (c + y) := by ac_rfl
+      let hout : LayerSubsumChoice (C :: P) (n + 1 + 1)
+          (c + (b + y)) := LayerSubsumChoice.take hc h'
+      refine ⟨hsum ▸ hout, ?_⟩
+      intro q
+      rw [quotientMultiplicity_cast]
+      simp only [hout, quotientMultiplicity]
+      rw [h'mult q]
+      omega
+
+/-- When the leading cell is contained in every tail cell and fewer than all
+layers are selected, every realization using the head can exchange it into
+an unused labelled tail occurrence. -/
+theorem exists_tail_of_head_subset_all
+    {B : Finset A} {P : List (Finset A)} {n : ℕ} {y : A}
+    (h : LayerSubsumChoice (B :: P) n y)
+    (hall : ∀ C ∈ P, B ⊆ C) (hlt : n < (B :: P).length)
+    (K : AddSubgroup A) [DecidableEq (A ⧸ K)] :
+    ∃ h' : LayerSubsumChoice P n y,
+      ∀ q : A ⧸ K, quotientMultiplicity K h' q =
+        quotientMultiplicity K h q := by
+  cases h with
+  | zero =>
+      exact ⟨LayerSubsumChoice.zero P, by
+        simp [quotientMultiplicity]⟩
+  | skip htail =>
+      exact ⟨htail, by simp [quotientMultiplicity]⟩
+  | @take _ _ k b z hb htail =>
+      have hcommon : ∀ C ∈ P, b ∈ C := by
+        intro C hC
+        exact hall C hC hb
+      have hltTail : k < P.length := by simpa using hlt
+      obtain ⟨h', h'mult⟩ :=
+        htail.exists_insert_common_value hcommon hltTail K
+      exact ⟨h', by
+        intro q
+        simpa [quotientMultiplicity] using h'mult q⟩
+
+/-- Any exact choice using fewer than all labelled layers survives deletion
+of one explicitly unused index. -/
+theorem exists_eraseIdx_of_weight_lt_length
+    {P : List (Finset A)} {n : ℕ} {y : A}
+    (h : LayerSubsumChoice P n y) (hlt : n < P.length)
+    (K : AddSubgroup A) [DecidableEq (A ⧸ K)] :
+    ∃ (i : ℕ) (hi : i < P.length),
+      ∃ h' : LayerSubsumChoice (P.eraseIdx i) n y,
+        ∀ q : A ⧸ K, quotientMultiplicity K h' q =
+          quotientMultiplicity K h q := by
+  induction h with
+  | zero P =>
+      cases P with
+      | nil => simp at hlt
+      | cons B P =>
+          exact ⟨0, by simp, LayerSubsumChoice.zero P, by
+            simp [quotientMultiplicity]⟩
+  | @skip B P n y h ih =>
+      exact ⟨0, by simp, h, by simp [quotientMultiplicity]⟩
+  | @take B P n b y hb h ih =>
+      have hltTail : n < P.length := by simpa using hlt
+      obtain ⟨i, hi, h', h'mult⟩ := ih hltTail
+      refine ⟨i + 1, by simp [hi], LayerSubsumChoice.take hb h', ?_⟩
+      intro q
+      simp only [quotientMultiplicity]
+      rw [h'mult q]
+
 end LayerSubsumChoice
 
 /-- A quotient-coset pattern of total weight `n`. -/
@@ -458,6 +554,62 @@ theorem patternSubsumSpectrum_tail_subset_inter_union
   have hCunion : C ⊆ B ∪ C := fun _ hx ↦ Finset.mem_union_right B hx
   exact (patternSubsumSpectrum_cons_mono hCunion P μ).trans
     (patternSubsumSpectrum_tail_subset_cons (B ∩ C) ((B ∪ C) :: P) μ)
+
+/-- Source `ℓ < m` common-cell exchange: deleting a leading cell contained
+in every tail cell leaves the complete prescribed-pattern spectrum unchanged.
+The strict weight inequality guarantees an unused labelled occurrence. -/
+theorem patternSubsumSpectrum_cons_eq_tail_of_head_subset_all
+    {K : AddSubgroup A} {n : ℕ} [Fintype (A ⧸ K)]
+    [DecidableEq (A ⧸ K)] (B : Finset A) (P : List (Finset A))
+    (μ : QuotientPattern K n) (hall : ∀ C ∈ P, B ⊆ C)
+    (hlt : n < (B :: P).length) :
+    patternSubsumSpectrum (B :: P) μ = patternSubsumSpectrum P μ := by
+  apply Finset.Subset.antisymm
+  · intro y hy
+    obtain ⟨⟨h, hμ⟩⟩ :=
+      (mem_patternSubsumSpectrum_iff (B :: P) μ y).1 hy
+    obtain ⟨h', h'mult⟩ :=
+      h.exists_tail_of_head_subset_all hall hlt K
+    exact (mem_patternSubsumSpectrum_iff P μ y).2
+      ⟨⟨h', fun q ↦ (h'mult q).trans (hμ q)⟩⟩
+  · exact patternSubsumSpectrum_tail_subset_cons B P μ
+
+/-- Finite labelled selection of the minimum-cardinality deletable cell.
+Existence is not assumed: an actual prescribed-pattern realization with
+weight strictly below the list length exposes an unused `eraseIdx`. -/
+theorem exists_minimal_deletableIdx
+    {K : AddSubgroup A} {n : ℕ} [Fintype (A ⧸ K)]
+    [DecidableEq (A ⧸ K)] (Q : List (Finset A))
+    (μ : QuotientPattern K n)
+    (hTarget : (patternSubsumSpectrum Q μ).Nonempty)
+    (hlt : n < Q.length) :
+    ∃ (i : ℕ) (hi : i < Q.length),
+      (patternSubsumSpectrum (Q.eraseIdx i) μ).Nonempty ∧
+      ∀ (j : ℕ) (hj : j < Q.length),
+        (patternSubsumSpectrum (Q.eraseIdx j) μ).Nonempty →
+        (Q[i]'hi).card ≤ (Q[j]'hj).card := by
+  classical
+  obtain ⟨y, hy⟩ := hTarget
+  obtain ⟨⟨h, hμ⟩⟩ := (mem_patternSubsumSpectrum_iff Q μ y).1 hy
+  obtain ⟨i₀, hi₀, h₀, h₀mult⟩ :=
+    h.exists_eraseIdx_of_weight_lt_length hlt K
+  have hdelete₀ :
+      (patternSubsumSpectrum (Q.eraseIdx i₀) μ).Nonempty := by
+    exact ⟨y, (mem_patternSubsumSpectrum_iff (Q.eraseIdx i₀) μ y).2
+      ⟨⟨h₀, fun q ↦ (h₀mult q).trans (hμ q)⟩⟩⟩
+  let p : ℕ → Prop := fun m ↦
+    ∃ (i : ℕ) (hi : i < Q.length),
+      (patternSubsumSpectrum (Q.eraseIdx i) μ).Nonempty ∧
+      (Q[i]'hi).card = m
+  have hp : ∃ m, p m :=
+    ⟨(Q[i₀]'hi₀).card, i₀, hi₀, hdelete₀, rfl⟩
+  obtain ⟨i, hi, hdelete, hcard⟩ := Nat.find_spec hp
+  refine ⟨i, hi, hdelete, ?_⟩
+  intro j hj hdeletej
+  have hpj : p (Q[j]'hj).card := ⟨j, hj, hdeletej, rfl⟩
+  have hle := Nat.find_min' hp hpj
+  rw [hcard]
+  exact hle
 
 theorem patternSubsumSpectrum_nonempty_weight_le_length
     {K : AddSubgroup A} {n : ℕ} [Fintype (A ⧸ K)]
@@ -2494,6 +2646,24 @@ theorem LayerSubsumChoice.quotientMultiplicity_le_layerMultiplicity
           rw [if_neg hbq]
           simpa using ih
 
+/-- If every labelled layer meets one quotient value, its incidence
+multiplicity is exactly the list length. -/
+theorem quotientLayerMultiplicity_eq_length_of_mem_all
+    (K : AddSubgroup A) (P : List (Finset A)) (q : A ⧸ K)
+    (hall : ∀ C ∈ P, q ∈ quotientLayer K C) :
+    quotientLayerMultiplicity K P q = P.length := by
+  classical
+  induction P with
+  | nil => simp [quotientLayerMultiplicity]
+  | cons C P ih =>
+      have hC : q ∈ quotientLayer K C := hall C (by simp)
+      have htail : ∀ D ∈ P, q ∈ quotientLayer K D := by
+        intro D hD
+        exact hall D (by simp [hD])
+      rw [quotientLayerMultiplicity_cons_of_mem K C P q hC, ih htail]
+      simp only [List.length_cons]
+      omega
+
 /-- Quotient-layer incidence multiplicity depends on the multiset of
 labelled layers, not their order. -/
 theorem quotientLayerMultiplicity_eq_of_perm
@@ -2787,6 +2957,34 @@ theorem le_dgmCappedMultiplicitySum_of_layerSubsumSpectrum_nonempty
         rw [h.sum_quotientMultiplicity (K := K)] at hsingle
         exact hsingle
       · exact h.quotientMultiplicity_le_layerMultiplicity q
+
+/-- In the common-cell `ℓ < m` branch, deleting the leading labelled cell
+does not change any capped quotient incidence: every quotient value lost at
+the head still occurs in all `m-1 ≥ ℓ` tail cells. -/
+theorem dgmCappedMultiplicitySum_cons_eq_tail_of_head_subset_all
+    (K : AddSubgroup A) [Finite (A ⧸ K)]
+    (B : Finset A) (P : List (Finset A)) (n : ℕ)
+    (hall : ∀ C ∈ P, B ⊆ C) (hlt : n < (B :: P).length) :
+    dgmCappedMultiplicitySum K (B :: P) n =
+      dgmCappedMultiplicitySum K P n := by
+  classical
+  letI : Fintype (A ⧸ K) := Fintype.ofFinite (A ⧸ K)
+  unfold dgmCappedMultiplicitySum
+  apply Finset.sum_congr rfl
+  intro q _
+  by_cases hq : q ∈ quotientLayer K B
+  · obtain ⟨b, hbB, hbq⟩ := (mem_quotientLayer_iff K B q).1 hq
+    have hqall : ∀ C ∈ P, q ∈ quotientLayer K C := by
+      intro C hC
+      exact (mem_quotientLayer_iff K C q).2
+        ⟨b, hall C hC hbB, hbq⟩
+    have htail := quotientLayerMultiplicity_eq_length_of_mem_all
+      K P q hqall
+    have hn : n ≤ P.length := by simpa using hlt
+    have hn' : n ≤ 1 + P.length := hn.trans (by omega)
+    rw [quotientLayerMultiplicity_cons_of_mem K B P q hq, htail]
+    rw [min_eq_left hn', min_eq_left hn]
+  · rw [quotientLayerMultiplicity_cons_of_not_mem K B P q hq]
 
 /-- At the full-layer endpoint the cap is inactive. -/
 theorem dgmCappedMultiplicitySum_length
@@ -4634,6 +4832,18 @@ theorem stabilizerDgmCappedMultiplicitySum_eq_of_perm
     ← dgmCappedMultiplicitySum_stabilizer_eq T Q n]
   exact dgmCappedMultiplicitySum_eq_of_perm
     (AddAction.stabilizer A (T : Set A)) hPQ n
+
+/-- Stabilizer-capped incidence also survives common-cell deletion. -/
+theorem stabilizerDgmCappedMultiplicitySum_cons_eq_tail_of_head_subset_all
+    [Fintype A] (T : Finset A) (B : Finset A)
+    (P : List (Finset A)) (n : ℕ)
+    (hall : ∀ C ∈ P, B ⊆ C) (hlt : n < (B :: P).length) :
+    stabilizerDgmCappedMultiplicitySum T (B :: P) n =
+      stabilizerDgmCappedMultiplicitySum T P n := by
+  rw [← dgmCappedMultiplicitySum_stabilizer_eq T (B :: P) n,
+    ← dgmCappedMultiplicitySum_stabilizer_eq T P n]
+  exact dgmCappedMultiplicitySum_cons_eq_tail_of_head_subset_all
+    (AddAction.stabilizer A (T : Set A)) B P n hall hlt
 
 /-- Frozen general DGM finite-setpartition statement.  This is the exact
 remaining target for arbitrary positive `n ≤ P.length`; defining the target
@@ -7730,6 +7940,76 @@ theorem exists_two_head_perm
   exact (List.perm_cons_erase hB).trans
     (List.Perm.cons B (List.perm_cons_erase hCerase))
 
+/-- Faithful labelled `ℓ < m` preparation.  Starting with a deletable cell
+at index `i` of minimum cardinality among all deletable indices, any remaining
+cell which does not contain it can be moved to the second position.  Minimality
+rules out reverse containment, and the deleted-spectrum witness embeds in the
+intersection--union transform, including when the intersection is empty. -/
+theorem exists_incomparable_two_head_of_minimal_deletableIdx
+    {K : AddSubgroup A} {n : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (Q : List (Finset A)) (μ : QuotientPattern K n)
+    (i : ℕ) (hi : i < Q.length)
+    (hdelete : (patternSubsumSpectrum (Q.eraseIdx i) μ).Nonempty)
+    (hmin : ∀ (j : ℕ) (hj : j < Q.length),
+      (patternSubsumSpectrum (Q.eraseIdx j) μ).Nonempty →
+      (Q[i]'hi).card ≤ (Q[j]'hj).card)
+    (hnotCommon : ∃ C ∈ Q.eraseIdx i, ¬Q[i]'hi ⊆ C) :
+    ∃ (C : Finset A) (R : List (Finset A)),
+      Q.Perm (Q[i]'hi :: C :: R) ∧
+      ¬Q[i]'hi ⊆ C ∧ ¬C ⊆ Q[i]'hi ∧
+      (patternSubsumSpectrum
+        (dgmInterUnionLayers (Q[i]'hi) C R) μ).Nonempty := by
+  classical
+  let B := Q[i]'hi
+  obtain ⟨C, hCtail, hBC⟩ := hnotCommon
+  have hBCne : B ≠ C := by
+    intro h
+    apply hBC
+    change Q[i]'hi = C at h
+    rw [← h]
+  let R := (Q.eraseIdx i).erase C
+  have htailPerm : (Q.eraseIdx i).Perm (C :: R) := by
+    simpa [R] using List.perm_cons_erase hCtail
+  have hfull : Q.Perm (B :: C :: R) := by
+    exact (List.getElem_cons_eraseIdx_perm hi).symm.trans
+      (List.Perm.cons B htailPerm)
+  have htail : (patternSubsumSpectrum (C :: R) μ).Nonempty := by
+    rw [← patternSubsumSpectrum_eq_of_perm htailPerm μ]
+    exact hdelete
+  have hCB : ¬C ⊆ B := by
+    intro hCB
+    have hBR : (patternSubsumSpectrum (B :: R) μ).Nonempty :=
+      htail.mono (patternSubsumSpectrum_cons_mono hCB R μ)
+    have hCmemQ : C ∈ Q := List.mem_of_mem_eraseIdx hCtail
+    obtain ⟨j, hj, hCeq⟩ := List.getElem_of_mem hCmemQ
+    have hidxErase : (Q.eraseIdx j).Perm (Q.erase C) := by
+      have h := (List.erase_getElem hj).symm
+      rwa [hCeq] at h
+    have hvalueErase : (Q.erase C).Perm (B :: R) := by
+      have h := hfull.erase C
+      simpa [hBCne, B] using h
+    have hEraseC : (Q.eraseIdx j).Perm (B :: R) :=
+      hidxErase.trans hvalueErase
+    have hdeleteC :
+        (patternSubsumSpectrum (Q.eraseIdx j) μ).Nonempty := by
+      rw [patternSubsumSpectrum_eq_of_perm hEraseC μ]
+      exact hBR
+    have hle := hmin j hj hdeleteC
+    rw [hCeq] at hle
+    change B.card ≤ C.card at hle
+    have hlt : C.card < B.card := by
+      apply Finset.card_lt_card
+      exact ⟨hCB, hBC⟩
+    omega
+  have htransformed : (patternSubsumSpectrum
+      (dgmInterUnionLayers B C R) μ).Nonempty := by
+    apply htail.mono
+    simpa [dgmInterUnionLayers] using
+      patternSubsumSpectrum_tail_subset_inter_union B C R μ
+  exact ⟨C, R, by simpa [B] using hfull, by simpa [B] using hBC,
+    by simpa [B] using hCB, by simpa [B] using htransformed⟩
+
 /-- Prepared-crossed is independent of where the eligible pair occurs in
 the labelled layer list.  This wrapper contains no classification premise:
 the transformed-spectrum nonemptiness is exactly the already isolated
@@ -7768,6 +8048,120 @@ theorem dgmPatternBound_of_perm_preparedCrossed_strongIH
     M ih B C P hP hBC hCB μ hmeasureHead hTargetHead
       hTargetStabHead hTransformed
   exact (dgmPatternBound_iff_of_perm hperm μ).2 hboundHead
+
+/-- Complete `ℓ < m`, non-common-cell branch of the source classification.
+The only data supplied are the genuinely selected minimum deletable index and
+the fact that its cell is not contained in every remaining labelled cell;
+all prepared-crossed hypotheses are constructed internally. -/
+theorem dgmPatternBound_of_minimal_deletableIdx_not_common_strongIH
+    [Fintype A] (M : DGMPatternInnerMeasure)
+    (ih : ∀ M', DGMPatternInnerLt M' M → DGMPatternAtMeasure (A := A) M')
+    {K : AddSubgroup A} {k : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (Q : List (Finset A)) (μ : QuotientPattern K (k + 2))
+    (hQ : IsNonemptySetPartition Q)
+    (i : ℕ) (hi : i < Q.length)
+    (hdelete : (patternSubsumSpectrum (Q.eraseIdx i) μ).Nonempty)
+    (hmin : ∀ (j : ℕ) (hj : j < Q.length),
+      (patternSubsumSpectrum (Q.eraseIdx j) μ).Nonempty →
+      (Q[i]'hi).card ≤ (Q[j]'hj).card)
+    (hnotCommon : ∃ C ∈ Q.eraseIdx i, ¬Q[i]'hi ⊆ C)
+    (hmeasure : dgmPatternInnerMeasure Q μ = M)
+    (hTarget : (patternSubsumSpectrum Q μ).Nonempty)
+    (hTargetStab : (patternSubsumSpectrum Q μ).addStab = {0}) :
+    DGMPatternBound Q μ := by
+  obtain ⟨C, R, hperm, hBC, hCB, hTransformed⟩ :=
+    exists_incomparable_two_head_of_minimal_deletableIdx
+      Q μ i hi hdelete hmin hnotCommon
+  exact dgmPatternBound_of_perm_preparedCrossed_strongIH
+    M ih Q (Q[i]'hi) C R hperm hQ hBC hCB μ hmeasure hTarget
+      hTargetStab hTransformed
+
+/-- Complete `ℓ < m`, common-cell branch.  Exact-layer exchange proves that
+deleting the selected labelled occurrence preserves the pattern spectrum;
+the same common-cell hypothesis makes both capped incidence corrections
+identical.  Positive head cardinality then strictly lowers the second inner
+measure coordinate, so the strong induction hypothesis gives the conclusion. -/
+theorem dgmPatternBound_of_minimal_deletableIdx_common_strongIH
+    [Fintype A] (M : DGMPatternInnerMeasure)
+    (ih : ∀ M', DGMPatternInnerLt M' M → DGMPatternAtMeasure (A := A) M')
+    {K : AddSubgroup A} {n : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (Q : List (Finset A)) (μ : QuotientPattern K n)
+    (hQ : IsNonemptySetPartition Q)
+    (i : ℕ) (hi : i < Q.length) (hlt : n < Q.length)
+    (hdelete : (patternSubsumSpectrum (Q.eraseIdx i) μ).Nonempty)
+    (hcommon : ∀ C ∈ Q.eraseIdx i, Q[i]'hi ⊆ C)
+    (hmeasure : dgmPatternInnerMeasure Q μ = M) :
+    DGMPatternBound Q μ := by
+  classical
+  let B := Q[i]'hi
+  let P := Q.eraseIdx i
+  have hperm : Q.Perm (B :: P) := by
+    exact (List.getElem_cons_eraseIdx_perm hi).symm
+  have hltHead : n < (B :: P).length := by
+    rw [← hperm.length_eq]
+    exact hlt
+  have hspec : patternSubsumSpectrum (B :: P) μ =
+      patternSubsumSpectrum P μ :=
+    patternSubsumSpectrum_cons_eq_tail_of_head_subset_all
+      B P μ (by simpa [B, P] using hcommon) hltHead
+  have hBne : B.Nonempty := by
+    exact hQ B (by simpa [B] using List.getElem_mem hi)
+  have hmeasureLt : DGMPatternInnerLt
+      (dgmPatternInnerMeasure P μ)
+      (dgmPatternInnerMeasure (B :: P) μ) := by
+    unfold dgmPatternInnerMeasure
+    rw [hspec]
+    exact Prod.Lex.right _ (Prod.Lex.left _ _ (by
+      simp only [dgmTotalLayerCard, List.map_cons, List.sum_cons]
+      have hpos : 0 < B.card := Finset.card_pos.mpr hBne
+      omega))
+  have hheadM : dgmPatternInnerMeasure (B :: P) μ = M :=
+    (dgmPatternInnerMeasure_eq_of_perm hperm μ).symm.trans hmeasure
+  have hltM : DGMPatternInnerLt (dgmPatternInnerMeasure P μ) M := by
+    rw [← hheadM]
+    exact hmeasureLt
+  have hsmall := ih (dgmPatternInnerMeasure P μ) hltM
+  have hboundTail : DGMPatternBound P μ :=
+    hsmall K n inferInstance inferInstance P μ rfl
+      (by simpa [P] using hdelete)
+  have hboundHead : DGMPatternBound (B :: P) μ := by
+    unfold DGMPatternBound at hboundTail ⊢
+    rw [hspec]
+    simp only at hboundTail ⊢
+    rw [stabilizerDgmCappedMultiplicitySum_cons_eq_tail_of_head_subset_all
+      (patternSubsumSpectrum P μ) B P n
+      (by simpa [B, P] using hcommon) hltHead]
+    rw [dgmCappedMultiplicitySum_cons_eq_tail_of_head_subset_all
+      K B P n (by simpa [B, P] using hcommon) hltHead]
+    exact hboundTail
+  exact (dgmPatternBound_iff_of_perm hperm μ).2 hboundHead
+
+/-- Full source `ℓ < m` branch for weights at least two.  The minimum
+deletable labelled cell is selected internally from an actual target choice;
+the common and non-common alternatives are then discharged by the two
+preceding faithful branches. -/
+theorem dgmPatternBound_of_weight_lt_length_strongIH
+    [Fintype A] (M : DGMPatternInnerMeasure)
+    (ih : ∀ M', DGMPatternInnerLt M' M → DGMPatternAtMeasure (A := A) M')
+    {K : AddSubgroup A} {k : ℕ}
+    [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
+    (Q : List (Finset A)) (μ : QuotientPattern K (k + 2))
+    (hQ : IsNonemptySetPartition Q)
+    (hlt : k + 2 < Q.length)
+    (hmeasure : dgmPatternInnerMeasure Q μ = M)
+    (hTarget : (patternSubsumSpectrum Q μ).Nonempty)
+    (hTargetStab : (patternSubsumSpectrum Q μ).addStab = {0}) :
+    DGMPatternBound Q μ := by
+  obtain ⟨i, hi, hdelete, hmin⟩ :=
+    exists_minimal_deletableIdx Q μ hTarget hlt
+  by_cases hcommon : ∀ C ∈ Q.eraseIdx i, Q[i]'hi ⊆ C
+  · exact dgmPatternBound_of_minimal_deletableIdx_common_strongIH
+      M ih Q μ hQ i hi hlt hdelete hcommon hmeasure
+  · push Not at hcommon
+    exact dgmPatternBound_of_minimal_deletableIdx_not_common_strongIH
+      M ih Q μ hQ i hi hdelete hmin hcommon hmeasure hTarget hTargetStab
 
 /-- Double counting raw layer-value incidences. -/
 theorem sum_rawLayerMultiplicity

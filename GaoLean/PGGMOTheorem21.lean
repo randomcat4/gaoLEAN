@@ -1554,6 +1554,475 @@ theorem Theorem21SetPartition.sum_card_quotientLayer_tailValueCells_eq_tailIndic
     rfl
 
 omit [AddCommGroup A] [Fintype A] in
+/-- A cell permutation fixes the initial segment strictly before `rho`.
+This is the exact reindexing condition used by the WLOG step in
+dissertation Lemma 5: leading cells keep their names, while the remaining
+tail may be permuted arbitrarily. -/
+def PrefixFixed (sigma : Equiv.Perm (Fin n)) (rho : ℕ) : Prop :=
+  ∀ c : Fin n, c.val < rho → sigma c = c
+
+omit [AddCommGroup A] [Fintype A] in
+theorem PrefixFixed.symm
+    {sigma : Equiv.Perm (Fin n)} {rho : ℕ}
+    (hfix : PrefixFixed sigma rho) : PrefixFixed sigma.symm rho := by
+  intro c hc
+  apply sigma.injective
+  simp [hfix c hc]
+
+omit [AddCommGroup A] [Fintype A] in
+/-- A prefix-fixing permutation maps the complementary tail to itself. -/
+theorem PrefixFixed.tail_mapped
+    {sigma : Equiv.Perm (Fin n)} {rho : ℕ}
+    (hfix : PrefixFixed sigma rho) (c : Fin n) (hc : rho ≤ c.val) :
+    rho ≤ (sigma c).val := by
+  by_contra htail
+  have hlt : (sigma c).val < rho := Nat.lt_of_not_ge htail
+  have hfixed := hfix (sigma c) hlt
+  have hcs : c = sigma c := by
+    apply sigma.injective
+    rw [hfixed]
+  rw [hcs] at hc
+  omega
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Converting a tail index to an ambient index and back by subtraction is
+exact; the explicit lemma avoids dependent proof-term noise below. -/
+theorem tailIndex_sub_eq (c : Fin n) {rho : ℕ} (hc : rho ≤ c.val) :
+    tailIndex n rho ⟨c.val - rho, by omega⟩ = c := by
+  apply Fin.ext
+  simp only [tailIndex_val]
+  omega
+
+omit [AddCommGroup A] [Fintype A] in
+/-- The permutation induced on the canonical `Fin (n-rho)` indexing of a
+prefix-fixed tail. -/
+noncomputable def tailRestrictionPerm
+    (sigma : Equiv.Perm (Fin n)) (rho : ℕ)
+    (hfix : PrefixFixed sigma rho) : Equiv.Perm (Fin (n - rho)) where
+  toFun j := ⟨(sigma (tailIndex n rho j)).val - rho, by
+    have hlower := hfix.tail_mapped (tailIndex n rho j) (by simp)
+    have hupper := (sigma (tailIndex n rho j)).isLt
+    omega⟩
+  invFun j := ⟨(sigma.symm (tailIndex n rho j)).val - rho, by
+    have hlower := hfix.symm.tail_mapped (tailIndex n rho j) (by simp)
+    have hupper := (sigma.symm (tailIndex n rho j)).isLt
+    omega⟩
+  left_inv j := by
+    apply Fin.ext
+    have hforward := hfix.tail_mapped (tailIndex n rho j) (by simp)
+    change (sigma.symm (tailIndex n rho
+      ⟨(sigma (tailIndex n rho j)).val - rho, by omega⟩)).val - rho = j.val
+    rw [tailIndex_sub_eq (sigma (tailIndex n rho j)) hforward,
+      sigma.symm_apply_apply]
+    simp only [tailIndex_val]
+    omega
+  right_inv j := by
+    apply Fin.ext
+    have hforward := hfix.symm.tail_mapped (tailIndex n rho j) (by simp)
+    change (sigma (tailIndex n rho
+      ⟨(sigma.symm (tailIndex n rho j)).val - rho, by omega⟩)).val - rho = j.val
+    rw [tailIndex_sub_eq (sigma.symm (tailIndex n rho j)) hforward,
+      sigma.apply_symm_apply]
+    simp only [tailIndex_val]
+    omega
+
+omit [AddCommGroup A] [Fintype A] in
+@[simp]
+theorem tailIndex_tailRestrictionPerm
+    (sigma : Equiv.Perm (Fin n)) (rho : ℕ)
+    (hfix : PrefixFixed sigma rho) (j : Fin (n - rho)) :
+    tailIndex n rho (tailRestrictionPerm sigma rho hfix j) =
+      sigma (tailIndex n rho j) := by
+  apply Fin.ext
+  have hlower := hfix.tail_mapped (tailIndex n rho j) (by simp)
+  exact congrArg Fin.val
+    (tailIndex_sub_eq (sigma (tailIndex n rho j)) hlower)
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Reindexing by a prefix-fixing permutation merely permutes the layers of
+the corresponding tail. -/
+theorem Theorem21SetPartition.tailValueCells_reindex_perm
+    {xs : List A} {n m rho : ℕ} (P : Theorem21SetPartition xs n m)
+    (sigma : Equiv.Perm (Fin n)) (hfix : PrefixFixed sigma rho) :
+    List.Perm ((P.reindex sigma).tailValueCells rho)
+      (P.tailValueCells rho) := by
+  classical
+  rw [(P.reindex sigma).tailValueCells_eq_ofFn_tailIndex,
+    P.tailValueCells_eq_ofFn_tailIndex]
+  let tau := tailRestrictionPerm sigma rho hfix
+  have hperm := tau.ofFn_comp_perm
+    (fun j : Fin (n - rho) ↦ P.valueCell (tailIndex n rho j))
+  have hfun :
+      (fun j : Fin (n - rho) ↦ P.valueCell (tailIndex n rho j)) ∘ tau =
+        fun j : Fin (n - rho) ↦
+          P.valueCell (sigma (tailIndex n rho j)) := by
+    funext j
+    change P.valueCell (tailIndex n rho (tau j)) = _
+    rw [show tailIndex n rho (tau j) = sigma (tailIndex n rho j) by
+      simpa only [tau] using tailIndex_tailRestrictionPerm sigma rho hfix j]
+  rw [hfun] at hperm
+  simpa only [Theorem21SetPartition.valueCell_reindex] using hperm
+
+omit [Fintype A] in
+/-- Every prefix-fixed reindexing preserves the corresponding tail sumset. -/
+theorem Theorem21SetPartition.tailSumset_reindex
+    {xs : List A} {n m rho : ℕ} (P : Theorem21SetPartition xs n m)
+    (sigma : Equiv.Perm (Fin n)) (hfix : PrefixFixed sigma rho) :
+    (P.reindex sigma).tailSumset rho = P.tailSumset rho := by
+  classical
+  unfold Theorem21SetPartition.tailSumset
+  exact fullLayerSumSpectrum_eq_of_perm
+    (P.tailValueCells_reindex_perm sigma hfix)
+
+omit [Fintype A] in
+@[simp]
+theorem Theorem21SetPartition.quotientIncidenceAt_reindex
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (sigma : Equiv.Perm (Fin n)) (H : AddSubgroup A) :
+    (P.reindex sigma).quotientIncidenceAt H = P.quotientIncidenceAt H := by
+  classical
+  unfold Theorem21SetPartition.quotientIncidenceAt
+  simpa only [Theorem21SetPartition.valueCell_reindex] using
+    (sigma.sum_comp (Finset.univ : Finset (Fin n))
+      (fun c : Fin n ↦ (quotientLayer H (P.valueCell c)).card) (by simp))
+
+omit [Fintype A] in
+theorem Theorem21SetPartition.quotientImagesIncluded_reindex_iff
+    {xs : List A} {n m : ℕ}
+    (F P : Theorem21SetPartition xs n m)
+    (sigma : Equiv.Perm (Fin n)) (H : AddSubgroup A) :
+    (F.reindex sigma).quotientImagesIncluded (P.reindex sigma) H ↔
+      F.quotientImagesIncluded P H := by
+  classical
+  constructor
+  · intro h c
+    simpa using h (sigma.symm c)
+  · intro h c
+    simpa using h (sigma c)
+
+omit [AddCommGroup A] [Fintype A] in
+@[simp]
+theorem Definition1ExtremalState.mem_reindex_iff_preimage
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    (state : Definition1ExtremalState xs seed n)
+    (sigma : Equiv.Perm (Fin n))
+    (P : Theorem21SetPartition xs n seed.card) :
+    P ∈ (state.reindex sigma).upsilon ↔
+      P.reindex sigma.symm ∈ state.upsilon := by
+  simpa using state.mem_reindex_iff sigma (P.reindex sigma.symm)
+
+omit [Fintype A] in
+/-- The literal source base family and its full-sumset argmax transport under
+a simultaneous reindexing of the input, anchors, and extremal state. -/
+theorem Definition1InitialValidUnder.reindex
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    {state : Definition1ExtremalState xs seed n}
+    (valid : Definition1InitialValidUnder I state)
+    (sigma : Equiv.Perm (Fin n)) :
+    Definition1InitialValidUnder (I.reindex sigma) (state.reindex sigma) := by
+  classical
+  refine {
+    chosen_admissible := valid.chosen_admissible.reindex sigma
+    maximal := ?_
+    mem_upsilon_iff := ?_
+  }
+  · intro P hP
+    have hPinv : GMOReplacementAdmissible I (P.reindex sigma.symm) := by
+      have := hP.reindex sigma.symm
+      simpa using this
+    have hmax := valid.maximal (P.reindex sigma.symm) hPinv
+    simpa [Definition1ExtremalState.reindex,
+      Theorem21SetPartition.sumset_reindex] using hmax
+  · intro P
+    rw [state.mem_reindex_iff_preimage sigma P,
+      valid.mem_upsilon_iff]
+    constructor
+    · rintro ⟨hPadm, hPcard⟩
+      have hPadm' := hPadm.reindex sigma
+      refine ⟨?_, ?_⟩
+      · simpa using hPadm'
+      · simpa [Definition1ExtremalState.reindex,
+          Theorem21SetPartition.sumset_reindex] using hPcard
+    · rintro ⟨hPadm, hPcard⟩
+      have hPadm' := hPadm.reindex sigma.symm
+      refine ⟨?_, ?_⟩
+      · simpa using hPadm'
+      · simpa [Definition1ExtremalState.reindex,
+          Theorem21SetPartition.sumset_reindex] using hPcard
+
+omit [Fintype A] in
+@[simp]
+theorem Theorem21SetPartition.tailPeriod_reindex
+    {xs : List A} {n m rho : ℕ} (P : Theorem21SetPartition xs n m)
+    (sigma : Equiv.Perm (Fin n)) (hfix : PrefixFixed sigma rho) :
+    (P.reindex sigma).tailPeriod rho = P.tailPeriod rho := by
+  unfold Theorem21SetPartition.tailPeriod
+  rw [P.tailSumset_reindex sigma hfix]
+
+@[simp]
+theorem Theorem21SetPartition.thickenedCell_reindex
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (sigma : Equiv.Perm (Fin n)) (H : AddSubgroup A) (c : Fin n) :
+    (P.reindex sigma).thickenedCell H c = P.thickenedCell H (sigma c) := by
+  simp [Theorem21SetPartition.thickenedCell]
+
+/-- The common intersection is insensitive to a permutation of all cells. -/
+@[simp]
+theorem Theorem21SetPartition.commonCore_reindex
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (sigma : Equiv.Perm (Fin n)) (H : AddSubgroup A) :
+    (P.reindex sigma).commonCore H = P.commonCore H := by
+  classical
+  ext x
+  simp only [P.mem_commonCore_iff, (P.reindex sigma).mem_commonCore_iff,
+    P.thickenedCell_reindex]
+  constructor
+  · intro h c
+    simpa using h (sigma.symm c)
+  · intro h c
+    exact h (sigma c)
+
+@[simp]
+theorem Theorem21SetPartition.commonCosetCount_reindex
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (sigma : Equiv.Perm (Fin n)) (H : AddSubgroup A) :
+    (P.reindex sigma).commonCosetCount H = P.commonCosetCount H := by
+  simp [Theorem21SetPartition.commonCosetCount]
+
+@[simp]
+theorem Theorem21SetPartition.cellExceptionDefect_reindex
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (sigma : Equiv.Perm (Fin n)) (H : AddSubgroup A) (c : Fin n) :
+    (P.reindex sigma).cellExceptionDefect H c =
+      P.cellExceptionDefect H (sigma c) := by
+  simp [Theorem21SetPartition.cellExceptionDefect]
+
+@[simp]
+theorem Theorem21SetPartition.exceptionDefect_reindex
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (sigma : Equiv.Perm (Fin n)) (H : AddSubgroup A) :
+    (P.reindex sigma).exceptionDefect H = P.exceptionDefect H := by
+  classical
+  unfold Theorem21SetPartition.exceptionDefect
+  simpa only [P.cellExceptionDefect_reindex] using
+    (sigma.sum_comp (Finset.univ : Finset (Fin n))
+      (fun c : Fin n ↦ P.cellExceptionDefect H c) (by simp))
+
+omit [Fintype A] in
+theorem Theorem21SetPartition.isHException_reindex_iff
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (sigma : Equiv.Perm (Fin n)) (H : AddSubgroup A) (x : A) :
+    (P.reindex sigma).IsHException H x ↔ P.IsHException H x := by
+  classical
+  unfold Theorem21SetPartition.IsHException
+  constructor
+  · rintro ⟨c, hc⟩
+    exact ⟨sigma c, by simpa using hc⟩
+  · rintro ⟨c, hc⟩
+    exact ⟨sigma.symm c, by simpa using hc⟩
+
+omit [Fintype A] in
+theorem Theorem21SetPartition.isHDoubledInCell_reindex_iff
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (sigma : Equiv.Perm (Fin n)) (H : AddSubgroup A)
+    (c : Fin n) (x : A) :
+    (P.reindex sigma).IsHDoubledInCell H c x ↔
+      P.IsHDoubledInCell H (sigma c) x := by
+  simp [Theorem21SetPartition.IsHDoubledInCell]
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Any named tail cell can be moved to the first tail position while every
+leading cell remains fixed. -/
+theorem exists_prefixFixed_swap_to_rho
+    {n rho : ℕ} (q : Fin n) (hrhoq : rho ≤ q.val) (hrhon : rho < n) :
+    ∃ sigma : Equiv.Perm (Fin n),
+      PrefixFixed sigma rho ∧
+        sigma ⟨rho, hrhon⟩ = q := by
+  let r : Fin n := ⟨rho, hrhon⟩
+  let sigma : Equiv.Perm (Fin n) := Equiv.swap q r
+  refine ⟨sigma, ?_, ?_⟩
+  · intro c hc
+    have hcq : c ≠ q := by
+      intro h
+      have := congrArg Fin.val h
+      omega
+    have hcr : c ≠ r := by
+      intro h
+      have := congrArg Fin.val h
+      simp only [r] at this
+      omega
+    exact Equiv.swap_apply_of_ne_of_ne hcq hcr
+  · exact Equiv.swap_apply_right q r
+
+omit [Fintype A] in
+/-- A positive Definition 1 stage transports under any reindexing fixing
+all cells through its current pivot `r`.  This hypothesis is exactly what
+preserves both tails used by the transition, at `r` and at `r+1`. -/
+theorem Definition1Transition.reindex
+    {xs : List A} {seed : Selection xs} {n r : ℕ}
+    {previous next : Definition1ExtremalState xs seed n}
+    {F : Theorem21SetPartition xs n seed.card}
+    (step : Definition1Transition r previous next F)
+    (sigma : Equiv.Perm (Fin n))
+    (hfix : PrefixFixed sigma (r + 1)) :
+    Definition1Transition r (previous.reindex sigma)
+      (next.reindex sigma) (F.reindex sigma) := by
+  classical
+  have hfixr : PrefixFixed sigma r := by
+    intro c hc
+    exact hfix c (by omega)
+  have hpreviousR :
+      ((previous.reindex sigma).chosen.tailSumset r) =
+        previous.chosen.tailSumset r := by
+    simpa only [Definition1ExtremalState.reindex] using
+      previous.chosen.tailSumset_reindex sigma hfixr
+  have hpreviousSucc :
+      ((previous.reindex sigma).chosen.tailSumset (r + 1)) =
+        previous.chosen.tailSumset (r + 1) := by
+    simpa only [Definition1ExtremalState.reindex] using
+      previous.chosen.tailSumset_reindex sigma hfix
+  have hnextSucc :
+      ((next.reindex sigma).chosen.tailSumset (r + 1)) =
+        next.chosen.tailSumset (r + 1) := by
+    simpa only [Definition1ExtremalState.reindex] using
+      next.chosen.tailSumset_reindex sigma hfix
+  refine {
+    F_mem_previous := (previous.mem_reindex_iff sigma F).2
+      step.F_mem_previous
+    F_tail_fixed := ?_
+    incidence_maximal := ?_
+    tail_maximal := ?_
+    mem_next_upsilon_iff := ?_
+  }
+  · calc
+      (F.reindex sigma).tailSumset r = F.tailSumset r :=
+        F.tailSumset_reindex sigma hfixr
+      _ = previous.chosen.tailSumset r := step.F_tail_fixed
+      _ = (previous.reindex sigma).chosen.tailSumset r := hpreviousR.symm
+  · intro P hPmem hPtail
+    let Q := P.reindex sigma.symm
+    have hQmem : Q ∈ previous.upsilon :=
+      (previous.mem_reindex_iff_preimage sigma P).1 hPmem
+    have hQtailP : Q.tailSumset r = P.tailSumset r := by
+      simpa only [Q] using P.tailSumset_reindex sigma.symm hfixr.symm
+    have hQtail : Q.tailSumset r = previous.chosen.tailSumset r :=
+      hQtailP.trans (hPtail.trans hpreviousR)
+    have hmax := step.incidence_maximal Q hQmem hQtail
+    rw [hpreviousR]
+    simpa only [Q, Theorem21SetPartition.quotientIncidenceAt_reindex] using hmax
+  · intro P hPmem hPtail hPinc hPimages
+    let Q := P.reindex sigma.symm
+    have hQmem : Q ∈ previous.upsilon :=
+      (previous.mem_reindex_iff_preimage sigma P).1 hPmem
+    have hQtailP : Q.tailSumset r = P.tailSumset r := by
+      simpa only [Q] using P.tailSumset_reindex sigma.symm hfixr.symm
+    have hQtail : Q.tailSumset r = previous.chosen.tailSumset r :=
+      hQtailP.trans (hPtail.trans hpreviousR)
+    have hQinc : Q.quotientIncidenceAt
+          (AddAction.stabilizer A
+            (previous.chosen.tailSumset r : Set A)) =
+        F.quotientIncidenceAt
+          (AddAction.stabilizer A
+            (previous.chosen.tailSumset r : Set A)) := by
+      rw [hpreviousR] at hPinc
+      simpa only [Q, Theorem21SetPartition.quotientIncidenceAt_reindex]
+        using hPinc
+    have hQimages : F.quotientImagesIncluded Q
+        (AddAction.stabilizer A
+          (previous.chosen.tailSumset r : Set A)) := by
+      rw [hpreviousR] at hPimages
+      have hQback : Q.reindex sigma = P := by simp [Q]
+      have htemp : (F.reindex sigma).quotientImagesIncluded
+          (Q.reindex sigma)
+          (AddAction.stabilizer A
+            (previous.chosen.tailSumset r : Set A)) := by
+        rw [hQback]
+        exact hPimages
+      exact (F.quotientImagesIncluded_reindex_iff Q sigma _).1 htemp
+    have hmax := step.tail_maximal Q hQmem hQtail hQinc hQimages
+    have hQsucc : Q.tailSumset (r + 1) = P.tailSumset (r + 1) := by
+      simpa only [Q] using P.tailSumset_reindex sigma.symm hfix.symm
+    rw [hQsucc, ← hnextSucc] at hmax
+    exact hmax
+  · intro P
+    let Q := P.reindex sigma.symm
+    rw [next.mem_reindex_iff_preimage sigma P,
+      step.mem_next_upsilon_iff Q]
+    have hQtailR : Q.tailSumset r = P.tailSumset r := by
+      simpa only [Q] using P.tailSumset_reindex sigma.symm hfixr.symm
+    have hQtailSucc : Q.tailSumset (r + 1) = P.tailSumset (r + 1) := by
+      simpa only [Q] using P.tailSumset_reindex sigma.symm hfix.symm
+    have hQback : Q.reindex sigma = P := by simp [Q]
+    constructor
+    · rintro ⟨hQmem, hQtail, hQinc, hQimages, hQnext⟩
+      refine ⟨(previous.mem_reindex_iff_preimage sigma P).2 hQmem,
+        ?_, ?_, ?_, ?_⟩
+      · exact hQtailR.symm.trans (hQtail.trans hpreviousR.symm)
+      · rw [hpreviousR]
+        simpa only [Q, Theorem21SetPartition.quotientIncidenceAt_reindex]
+          using hQinc
+      · have htemp :=
+          (F.quotientImagesIncluded_reindex_iff Q sigma _).2 hQimages
+        rw [hpreviousR, ← hQback]
+        exact htemp
+      · calc
+          (P.tailSumset (r + 1)).card =
+              (Q.tailSumset (r + 1)).card :=
+            congrArg Finset.card hQtailSucc.symm
+          _ = (next.chosen.tailSumset (r + 1)).card := hQnext
+          _ = ((next.reindex sigma).chosen.tailSumset (r + 1)).card :=
+            congrArg Finset.card hnextSucc.symm
+    · rintro ⟨hPmem, hPtail, hPinc, hPimages, hPnext⟩
+      refine ⟨(previous.mem_reindex_iff_preimage sigma P).1 hPmem,
+        ?_, ?_, ?_, ?_⟩
+      · exact hQtailR.trans (hPtail.trans hpreviousR)
+      · rw [hpreviousR] at hPinc
+        simpa only [Q, Theorem21SetPartition.quotientIncidenceAt_reindex]
+          using hPinc
+      · have htemp : (F.reindex sigma).quotientImagesIncluded
+            (Q.reindex sigma)
+          (AddAction.stabilizer A
+              (previous.chosen.tailSumset r : Set A)) := by
+          rw [hpreviousR] at hPimages
+          rw [hQback]
+          exact hPimages
+        exact (F.quotientImagesIncluded_reindex_iff Q sigma _).1 htemp
+      · calc
+          (Q.tailSumset (r + 1)).card =
+              (P.tailSumset (r + 1)).card :=
+            congrArg Finset.card hQtailSucc
+          _ = ((next.reindex sigma).chosen.tailSumset (r + 1)).card := hPnext
+          _ = (next.chosen.tailSumset (r + 1)).card :=
+            congrArg Finset.card hnextSucc
+
+omit [Fintype A] in
+/-- A source-faithful extremal chain transports under a permutation fixing
+its entire leading prefix.  Each successor invokes the preceding theorem
+with its own true stage, so no final transition is reused at an earlier
+prefix. -/
+noncomputable def Definition1SourceChain.reindex
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    {state : Definition1ExtremalState xs seed n}
+    (chain : Definition1SourceChain I rho state)
+    (sigma : Equiv.Perm (Fin n))
+    (hfix : PrefixFixed sigma rho) :
+    Definition1SourceChain (I.reindex sigma) rho (state.reindex sigma) := by
+  induction chain with
+  | initial state valid =>
+      exact Definition1SourceChain.initial (state.reindex sigma)
+        (valid.reindex sigma)
+  | @next r previous prior state F step ih =>
+      have hfixr : PrefixFixed sigma r := by
+        intro c hc
+        exact hfix c (by omega)
+      have hfixSucc : PrefixFixed sigma (r + 1) := by
+        simpa only using hfix
+      exact Definition1SourceChain.next (ih hfixr) (state.reindex sigma)
+        (F.reindex sigma) (step.reindex sigma hfixSucc)
+
+omit [AddCommGroup A] [Fintype A] in
 /-- There are exactly `n-rho` cells in the zero-based tail. -/
 theorem card_tailIndices {n rho : ℕ} (hrho : rho ≤ n) :
     (tailIndices n rho).card = n - rho := by
@@ -6620,6 +7089,46 @@ structure GMOTheoremESourceOutput
     H ≠ ⊥ → ∀ i : Occurrence xs, i ∉ partition.support →
       occurrenceValue xs i ∈ partition.commonCore H
 
+/-- Simultaneously relabel every cell of a literal Theorem E output and its
+source input.  All numerical data are invariant because both the common
+intersection and the sum over cell defects are symmetric in the cells. -/
+noncomputable def GMOTheoremESourceOutput.reindex
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (out : GMOTheoremESourceOutput I)
+    (sigma : Equiv.Perm (Fin n)) :
+    GMOTheoremESourceOutput (I.reindex sigma) := by
+  classical
+  refine {
+    partition := out.partition.reindex sigma
+    H := out.H
+    periodic := ?_
+    admissible := out.admissible.reindex sigma
+    card_lower := ?_
+    unused_mem_commonCore := ?_
+  }
+  · rw [out.partition.sumset_reindex sigma]
+    exact out.periodic
+  · simpa only [Theorem21SetPartition.commonCosetCount_reindex,
+      Theorem21SetPartition.exceptionDefect_reindex,
+      Theorem21SetPartition.sumset_reindex] using out.card_lower
+  · intro hH i hi
+    have hi' : i ∉ out.partition.support := by
+      simpa only [out.partition.support_reindex sigma] using hi
+    simpa only [out.partition.commonCore_reindex sigma out.H] using
+      out.unused_mem_commonCore hH i hi'
+
+/-- Undo a simultaneous cell reindexing of a source Theorem E output.  This
+is the final descent needed after Lemma 5's WLOG tail permutation. -/
+noncomputable def GMOTheoremESourceOutput.inverseReindex
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (sigma : Equiv.Perm (Fin n))
+    (out : GMOTheoremESourceOutput (I.reindex sigma)) :
+    GMOTheoremESourceOutput I := by
+  have temp := out.reindex sigma.symm
+  simpa using temp
+
 /-- The scalar trivial-period conclusion used as the contradiction target in
 dissertation Lemma 3: an admissible replacement satisfying the ordinary
 Cauchy--Davenport bound.  It is deliberately separate from an
@@ -6795,6 +7304,154 @@ theorem FactorForm.exists_doubledException_of_no_sourceOutput
     simpa only [not_exists] using hnone
   exact F.false_of_card_lower_of_no_sourceOutput hfail
     (F.theoremE_card_lower_of_no_doubled hno)
+
+/-- The WLOG/reselection core of the doubled branch in dissertation Lemma 5.
+Starting from a genuine doubled exception, its cell is swapped into position
+`rho` together with the source anchors and the entire prefix chain.  A fresh
+`Lambda_{rho+1}` transition is then constructed and recentered at the
+reindexed factor partition itself; the old `W.next` is never reused. -/
+theorem FactorForm.exists_reindexed_recentered_doubled
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (F : FactorForm I rho)
+    (hfail : ¬ Nonempty (GMOTheoremESourceOutput I)) :
+    ∃ (sigma : Equiv.Perm (Fin n))
+      (_hfix : PrefixFixed sigma rho)
+      (W : WeakFactorForm (I.reindex sigma) rho)
+      (x : A),
+      W.F = W.partition ∧
+      W.partition = F.partition.reindex sigma ∧
+      W.partition.IsHException (W.partition.tailPeriod rho) x ∧
+      W.partition.IsHDoubledInCell (W.partition.tailPeriod rho)
+        ⟨rho, by have := F.range; omega⟩ x := by
+  classical
+  obtain ⟨x, hxException, q, hxDouble⟩ :=
+    F.exists_doubledException_of_no_sourceOutput hfail
+  obtain ⟨z, _hzquot, hzException, hzDouble, _hzAnchor,
+      hrhoq, _hzNotPeriodic⟩ :=
+    F.toWeakFactorForm.exists_lemma1_representative q x
+      hxException hxDouble
+  have hrhon : rho < n := by
+    have := F.range
+    omega
+  obtain ⟨sigma, hfix, hsigmaRho⟩ :=
+    exists_prefixFixed_swap_to_rho q hrhoq hrhon
+  let I' := I.reindex sigma
+  let P' := F.partition.reindex sigma
+  let previous' := F.previous.reindex sigma
+  have chain' : Definition1SourceChain I' rho previous' := by
+    simpa only [I', previous'] using F.chain.reindex sigma hfix
+  obtain ⟨next0, F0, step0⟩ :=
+    exists_definition1Transition rho previous'
+  have hPprevious : P' ∈ previous'.upsilon := by
+    simpa only [P', previous'] using
+      (F.previous.mem_reindex_iff sigma F.partition).2 F.inLambda.1
+  have hPtail : P'.tailSumset rho = previous'.chosen.tailSumset rho := by
+    calc
+      P'.tailSumset rho = F.partition.tailSumset rho := by
+        simpa only [P'] using
+          F.partition.tailSumset_reindex sigma hfix
+      _ = F.previous.chosen.tailSumset rho := F.inLambda.2.1
+      _ = previous'.chosen.tailSumset rho := by
+        have h := F.previous.chosen.tailSumset_reindex sigma hfix
+        simpa only [previous', Definition1ExtremalState.reindex] using h.symm
+  let Q := F0.reindex sigma.symm
+  have hQprevious : Q ∈ F.previous.upsilon := by
+    have hpre :=
+      (F.previous.mem_reindex_iff_preimage sigma F0).1 step0.F_mem_previous
+    simpa only [Q] using hpre
+  have hfixSymm : PrefixFixed sigma.symm rho := hfix.symm
+  have hQtailF0 : Q.tailSumset rho = F0.tailSumset rho := by
+    simpa only [Q] using F0.tailSumset_reindex sigma.symm hfixSymm
+  have hPreviousTail : previous'.chosen.tailSumset rho =
+      F.previous.chosen.tailSumset rho := by
+    simpa only [previous', Definition1ExtremalState.reindex] using
+      F.previous.chosen.tailSumset_reindex sigma hfix
+  have hQtail : Q.tailSumset rho =
+      F.previous.chosen.tailSumset rho :=
+    hQtailF0.trans (step0.F_tail_fixed.trans hPreviousTail)
+  have hOldMax := F.transition.incidence_maximal Q hQprevious hQtail
+  have hH : AddAction.stabilizer A
+        (previous'.chosen.tailSumset rho : Set A) =
+      AddAction.stabilizer A
+        (F.previous.chosen.tailSumset rho : Set A) := by
+    rw [hPreviousTail]
+  have hP_le := step0.incidence_maximal P' hPprevious hPtail
+  have hF0_le : F0.quotientIncidenceAt
+        (AddAction.stabilizer A
+          (previous'.chosen.tailSumset rho : Set A)) ≤
+      P'.quotientIncidenceAt
+        (AddAction.stabilizer A
+          (previous'.chosen.tailSumset rho : Set A)) := by
+    rw [hH]
+    have hOldMax' := hOldMax.trans_eq F.inLambda.2.2.symm
+    simpa only [Q, P',
+      Theorem21SetPartition.quotientIncidenceAt_reindex] using hOldMax'
+  have hPinc : P'.quotientIncidenceAt
+        (AddAction.stabilizer A
+          (previous'.chosen.tailSumset rho : Set A)) =
+      F0.quotientIncidenceAt
+        (AddAction.stabilizer A
+          (previous'.chosen.tailSumset rho : Set A)) :=
+    Nat.le_antisymm hP_le hF0_le
+  have hPinLambda0 : step0.InLambda P' :=
+    ⟨hPprevious, hPtail, hPinc⟩
+  obtain ⟨nextP, stepP⟩ := step0.exists_recentered hPinLambda0
+  have hPinLambdaP : stepP.InLambda P' :=
+    ⟨hPprevious, hPtail, rfl⟩
+  let W : WeakFactorForm I' rho := {
+    range := F.range
+    partition := P'
+    admissible := by
+      simpa only [I', P'] using F.admissible.reindex sigma
+    previous := previous'
+    chain := chain'
+    next := nextP
+    F := P'
+    transition := stepP
+    partition_inLambda := hPinLambdaP
+    tail_actual := by
+      intro s hs
+      have hfixs : PrefixFixed sigma s := by
+        intro c hc
+        exact hfix c (hc.trans_le hs)
+      have hperiod : P'.tailPeriod s = F.partition.tailPeriod s := by
+        simpa only [P'] using F.partition.tailPeriod_reindex sigma hfixs
+      rw [hperiod]
+      exact F.tail_actual s hs
+    leading_exception := by
+      intro c hc
+      obtain ⟨y, hy, hyException⟩ := F.leading_exception c hc
+      have hsigmac : sigma c = c := hfix c hc
+      have hfixc : PrefixFixed sigma c.val := by
+        intro d hd
+        exact hfix d (hd.trans hc)
+      have hperiod : P'.tailPeriod c.val =
+          F.partition.tailPeriod c.val := by
+        simpa only [P'] using F.partition.tailPeriod_reindex sigma hfixc
+      refine ⟨y, ?_, ?_⟩
+      · simpa only [P', Theorem21SetPartition.valueCell_reindex,
+          hsigmac] using hy
+      · rw [hperiod]
+        exact (F.partition.isHException_reindex_iff sigma _ y).2
+          hyException
+  }
+  have hperiodRho : P'.tailPeriod rho =
+      F.partition.tailPeriod rho := by
+    simpa only [P'] using F.partition.tailPeriod_reindex sigma hfix
+  have hzException' : P'.IsHException (P'.tailPeriod rho) z := by
+    rw [hperiodRho]
+    exact (F.partition.isHException_reindex_iff sigma _ z).2 hzException
+  have hzDouble' : P'.IsHDoubledInCell (P'.tailPeriod rho)
+      ⟨rho, hrhon⟩ z := by
+    rw [hperiodRho]
+    have htransport :=
+      (F.partition.isHDoubledInCell_reindex_iff sigma
+        (F.partition.tailPeriod rho) ⟨rho, hrhon⟩ z).2
+    exact htransport (by simpa only [hsigmaRho] using hzDouble)
+  refine ⟨sigma, hfix, W, z, rfl, rfl, ?_, ?_⟩
+  · exact hzException'
+  · exact hzDouble'
 
 /-- Enlarging a period enlarges every thickened cell and hence the common
 core. -/
