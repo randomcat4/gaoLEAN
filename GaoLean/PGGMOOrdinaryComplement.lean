@@ -47,7 +47,14 @@ theorem Theorem21SetPartition.exists_complement_selection_of_sumset_eq_univ
     rw [Finset.inter_eq_right.mpr hDsub, hDsum] at hsplit
     dsimp only [I]
     dsimp only [total] at hsplit
-    abel
+    have hcancel :=
+      congrArg (fun z : A ↦ z - (total - y)) hsplit
+    dsimp only [total] at hcancel
+    calc
+      _ = (∑ i ∈ P.support, occurrenceValue xs i) -
+          ((∑ i ∈ P.support, occurrenceValue xs i) - y) := by
+        simpa only [add_sub_cancel_left] using hcancel
+      _ = y := by abel
 
 /-- Fixed-support complement duality turns a full partition sumset into the
 ambient exact spectrum at the complementary cardinality. -/
