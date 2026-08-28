@@ -16,6 +16,16 @@ The older conditional interfaces and the milestone text below are retained as
 an audit trail of how the boundary was reduced; they are not dependencies of
 the final endpoint.
 
+Merged release receipt: default `lake build` and central
+`lake build GaoFormal.AxiomAudit` both completed 8820 jobs with exit 0.  Two
+fresh independent paragraph audits of revision `61906ee` each reported
+0 blocking / 0 major findings; incremental review of patch `a1b055a` reported
+0 blocking / 0 major / 0 minor, and the main-agent review passed.
+`pr7ThirteenPageMain` is the core frozen-threshold endpoint.  Full manuscript
+display coverage is joint: the core theorem plus the separate Olson, GJM,
+unconditional Corollary 6.1, and `C₃²` endpoints.  It is not attributed
+literally to one oversized endpoint.
+
 ## Dependency DAG
 
 ```text

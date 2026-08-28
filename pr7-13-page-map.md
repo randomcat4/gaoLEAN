@@ -67,5 +67,8 @@
 此前两轮独立审计发现并保留的自然数截断、人工 padding、标签不交、错误 raw
 capacity/gap 接口等证据没有删除；最终闭合走的是 canonical `d*` target induction、
 canonical subgroup extension 与已证明的 signed General-DGM provider 路线，不依赖
-那些被证否的接口。当前准确裁决为该 13 页基准 `LEAN_FULLY_CHECKED`。本次发布前
-聚合只声明源码与端点已经闭合；新的发布双审计若尚未执行，不在此冒称完成。
+那些被证否的接口。当前准确裁决为该 13 页基准 `LEAN_FULLY_CHECKED`。
+`pr7ThirteenPageMain` 是核心冻结阈值端点；正文的完整显示式由它与 Olson、GJM、
+无条件 Corollary 6.1、`C₃²` 独立端点共同覆盖，并不声称单一端点逐字包含全部
+显示公式。两名全新独立审计员对 `61906ee` 均给出 0 blocking / 0 major；补丁
+`a1b055a` 的增量复核为 0 blocking / 0 major / 0 minor，主实例复查通过。

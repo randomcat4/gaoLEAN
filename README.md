@@ -35,15 +35,22 @@ lake build GaoFormal.AxiomAudit
 
 工具链固定为 Lean `v4.32.0`，Mathlib 固定为公开标签 `v4.32.0`。
 当前发布聚合入口为 `GaoLean.lean`，其中显式导入
-`GaoLean.PGGaoOrdinaryComplete`，因此默认 `lake build` 会实际构建最终模块。
+`GaoLean.PGGaoOrdinaryComplete` 与 `GaoLean.PGManuscriptConsequences`，因此默认
+`lake build` 会实际构建最终模块及正文数值后果。
 最终四个关键端点是
 `ordinaryGMOPrescribedLengthProvider_of_canonicalDStar`、
 `ordinaryGMOStructuralProvider_addSubgroup_of_oddPrimePGroup`、
 `ConcreteGDihedral.pgGaoOrdinaryRemainingInputs` 与
 `ConcreteGDihedral.pr7ThirteenPageMain`。它们的公理输出只含 Lean/Mathlib 常规的
 `propext`、`Classical.choice`、`Quot.sound`（各定理可使用其子集），没有
-`sorryAx` 或项目自定义公理。发布聚合后的默认 `lake build` 已实际完成 8819 个
-任务并以 exit 0 结束。
+`sorryAx` 或项目自定义公理。合并后的默认 `lake build` 与中央
+`GaoFormal.AxiomAudit` 均已实际完成 8820 个任务并以 exit 0 结束。
+
+`pr7ThirteenPageMain` 是冻结 13 页主定理的核心阈值端点；正文的完整显示式由该
+核心定理与独立的 Olson、GJM、无条件 Corollary 6.1 以及 `C₃²` 数值见证端点共同
+覆盖，而不是声称某个单一端点逐字包含所有显示公式。两名全新独立审计员对
+`61906ee` 的逐段复查均报告 0 blocking / 0 major；发布补丁 `a1b055a` 的增量复核
+报告 blocking / major / minor 均为 0，主实例复查亦已通过。
 
 下文保留各历史里程碑当时的边界描述与反例；其中写有“仍缺”“partial”、
 “conditional”或“NOT_FORMALIZED”的段落是过程记录，不应覆盖上述最终发布状态。

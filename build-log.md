@@ -1002,12 +1002,23 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
   structural field uniformly in every additive subgroup.  The already proved
   signed General-DGM providers complete the source package.
 - Updated the default aggregation module `GaoLean.lean` to import
-  `GaoLean.PGGaoOrdinaryComplete`; default `lake build` therefore exercised the
-  final module and completed successfully: 8819 jobs, exit 0.
+  `GaoLean.PGGaoOrdinaryComplete` and, in the merged release patch,
+  `GaoLean.PGManuscriptConsequences`; default `lake build` therefore exercised
+  the final module and manuscript consequences and completed successfully:
+  8820 jobs, exit 0.
+- Central `lake build GaoFormal.AxiomAudit` also completed with 8820 jobs,
+  exit 0.  The audit includes the four final endpoints, the unconditional
+  Corollary 6.1 displays, and the `C₃²` lower-witness/threshold endpoints.
 - The four final endpoint audits report only `propext`, `Classical.choice`, and
   `Quot.sound`.  The release scan contains no `sorry`, `admit`, declaration
   `axiom`, `unsafe`, `native_decide`, or `sorryAx` in project Lean sources.
 - Historical conditional interfaces, failed raw/padded capacity statements,
   and the `C₃` gap counterexamples remain in the repository as audit evidence.
-  This aggregation does not claim that a new independent two-reviewer release
-  audit has already been performed.
+- Two fresh independent paragraph audits of `61906ee` each returned
+  0 blocking / 0 major findings.  The incremental review of release patch
+  `a1b055a` returned 0 blocking / 0 major / 0 minor findings, and the main-agent
+  review passed.
+- `pr7ThirteenPageMain` is the core frozen-threshold theorem.  The manuscript's
+  complete displayed consequences are covered jointly by that theorem and the
+  independent Olson, GJM, unconditional Corollary 6.1, and `C₃²` endpoints;
+  no single endpoint is claimed to contain every displayed equation literally.

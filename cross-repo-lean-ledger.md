@@ -18,7 +18,15 @@ is listed for scope control and is never counted as a Lean failure.
 | `gao0823` | `18cdc6ee95b90f380b8a848fc285e30a2cbf6fde` plus the scoped formalization worktree | maintained theorem and Lean source |
 | `gao0824` | `711eefa35364ab9165cf354839904ae0321c0025` on the six-reflection branch | read-only method/source input |
 | `zhuang-gao-cyclic-index-two` | `33de3f6d2f0cd15a947713aa6db20d3d1279ee80` | read-only C8/local-lemma source |
-| `gaoLEAN` integration | `a553b2afb108dfd51f95c69877a3a3da30cbf0fc` | unconditional 13-page endpoint and kernel-checked proof graph |
+| `gaoLEAN` integration | `a1b055a0beea3db90556b57e9a06dfc9440064a1` | unconditional 13-page endpoint, manuscript consequences, and kernel-checked proof graph |
+
+Merged-release receipt: default build and central `GaoFormal.AxiomAudit` both
+completed 8820 jobs with exit 0.  Two fresh independent audits of `61906ee`
+each found 0 blocking / 0 major issues; incremental review of `a1b055a` found
+0 blocking / 0 major / 0 minor, and the main-agent review passed.  The single
+`pr7ThirteenPageMain` endpoint carries the frozen core threshold; Olson, GJM,
+the unconditional Corollary 6.1 displays, and the `C₃²` endpoints jointly
+cover the remaining displayed consequences.
 
 ## Canonical theorem ledger
 
