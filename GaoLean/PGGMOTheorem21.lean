@@ -2,12 +2,15 @@ import GaoLean.PGSetpartitionOccurrences
 import GaoLean.PGGMOOrdinarySource
 import GaoLean.PGCapacity
 import GaoLean.PGScherk
+import GaoLean.PGDavenportConvolution
+import GaoLean.PGDGMCore
 
 /-!
 # Occurrence-faithful statement of the GMO partition theorem
 
-This file freezes Theorem 2.1 of Grynkiewicz--Marchan--Ordaz,
-*A Weighted Generalization of Two Theorems of Gao* (arXiv:0903.2810v1),
+This file freezes Theorem 2.1 and the Section 5 proof of
+Grynkiewicz--Marchan--Ordaz, *Representation of finite abelian group
+elements by subsequence sums* (arXiv:0806.0309; DOI 10.5802/jtnb.689),
 in the ordinary additive setting used by the thirteen-page manuscript.
 
 The source theorem starts with `S' | S`, replaces `S'` by an equally long
@@ -9653,7 +9656,7 @@ theorem exists_gmoTheoremEInput
     exact Classical.choose_spec (P.cells_nonempty c)
 
 /-- Unconditional projected Theorem E.  The zero-cell case is the empty
-Definition-1 layer, whose tail-period convention is bottom; positive `n` uses the fully
+Definition-1 layer, whose stabilizer is top; positive `n` uses the fully
 proved source-faithful theorem and then forgets its base-family data. -/
 theorem gmoTheoremEStatement : GMOTheoremEStatement A := by
   intro xs seed n hcap hlen
@@ -9713,8 +9716,249 @@ theorem gmoProperSubgroupInductionData
     subgroup_lt := ?_
     quotient_lt := ?_
   }
-  · nlinarith [Nat.card_pos (α := H), Nat.card_pos (α := A ⧸ H)]
-  · nlinarith [Nat.card_pos (α := H), Nat.card_pos (α := A ⧸ H)]
+  · rw [hfactor]
+    nlinarith [Nat.card_pos (α := A ⧸ H)]
+  · rw [hfactor]
+    nlinarith [Nat.card_pos (α := H)]
+
+/-- The honest **odd-prime** p-group specialization targeted by the frozen
+thirteen-page final manuscript (PR #7 explicitly excludes `2`-groups).
+Recursive width is measured by the canonical ordinary Davenport constant,
+not by an unavailable general invariant-factor transport.  This is
+deliberately not named `GMOTheorem21Statement`. -/
+def OrdinaryGMOPGroupSourceStatement
+    (A : Type u) [AddCommGroup A] [Fintype A] : Prop :=
+  ∀ (p : ℕ), Fact p.Prime → p ≠ 2 → IsPGroup p (Multiplicative A) →
+    ∀ (xs : List A) (n : ℕ),
+      Nat.card A ≤ n →
+      n + ordinaryDavenportValue A - 1 ≤ xs.length →
+      Nonempty (OrdinaryGMOSourceOutput xs n)
+
+omit [Fintype A] in
+/-- The labelled source splits exactly into occurrences inside and outside
+one additive coset.  This is the occurrence-faithful bookkeeping used by
+Claim B and the maximal-subgroup replacement step. -/
+theorem occurrencesInAddCoset_union_compl
+    (xs : List A) (H : AddSubgroup A) (alpha : A) :
+    occurrencesInAddCoset xs H alpha ∪
+        ((Finset.univ : Selection xs) \ occurrencesInAddCoset xs H alpha) =
+      Finset.univ := by
+  classical
+  exact Finset.union_sdiff_of_subset (Finset.subset_univ _)
+
+omit [Fintype A] in
+theorem occurrencesInAddCoset_disjoint_compl
+    (xs : List A) (H : AddSubgroup A) (alpha : A) :
+    Disjoint (occurrencesInAddCoset xs H alpha)
+      ((Finset.univ : Selection xs) \ occurrencesInAddCoset xs H alpha) := by
+  classical
+  exact Finset.disjoint_sdiff
+
+omit [Fintype A] in
+theorem card_occurrencesInAddCoset_add_compl
+    (xs : List A) (H : AddSubgroup A) (alpha : A) :
+    (occurrencesInAddCoset xs H alpha).card +
+        ((Finset.univ : Selection xs) \
+          occurrencesInAddCoset xs H alpha).card = xs.length := by
+  classical
+  have h := Finset.card_sdiff_add_card_eq_card
+    (Finset.subset_univ (occurrencesInAddCoset xs H alpha))
+  rw [Finset.card_univ] at h
+  simpa [Nat.add_comm] using h
+
+/-- Push a labelled occurrence selection through a list map. -/
+noncomputable def mapSelection
+    {X B : Type*} (f : X → B) (s : List X) (I : Selection s) :
+    Selection (s.map f) := by
+  classical
+  exact I.map (ConcreteGDihedral.mapOccurrenceEquiv f s).toEmbedding
+
+omit [AddCommGroup A] [Fintype A] in
+@[simp]
+theorem card_mapSelection {X B : Type*} (f : X → B)
+    (s : List X) (I : Selection s) :
+    (mapSelection f s I).card = I.card := by
+  classical
+  simp [mapSelection]
+
+omit [Fintype A] in
+/-- Quotient displacement from the chosen coset representative. -/
+noncomputable def quotientDisplacement
+    (H : AddSubgroup A) (alpha : A) : A → A ⧸ H :=
+  fun x ↦ QuotientAddGroup.mk' H (x - alpha)
+
+theorem quotientDisplacement_eq_zero_iff
+    (H : AddSubgroup A) (alpha x : A) :
+    quotientDisplacement H alpha x = 0 ↔ x ∈ addCosetFinset H alpha := by
+  unfold quotientDisplacement
+  constructor
+  · intro hx
+    apply (mem_addCosetFinset_iff H alpha x).2
+    have hmem := QuotientAddGroup.eq_iff_sub_mem.mp hx
+    simpa using hmem
+  · intro hx
+    apply QuotientAddGroup.eq_iff_sub_mem.mpr
+    have hmem := (mem_addCosetFinset_iff H alpha x).1 hx
+    simpa using hmem
+
+/-- The quotient image of every labelled occurrence outside `alpha+H` is
+nonzero.  The occurrence equivalence preserves its original index. -/
+theorem occurrenceValue_mapSelection_compl_ne_zero
+    (xs : List A) (H : AddSubgroup A) (alpha : A)
+    (j : Occurrence
+      (xs.map (quotientDisplacement H alpha)))
+    (hj : j ∈ mapSelection (quotientDisplacement H alpha) xs
+      ((Finset.univ : Selection xs) \
+        occurrencesInAddCoset xs H alpha)) :
+    occurrenceValue (xs.map (quotientDisplacement H alpha)) j ≠ 0 := by
+  classical
+  unfold mapSelection at hj
+  obtain ⟨i, hi, rfl⟩ := Finset.mem_map.mp hj
+  have hvalue := ConcreteGDihedral.occurrenceValue_mapOccurrenceEquiv
+    (quotientDisplacement H alpha) xs i
+  change occurrenceValue (xs.map (quotientDisplacement H alpha))
+      (ConcreteGDihedral.mapOccurrenceEquiv
+        (quotientDisplacement H alpha) xs i) ≠ 0
+  rw [hvalue]
+  intro hz
+  have hcoset := (quotientDisplacement_eq_zero_iff H alpha
+    (occurrenceValue xs i)).1 hz
+  exact (Finset.mem_sdiff.mp hi).2
+    ((mem_occurrencesInAddCoset_iff xs H alpha i).2
+      ((mem_addCosetFinset_iff H alpha (occurrenceValue xs i)).1 hcoset))
+
+/-- A periodic common core with quotient-coset count zero is empty. -/
+theorem Theorem21SetPartition.commonCore_eq_empty_of_count_eq_zero
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (H : AddSubgroup A) (hN : P.commonCosetCount H = 0) :
+    P.commonCore H = ∅ := by
+  classical
+  by_contra hne
+  obtain ⟨x, hx⟩ := Finset.nonempty_iff_ne_empty.mpr hne
+  have hcoset : addCosetFinset H x ⊆ P.commonCore H := by
+    intro y hy
+    have hyH := (mem_addCosetFinset_iff H x y).1 hy
+    have hadd := P.add_mem_commonCore H hyH hx
+    simpa [sub_add_cancel] using hadd
+  have hcard : Nat.card H ≤ (P.commonCore H).card := by
+    simpa using Finset.card_le_card hcoset
+  have hdiv : 1 ≤ (P.commonCore H).card / Nat.card H :=
+    (Nat.le_div_iff_mul_le Nat.card_pos).2 (by simpa using hcard)
+  unfold Theorem21SetPartition.commonCosetCount at hN
+  omega
+
+/-- The `N=0` endpoint of Section 5 is already the direct large alternative;
+no Claim-B or quotient induction is needed. -/
+theorem GMOTheoremESourceOutput.largeAlternative_of_commonCosetCount_eq_zero
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (out : GMOTheoremESourceOutput I)
+    (hlen : n ≤ seed.card)
+    (hN : out.partition.commonCosetCount out.H = 0) :
+    GMOTheorem21LargeAlternative xs seed n out.partition := by
+  classical
+  have hcore := out.partition.commonCore_eq_empty_of_count_eq_zero out.H hN
+  have he : out.partition.exceptionDefect out.H = seed.card := by
+    simp [Theorem21SetPartition.exceptionDefect,
+      Theorem21SetPartition.cellExceptionDefect, hcore,
+      out.partition.sum_card_valueCell]
+  have hbound := out.card_lower
+  rw [hN, he] at hbound
+  have hcoeff : seed.card - n + 1 ≤
+      ((0 * n + seed.card + 1) - n) * Nat.card out.H := by
+    have hbase : (0 * n + seed.card + 1) - n = seed.card - n + 1 := by
+      omega
+    rw [hbase]
+    have hone : 1 ≤ Nat.card out.H := Nat.card_pos
+    simpa using Nat.mul_le_mul_left (seed.card - n + 1) hone
+  refine ⟨(min_le_right (Nat.card A) (seed.card - n + 1)).trans ?_⟩
+  exact hcoeff.trans hbound
+
+/-- Ordinary Proposition F in normalized ambient-group form: two finite
+subsets whose cardinalities sum to more than the group order have full
+sumset. -/
+theorem add_eq_univ_of_natCard_lt_card_add_card
+    [DecidableEq A]
+    (B C : Finset A) (hcard : Nat.card A < B.card + C.card) :
+    (B + C : Finset A) = Finset.univ := by
+  classical
+  apply Finset.eq_univ_iff_forall.mpr
+  intro x
+  let R : Finset A := C.image fun c ↦ x - c
+  have hRcard : R.card = C.card := by
+    apply Finset.card_image_of_injective
+    intro c d h
+    exact sub_right_injective h
+  have hinter : (B ∩ R).Nonempty := by
+    by_contra hnone
+    have hdisj : Disjoint B R := Finset.disjoint_iff_inter_eq_empty.mpr
+      (Finset.not_nonempty_iff_eq_empty.mp hnone)
+    have hunion : B.card + R.card = (B ∪ R).card :=
+      (Finset.card_union_of_disjoint hdisj).symm
+    have hle : (B ∪ R).card ≤ Nat.card A := by
+      simpa using Finset.card_le_univ (B ∪ R)
+    rw [hRcard] at hunion
+    omega
+  obtain ⟨b, hbI⟩ := hinter
+  have ⟨hbB, hbR⟩ := Finset.mem_inter.mp hbI
+  obtain ⟨c, hcC, hbc⟩ := Finset.mem_image.mp hbR
+  apply Finset.mem_add.mpr
+  refine ⟨b, hbB, c, hcC, ?_⟩
+  rw [← hbc]
+  abel
+
+/-- Claim-B Case 1, equation (13), in the ordinary-weight specialization:
+two slices contained in the same subgroup and having more than one subgroup
+order of total cardinality fill that subgroup under addition.  This is the
+ambient-`A` form needed by the occurrence setpartition, so no multiplicity
+or subtype coercion is discarded. -/
+theorem add_eq_dgmSubgroupFinset_of_subsets_of_natCard_lt_card_add_card
+    [DecidableEq A]
+    (H : AddSubgroup A) (B C : Finset A)
+    (hB : B ⊆ dgmSubgroupFinset H)
+    (hC : C ⊆ dgmSubgroupFinset H)
+    (hcard : Nat.card H < B.card + C.card) :
+    B + C = dgmSubgroupFinset H := by
+  classical
+  apply Finset.Subset.antisymm
+  · intro x hx
+    obtain ⟨b, hb, c, hc, rfl⟩ := Finset.mem_add.mp hx
+    rw [mem_dgmSubgroupFinset_iff]
+    exact H.add_mem
+      ((mem_dgmSubgroupFinset_iff H b).1 (hB hb))
+      ((mem_dgmSubgroupFinset_iff H c).1 (hC hc))
+  · intro x hx
+    let R : Finset A := C.image fun c ↦ x - c
+    have hxH : x ∈ H := (mem_dgmSubgroupFinset_iff H x).1 hx
+    have hRcard : R.card = C.card := by
+      apply Finset.card_image_of_injective
+      intro c d h
+      exact sub_right_injective h
+    have hR : R ⊆ dgmSubgroupFinset H := by
+      intro r hr
+      obtain ⟨c, hcC, rfl⟩ := Finset.mem_image.mp hr
+      rw [mem_dgmSubgroupFinset_iff]
+      exact H.sub_mem hxH
+        ((mem_dgmSubgroupFinset_iff H c).1 (hC hcC))
+    have hinter : (B ∩ R).Nonempty := by
+      by_contra hnone
+      have hdisj : Disjoint B R := Finset.disjoint_iff_inter_eq_empty.mpr
+        (Finset.not_nonempty_iff_eq_empty.mp hnone)
+      have hunion : B.card + R.card = (B ∪ R).card :=
+        (Finset.card_union_of_disjoint hdisj).symm
+      have hunionSub : B ∪ R ⊆ dgmSubgroupFinset H :=
+        Finset.union_subset hB hR
+      have hle : (B ∪ R).card ≤ Nat.card H := by
+        simpa using Finset.card_le_card hunionSub
+      rw [hRcard] at hunion
+      omega
+    obtain ⟨b, hbI⟩ := hinter
+    have ⟨hbB, hbR⟩ := Finset.mem_inter.mp hbI
+    obtain ⟨c, hcC, hbc⟩ := Finset.mem_image.mp hbR
+    apply Finset.mem_add.mpr
+    refine ⟨b, hbB, c, hcC, ?_⟩
+    rw [← hbc]
+    abel
 
 /-- Honest proved DGM endpoint for a source whose own occurrences already
 satisfy the setpartition criterion.  This is strictly weaker than Theorem
