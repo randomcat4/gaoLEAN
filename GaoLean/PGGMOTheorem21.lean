@@ -382,6 +382,128 @@ noncomputable def Theorem21SetPartition.sumset
   classical
   exact fullLayerSumSpectrum P.valueCells
 
+omit [Fintype A] in
+/-- Full-layer sumsets are invariant under permutation of their layers. -/
+theorem fullLayerSumSpectrum_eq_of_perm [DecidableEq A]
+    {L R : List (Finset A)}
+    (h : L.Perm R) : fullLayerSumSpectrum L = fullLayerSumSpectrum R := by
+  induction h with
+  | nil => rfl
+  | cons C _ ih => simp [fullLayerSumSpectrum_cons, ih]
+  | swap B C T =>
+      simp only [fullLayerSumSpectrum_cons]
+      ac_rfl
+  | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
+
+omit [AddCommGroup A] [Fintype A] in
+/-- Relabel the ordered cells by a finite permutation.  Occurrences and their
+support are unchanged; only the cell indices move. -/
+noncomputable def Theorem21SetPartition.reindex
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (sigma : Equiv.Perm (Fin n)) : Theorem21SetPartition xs n m := by
+  classical
+  refine {
+    cells := fun c ↦ P.cells (sigma c)
+    cells_nonempty := fun c ↦ P.cells_nonempty (sigma c)
+    cells_pairwise_disjoint := ?_
+    value_injective := fun c ↦ P.value_injective (sigma c)
+    card_support := ?_
+  }
+  · intro c d hcd
+    exact P.cells_pairwise_disjoint fun h ↦ hcd (sigma.injective h)
+  · have hunion :
+        Finset.univ.biUnion (fun c ↦ P.cells (sigma c)) =
+          Finset.univ.biUnion P.cells := by
+      ext i
+      simp only [Finset.mem_biUnion, Finset.mem_univ, true_and]
+      constructor
+      · rintro ⟨c, hic⟩
+        exact ⟨sigma c, hic⟩
+      · rintro ⟨d, hid⟩
+        exact ⟨sigma.symm d, by simpa using hid⟩
+    rw [hunion]
+    exact P.card_support
+
+omit [AddCommGroup A] [Fintype A] in
+@[simp]
+theorem Theorem21SetPartition.cells_reindex
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (sigma : Equiv.Perm (Fin n)) (c : Fin n) :
+    (P.reindex sigma).cells c = P.cells (sigma c) := by
+  rfl
+
+omit [AddCommGroup A] [Fintype A] in
+@[simp]
+theorem Theorem21SetPartition.valueCell_reindex
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (sigma : Equiv.Perm (Fin n)) (c : Fin n) :
+    (P.reindex sigma).valueCell c = P.valueCell (sigma c) := by
+  rfl
+
+omit [AddCommGroup A] [Fintype A] in
+theorem Theorem21SetPartition.support_reindex
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (sigma : Equiv.Perm (Fin n)) :
+    (P.reindex sigma).support = P.support := by
+  classical
+  ext i
+  simp only [Theorem21SetPartition.support, Finset.mem_biUnion,
+    Finset.mem_univ, true_and, P.cells_reindex]
+  constructor
+  · rintro ⟨c, hic⟩
+    exact ⟨sigma c, hic⟩
+  · rintro ⟨d, hid⟩
+    exact ⟨sigma.symm d, by simpa using hid⟩
+
+omit [AddCommGroup A] [Fintype A] in
+@[simp]
+theorem Theorem21SetPartition.reindex_symm_reindex
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (sigma : Equiv.Perm (Fin n)) :
+    (P.reindex sigma).reindex sigma.symm = P := by
+  apply Theorem21SetPartition.ext_cells
+  intro c
+  simp
+
+omit [AddCommGroup A] [Fintype A] in
+@[simp]
+theorem Theorem21SetPartition.reindex_reindex_symm
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (sigma : Equiv.Perm (Fin n)) :
+    (P.reindex sigma.symm).reindex sigma = P := by
+  apply Theorem21SetPartition.ext_cells
+  intro c
+  simp
+
+omit [AddCommGroup A] [Fintype A] in
+theorem Theorem21SetPartition.reindex_injective
+    {xs : List A} {n m : ℕ} (sigma : Equiv.Perm (Fin n)) :
+    Function.Injective
+      (fun P : Theorem21SetPartition xs n m ↦ P.reindex sigma) := by
+  intro P Q h
+  have := congrArg (fun R : Theorem21SetPartition xs n m ↦
+    R.reindex sigma.symm) h
+  simpa using this
+
+omit [AddCommGroup A] [Fintype A] in
+theorem Theorem21SetPartition.valueCells_reindex
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (sigma : Equiv.Perm (Fin n)) :
+    (P.reindex sigma).valueCells =
+      List.ofFn ((fun c : Fin n ↦ P.valueCell c) ∘ sigma) := by
+  classical
+  simp [Theorem21SetPartition.valueCells, Function.comp_def]
+
+omit [Fintype A] in
+theorem Theorem21SetPartition.sumset_reindex
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (sigma : Equiv.Perm (Fin n)) :
+    (P.reindex sigma).sumset = P.sumset := by
+  classical
+  unfold Theorem21SetPartition.sumset
+  rw [P.valueCells_reindex sigma]
+  exact fullLayerSumSpectrum_eq_of_perm (sigma.ofFn_comp_perm _)
+
 /-- Every full-layer value choice lifts to `n` distinct labelled source
 occurrences.  Thus Theorem 2.1's sumset is literally contained in the
 project's occurrence-sensitive exact-`n` spectrum. -/
@@ -644,6 +766,19 @@ structure GMOTheoremEInput
   anchor : Fin n → Occurrence xs
   anchor_mem : ∀ c, anchor c ∈ initial.cells c
 
+omit [AddCommGroup A] [Fintype A] in
+@[ext]
+theorem GMOTheoremEInput.ext
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    {I J : GMOTheoremEInput xs seed n}
+    (hinitial : I.initial = J.initial) (hanchor : I.anchor = J.anchor) :
+    I = J := by
+  cases I
+  cases J
+  cases hinitial
+  cases hanchor
+  rfl
+
 /-- Literal `Lambda_0` admissibility in dissertation Definition 1: the
 initial full sumset is contained in the replacement full sumset, and every
 distinguished anchor value remains in its indexed cell. -/
@@ -654,6 +789,58 @@ def GMOReplacementAdmissible
   I.initial.sumset ⊆ P.sumset ∧
     ∀ c : Fin n,
       occurrenceValue xs (I.anchor c) ∈ P.valueCell c
+
+omit [Fintype A] in
+/-- Reindex the source partition and its anchors together.  This is the
+source-faithful transport required when Lemma 5 permutes only tail cells. -/
+noncomputable def GMOTheoremEInput.reindex
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    (I : GMOTheoremEInput xs seed n) (sigma : Equiv.Perm (Fin n)) :
+    GMOTheoremEInput xs seed n := by
+  classical
+  refine {
+    initial := I.initial.reindex sigma
+    initial_support := ?_
+    anchor := fun c ↦ I.anchor (sigma c)
+    anchor_mem := ?_
+  }
+  · rw [I.initial.support_reindex, I.initial_support]
+  · intro c
+    simpa using I.anchor_mem (sigma c)
+
+omit [Fintype A] in
+theorem GMOReplacementAdmissible.reindex
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    {P : Theorem21SetPartition xs n seed.card}
+    (hP : GMOReplacementAdmissible I P)
+    (sigma : Equiv.Perm (Fin n)) :
+    GMOReplacementAdmissible (I.reindex sigma) (P.reindex sigma) := by
+  classical
+  constructor
+  · simpa [GMOTheoremEInput.reindex,
+      Theorem21SetPartition.sumset_reindex] using hP.1
+  · intro c
+    simpa [GMOTheoremEInput.reindex] using hP.2 (sigma c)
+
+omit [AddCommGroup A] [Fintype A] in
+@[simp]
+theorem GMOTheoremEInput.reindex_symm_reindex
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    (I : GMOTheoremEInput xs seed n) (sigma : Equiv.Perm (Fin n)) :
+    (I.reindex sigma).reindex sigma.symm = I := by
+  apply GMOTheoremEInput.ext
+  · simp [GMOTheoremEInput.reindex]
+  · funext c
+    simp [GMOTheoremEInput.reindex]
+
+omit [AddCommGroup A] [Fintype A] in
+@[simp]
+theorem GMOTheoremEInput.reindex_reindex_symm
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    (I : GMOTheoremEInput xs seed n) (sigma : Equiv.Perm (Fin n)) :
+    (I.reindex sigma.symm).reindex sigma = I := by
+  simpa using I.reindex_symm_reindex sigma.symm
 
 omit [Fintype A] in
 /-- The initial partition belongs to its literal source base family. -/
@@ -785,6 +972,61 @@ structure Definition1ExtremalState
   upsilon : Finset (Theorem21SetPartition xs n seed.card)
   chosen : Theorem21SetPartition xs n seed.card
   chosen_mem : chosen ∈ upsilon
+
+omit [Fintype A] in
+/-- Relabel every partition in one finite extremal family, including its
+chosen representative. -/
+noncomputable def Definition1ExtremalState.reindex
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    (state : Definition1ExtremalState xs seed n)
+    (sigma : Equiv.Perm (Fin n)) : Definition1ExtremalState xs seed n := by
+  classical
+  refine {
+    upsilon := state.upsilon.image fun P ↦ P.reindex sigma
+    chosen := state.chosen.reindex sigma
+    chosen_mem := ?_
+  }
+  exact Finset.mem_image.mpr ⟨state.chosen, state.chosen_mem, rfl⟩
+
+omit [AddCommGroup A] [Fintype A] in
+@[simp]
+theorem Definition1ExtremalState.mem_reindex_iff
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    (state : Definition1ExtremalState xs seed n)
+    (sigma : Equiv.Perm (Fin n))
+    (P : Theorem21SetPartition xs n seed.card) :
+    P.reindex sigma ∈ (state.reindex sigma).upsilon ↔
+      P ∈ state.upsilon := by
+  classical
+  constructor
+  · intro hP
+    obtain ⟨Q, hQ, hQP⟩ := Finset.mem_image.mp hP
+    have hQP' : Q = P :=
+      Theorem21SetPartition.reindex_injective sigma hQP
+    exact hQP' ▸ hQ
+  · intro hP
+    exact Finset.mem_image.mpr ⟨P, hP, rfl⟩
+
+omit [AddCommGroup A] [Fintype A] in
+@[simp]
+theorem Definition1ExtremalState.reindex_symm_reindex
+    {xs : List A} {seed : Selection xs} {n : ℕ}
+    (state : Definition1ExtremalState xs seed n)
+    (sigma : Equiv.Perm (Fin n)) :
+    (state.reindex sigma).reindex sigma.symm = state := by
+  cases state with
+  | mk upsilon chosen chosen_mem =>
+      simp only [Definition1ExtremalState.reindex]
+      congr 1
+      ext P
+      simp only [Finset.mem_image]
+      constructor
+      · rintro ⟨Q, ⟨R, hR, rfl⟩, rfl⟩
+        simpa using hR
+      · intro hP
+        refine ⟨P.reindex sigma, ?_, by simp⟩
+        exact ⟨P, hP, rfl⟩
+      · exact Theorem21SetPartition.reindex_symm_reindex chosen sigma
 
 /-- Exact validity condition for `Υ_0`: the family of all replacements with
 maximum full-sumset cardinality. -/
@@ -1020,6 +1262,62 @@ theorem exists_definition1Transition
   · intro P
     simp only [next, nextUpsilon, Finset.mem_filter, upsilonBase,
       lambda, lambdaBase]
+    tauto
+
+omit [Fintype A] in
+/-- Recenter a Definition 1 stage at an arbitrary member of its literal
+`Lambda`.  The incidence maximum is unchanged, while the following `Upsilon`
+is rebuilt by a fresh finite argmax using this partition's quotient images as
+the reference.  This is the normalization needed in dissertation Lemma 5;
+it does not identify the old fixed `F` or old `next` with the new ones. -/
+theorem Definition1Transition.exists_recentered
+    {xs : List A} {seed : Selection xs} {n r : ℕ}
+    {previous oldNext : Definition1ExtremalState xs seed n}
+    {oldF P : Theorem21SetPartition xs n seed.card}
+    (step : Definition1Transition r previous oldNext oldF)
+    (hP : step.InLambda P) :
+    ∃ next : Definition1ExtremalState xs seed n,
+      Definition1Transition r previous next P := by
+  classical
+  let H : AddSubgroup A := AddAction.stabilizer A
+    (previous.chosen.tailSumset r : Set A)
+  let upsilonBase := previous.upsilon.filter fun Q ↦
+    Q.tailSumset r = previous.chosen.tailSumset r ∧
+      Q.quotientIncidenceAt H = P.quotientIncidenceAt H ∧
+      P.quotientImagesIncluded Q H
+  have hPbase : P ∈ upsilonBase := by
+    apply Finset.mem_filter.mpr
+    refine ⟨hP.1, hP.2.1, rfl, ?_⟩
+    intro c
+    exact Finset.Subset.rfl
+  obtain ⟨G, hGbase, hGmax⟩ := Finset.exists_max_image upsilonBase
+    (fun Q ↦ (Q.tailSumset (r + 1)).card) ⟨P, hPbase⟩
+  let nextUpsilon := upsilonBase.filter fun Q ↦
+    (Q.tailSumset (r + 1)).card = (G.tailSumset (r + 1)).card
+  have hGnext : G ∈ nextUpsilon := by simp [nextUpsilon, hGbase]
+  let next : Definition1ExtremalState xs seed n := {
+    upsilon := nextUpsilon
+    chosen := G
+    chosen_mem := hGnext
+  }
+  refine ⟨next, {
+    F_mem_previous := hP.1
+    F_tail_fixed := hP.2.1
+    incidence_maximal := ?_
+    tail_maximal := ?_
+    mem_next_upsilon_iff := ?_
+  }⟩
+  · intro Q hQprevious hQtail
+    have hmax := step.incidence_maximal Q hQprevious hQtail
+    rw [← hP.2.2] at hmax
+    simpa [H] using hmax
+  · intro Q hQprevious hQtail hQinc hQimages
+    apply hGmax Q
+    exact Finset.mem_filter.mpr
+      ⟨hQprevious, hQtail, by simpa [H] using hQinc,
+        by simpa [H] using hQimages⟩
+  · intro Q
+    simp only [next, nextUpsilon, Finset.mem_filter, upsilonBase]
     tauto
 
 /-- The full finite chain, indexed by its last stage.  The indexed inductive

@@ -406,6 +406,59 @@ theorem patternSubsumSpectrum_eq_of_perm
     exact (mem_patternSubsumSpectrum_iff P μ y).2
       ⟨⟨h', fun q ↦ (hmult q).trans (hμ q)⟩⟩
 
+/-- Skipping a new leading labelled layer embeds every tail realization. -/
+theorem patternSubsumSpectrum_tail_subset_cons
+    {K : AddSubgroup A} {n : ℕ} [Fintype (A ⧸ K)]
+    [DecidableEq (A ⧸ K)] (B : Finset A) (P : List (Finset A))
+    (μ : QuotientPattern K n) :
+    patternSubsumSpectrum P μ ⊆ patternSubsumSpectrum (B :: P) μ := by
+  intro y hy
+  obtain ⟨⟨h, hμ⟩⟩ := (mem_patternSubsumSpectrum_iff P μ y).1 hy
+  exact (mem_patternSubsumSpectrum_iff (B :: P) μ y).2
+    ⟨⟨LayerSubsumChoice.skip h, by
+      intro q
+      simpa [LayerSubsumChoice.quotientMultiplicity] using hμ q⟩⟩
+
+/-- Enlarging one labelled cell preserves every realization, with the same
+selected occurrence and quotient pattern. -/
+theorem patternSubsumSpectrum_cons_mono
+    {K : AddSubgroup A} {n : ℕ} [Fintype (A ⧸ K)]
+    [DecidableEq (A ⧸ K)] {B C : Finset A} (hBC : B ⊆ C)
+    (P : List (Finset A)) (μ : QuotientPattern K n) :
+    patternSubsumSpectrum (B :: P) μ ⊆
+      patternSubsumSpectrum (C :: P) μ := by
+  intro y hy
+  obtain ⟨⟨h, hμ⟩⟩ :=
+    (mem_patternSubsumSpectrum_iff (B :: P) μ y).1 hy
+  cases h with
+  | zero =>
+      exact (mem_patternSubsumSpectrum_iff (C :: P) μ 0).2
+        ⟨⟨LayerSubsumChoice.zero (C :: P), by
+          intro q
+          simpa [LayerSubsumChoice.quotientMultiplicity] using hμ q⟩⟩
+  | skip htail =>
+      exact (mem_patternSubsumSpectrum_iff (C :: P) μ y).2
+        ⟨⟨LayerSubsumChoice.skip htail, by
+          intro q
+          simpa [LayerSubsumChoice.quotientMultiplicity] using hμ q⟩⟩
+  | @take _ _ k b z hb htail =>
+      exact (mem_patternSubsumSpectrum_iff (C :: P) μ (b + z)).2
+        ⟨⟨LayerSubsumChoice.take (hBC hb) htail, by
+          intro q
+          simpa [LayerSubsumChoice.quotientMultiplicity] using hμ q⟩⟩
+
+/-- A realization avoiding `B` remains feasible after the next cell `C` is
+replaced by the intersection--union pair. -/
+theorem patternSubsumSpectrum_tail_subset_inter_union
+    {K : AddSubgroup A} {n : ℕ} [Fintype (A ⧸ K)]
+    [DecidableEq (A ⧸ K)] (B C : Finset A)
+    (P : List (Finset A)) (μ : QuotientPattern K n) :
+    patternSubsumSpectrum (C :: P) μ ⊆
+      patternSubsumSpectrum ((B ∩ C) :: (B ∪ C) :: P) μ := by
+  have hCunion : C ⊆ B ∪ C := fun _ hx ↦ Finset.mem_union_right B hx
+  exact (patternSubsumSpectrum_cons_mono hCunion P μ).trans
+    (patternSubsumSpectrum_tail_subset_cons (B ∩ C) ((B ∪ C) :: P) μ)
+
 theorem patternSubsumSpectrum_nonempty_weight_le_length
     {K : AddSubgroup A} {n : ℕ} [Fintype (A ⧸ K)]
     [DecidableEq (A ⧸ K)]
@@ -2406,6 +2459,41 @@ theorem quotientLayerMultiplicity_cons_of_not_mem
     simpa only [mem_quotientLayer_iff] using hq
   simp [quotientLayerMultiplicity, hq']
 
+/-- A proof-relevant choice cannot use a quotient value in more labelled
+layers than the source list contains. -/
+theorem LayerSubsumChoice.quotientMultiplicity_le_layerMultiplicity
+    {K : AddSubgroup A} [DecidableEq (A ⧸ K)]
+    {P : List (Finset A)} {n : ℕ} {y : A}
+    (h : LayerSubsumChoice P n y) (q : A ⧸ K) :
+    h.quotientMultiplicity K q ≤ quotientLayerMultiplicity K P q := by
+  classical
+  induction h with
+  | zero P => simp [LayerSubsumChoice.quotientMultiplicity,
+      quotientLayerMultiplicity]
+  | @skip B P n y h ih =>
+      by_cases hq : q ∈ quotientLayer K B
+      · rw [quotientLayerMultiplicity_cons_of_mem K B P q hq]
+        simp only [LayerSubsumChoice.quotientMultiplicity]
+        omega
+      · rw [quotientLayerMultiplicity_cons_of_not_mem K B P q hq]
+        simpa [LayerSubsumChoice.quotientMultiplicity] using ih
+  | @take B P n b y hb h ih =>
+      by_cases hbq : (b : A ⧸ K) = q
+      · have hq : q ∈ quotientLayer K B :=
+          (mem_quotientLayer_iff K B q).2 ⟨b, hb, hbq⟩
+        rw [quotientLayerMultiplicity_cons_of_mem K B P q hq]
+        simp only [LayerSubsumChoice.quotientMultiplicity, hbq, if_pos]
+        omega
+      · by_cases hq : q ∈ quotientLayer K B
+        · rw [quotientLayerMultiplicity_cons_of_mem K B P q hq]
+          simp only [LayerSubsumChoice.quotientMultiplicity]
+          rw [if_neg hbq]
+          omega
+        · rw [quotientLayerMultiplicity_cons_of_not_mem K B P q hq]
+          simp only [LayerSubsumChoice.quotientMultiplicity]
+          rw [if_neg hbq]
+          simpa using ih
+
 /-- Quotient-layer incidence multiplicity depends on the multiset of
 labelled layers, not their order. -/
 theorem quotientLayerMultiplicity_eq_of_perm
@@ -2667,6 +2755,38 @@ theorem dgmCappedMultiplicitySum_eq_of_perm
   apply Finset.sum_congr rfl
   intro q _
   rw [quotientLayerMultiplicity_eq_of_perm K hPQ q]
+
+/-- A single exact-layer witness is enough for every quotient capped-count
+lower bound; no nonemptiness of unselected cells is required. -/
+theorem le_dgmCappedMultiplicitySum_of_layerSubsumSpectrum_nonempty
+    (K : AddSubgroup A) [Fintype (A ⧸ K)]
+    (P : List (Finset A)) (n : ℕ)
+    (hS : (layerSubsumSpectrum P n).Nonempty) :
+    n ≤ dgmCappedMultiplicitySum K P n := by
+  classical
+  obtain ⟨y, hy⟩ := hS
+  obtain ⟨h⟩ := (nonempty_layerSubsumChoice_iff_mem P n y).2 hy
+  have hcap : dgmCappedMultiplicitySum K P n =
+      ∑ q : A ⧸ K, min n (quotientLayerMultiplicity K P q) := by
+    rw [dgmCappedMultiplicitySum]
+    congr 1
+    ext q
+    simp
+  rw [hcap]
+  calc
+    n = ∑ q : A ⧸ K, h.quotientMultiplicity K q :=
+      h.sum_quotientMultiplicity.symm
+    _ ≤ ∑ q : A ⧸ K, min n (quotientLayerMultiplicity K P q) := by
+      apply Finset.sum_le_sum
+      intro q _
+      apply le_min
+      · have hsingle : h.quotientMultiplicity K q ≤
+            ∑ r : A ⧸ K, h.quotientMultiplicity K r :=
+          Finset.single_le_sum (fun _ _ ↦ Nat.zero_le _)
+            (Finset.mem_univ q)
+        rw [h.sum_quotientMultiplicity (K := K)] at hsingle
+        exact hsingle
+      · exact h.quotientMultiplicity_le_layerMultiplicity q
 
 /-- At the full-layer endpoint the cap is inactive. -/
 theorem dgmCappedMultiplicitySum_length
@@ -4854,7 +4974,8 @@ theorem dgmCrossedStrictSlicesMissing_lt_of_threeSummand
     (hinfeasible : patternSubsumSpectrum
       (dgmInterUnionLayers B C P) ν = ∅)
     (hP : IsNonemptySetPartition P)
-    (hInter : (B ∩ C).Nonempty)
+    (hFeasible : (layerSubsumSpectrum
+      (dgmInterUnionLayers B C P) (k + 2)).Nonempty)
     (S₁ S₂ D : Finset A)
     (hstrict : D.card + Nat.card H *
         (dgmCappedMultiplicitySum H
@@ -4874,16 +4995,14 @@ theorem dgmCrossedStrictSlicesMissing_lt_of_threeSummand
           dgmMissingPairCoset H L B C b₂).card < Nat.card H := by
   have hklen : k ≤ P.length :=
     patternSubsumSpectrum_nonempty_weight_le_length P νtail htail
-  have hP' : IsNonemptySetPartition (dgmInterUnionLayers B C P) :=
-    dgmInterUnionLayers_nonempty B C P hInter hP
-  have hn' : k + 2 ≤ (dgmInterUnionLayers B C P).length := by
-    simpa [dgmInterUnionLayers] using Nat.add_le_add_right hklen 2
   have hkTL := le_dgmCappedMultiplicitySum L P hP k hklen
   have hkTH := le_dgmCappedMultiplicitySum H P hP k hklen
-  have hweightL := le_dgmCappedMultiplicitySum L
-    (dgmInterUnionLayers B C P) hP' (k + 2) hn'
-  have hweightH := le_dgmCappedMultiplicitySum H
-    (dgmInterUnionLayers B C P) hP' (k + 2) hn'
+  have hweightL :=
+    le_dgmCappedMultiplicitySum_of_layerSubsumSpectrum_nonempty L
+      (dgmInterUnionLayers B C P) (k + 2) hFeasible
+  have hweightH :=
+    le_dgmCappedMultiplicitySum_of_layerSubsumSpectrum_nonempty H
+      (dgmInterUnionLayers B C P) (k + 2) hFeasible
   have hTLAL := dgmCappedMultiplicitySum_tail_le_inter_union
     L B C P k
   have hTHAH := dgmCappedMultiplicitySum_tail_le_inter_union
@@ -5032,7 +5151,8 @@ theorem dgmCrossedEquationFour_of_threeSummand
     (hinfeasible : patternSubsumSpectrum
       (dgmInterUnionLayers B C P) ν = ∅)
     (hP : IsNonemptySetPartition P)
-    (hInter : (B ∩ C).Nonempty)
+    (hFeasible : (layerSubsumSpectrum
+      (dgmInterUnionLayers B C P) (k + 2)).Nonempty)
     (S₁ S₂ D : Finset A)
     (hstrict : D.card + Nat.card H *
         (dgmCappedMultiplicitySum H
@@ -5050,16 +5170,14 @@ theorem dgmCrossedEquationFour_of_threeSummand
         (S₂ + dgmSubgroupFinset L).card + Nat.card L ≤ Nat.card H := by
   have hklen : k ≤ P.length :=
     patternSubsumSpectrum_nonempty_weight_le_length P νtail htail
-  have hP' : IsNonemptySetPartition (dgmInterUnionLayers B C P) :=
-    dgmInterUnionLayers_nonempty B C P hInter hP
-  have hn' : k + 2 ≤ (dgmInterUnionLayers B C P).length := by
-    simpa [dgmInterUnionLayers] using Nat.add_le_add_right hklen 2
   have hkTL := le_dgmCappedMultiplicitySum L P hP k hklen
   have hkTH := le_dgmCappedMultiplicitySum H P hP k hklen
-  have hweightL := le_dgmCappedMultiplicitySum L
-    (dgmInterUnionLayers B C P) hP' (k + 2) hn'
-  have hweightH := le_dgmCappedMultiplicitySum H
-    (dgmInterUnionLayers B C P) hP' (k + 2) hn'
+  have hweightL :=
+    le_dgmCappedMultiplicitySum_of_layerSubsumSpectrum_nonempty L
+      (dgmInterUnionLayers B C P) (k + 2) hFeasible
+  have hweightH :=
+    le_dgmCappedMultiplicitySum_of_layerSubsumSpectrum_nonempty H
+      (dgmInterUnionLayers B C P) (k + 2) hFeasible
   have hTLAL := dgmCappedMultiplicitySum_tail_le_inter_union
     L B C P k
   have hTHAH := dgmCappedMultiplicitySum_tail_le_inter_union
@@ -5106,7 +5224,8 @@ theorem dgmCrossedEquationFive_of_threeSummand
       (dgmInterUnionLayers B C P) ν = ∅)
     (hne : (b₁ : A ⧸ H) ≠ (b₂ : A ⧸ H))
     (hP : IsNonemptySetPartition P)
-    (hInter : (B ∩ C).Nonempty)
+    (hFeasible : (layerSubsumSpectrum
+      (dgmInterUnionLayers B C P) (k + 2)).Nonempty)
     (S₁ S₂ D : Finset A)
     (hstrict : D.card + Nat.card H *
         (dgmCappedMultiplicitySum H
@@ -5127,16 +5246,14 @@ theorem dgmCrossedEquationFive_of_threeSummand
           dgmMissingPairCoset H L B C b₂).card ≤ Nat.card H := by
   have hklen : k ≤ P.length :=
     patternSubsumSpectrum_nonempty_weight_le_length P νtail htail
-  have hP' : IsNonemptySetPartition (dgmInterUnionLayers B C P) :=
-    dgmInterUnionLayers_nonempty B C P hInter hP
-  have hn' : k + 2 ≤ (dgmInterUnionLayers B C P).length := by
-    simpa [dgmInterUnionLayers] using Nat.add_le_add_right hklen 2
   have hkTL := le_dgmCappedMultiplicitySum L P hP k hklen
   have hkTH := le_dgmCappedMultiplicitySum H P hP k hklen
-  have hweightL := le_dgmCappedMultiplicitySum L
-    (dgmInterUnionLayers B C P) hP' (k + 2) hn'
-  have hweightH := le_dgmCappedMultiplicitySum H
-    (dgmInterUnionLayers B C P) hP' (k + 2) hn'
+  have hweightL :=
+    le_dgmCappedMultiplicitySum_of_layerSubsumSpectrum_nonempty L
+      (dgmInterUnionLayers B C P) (k + 2) hFeasible
+  have hweightH :=
+    le_dgmCappedMultiplicitySum_of_layerSubsumSpectrum_nonempty H
+      (dgmInterUnionLayers B C P) (k + 2) hFeasible
   have hTLAL := dgmCappedMultiplicitySum_tail_le_inter_union L B C P k
   have hTHAH := dgmCappedMultiplicitySum_tail_le_inter_union H B C P k
   have hxi := weighted_dgmXiTwoGain_add_missingUnion_le_of_twoStep_infeasible
@@ -6812,7 +6929,9 @@ theorem dgmCrossedNumericGates_of_minimalConvergent_strongIH
     {K : AddSubgroup A} {k : ℕ}
     [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
     (B C : Finset A) (P : List (Finset A))
-    (hP : IsNonemptySetPartition P) (hInter : (B ∩ C).Nonempty)
+    (hP : IsNonemptySetPartition P)
+    (hFeasible : (layerSubsumSpectrum
+      (dgmInterUnionLayers B C P) (k + 2)).Nonempty)
     (μ : QuotientPattern K (k + 2)) (E : Finset A)
     (hE : DGMPatternConvergent B C P μ E)
     (hmin : ∀ E' : Finset A, DGMPatternConvergent B C P μ E' →
@@ -6885,7 +7004,7 @@ theorem dgmCrossedNumericGates_of_minimalConvergent_strongIH
     exact hstrict
   have hslices := dgmCrossedStrictSlicesMissing_lt_of_threeSummand
     H1 H h1H B C P ν hb₁ hb₂ νtail hext htail hinfeasible
-      hP hInter S11 S12 D1
+      hP hFeasible S11 S12 D1
       hstrict'
       (by simpa [H, H1, S11, S12, D1] using hthree)
   have hgates := dgmCrossedNumericGates_of_strictSlicesMissing
@@ -6921,7 +7040,9 @@ theorem dgmCrossedContradiction_of_minimalConvergent_strongIH
     {K : AddSubgroup A} {k : ℕ}
     [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
     (B C : Finset A) (P : List (Finset A))
-    (hP : IsNonemptySetPartition P) (hInter : (B ∩ C).Nonempty)
+    (hP : IsNonemptySetPartition P)
+    (hFeasible : (layerSubsumSpectrum
+      (dgmInterUnionLayers B C P) (k + 2)).Nonempty)
     (μ : QuotientPattern K (k + 2)) (E : Finset A)
     (hE : DGMPatternConvergent B C P μ E)
     (hmin : ∀ E' : Finset A, DGMPatternConvergent B C P μ E' →
@@ -6957,7 +7078,7 @@ theorem dgmCrossedContradiction_of_minimalConvergent_strongIH
   let D2 := dgmCrossedD2 B C P b₁ b₂ νtail
   let D12 := dgmCrossedD12 B C P b₁ b₂ νtail
   have hgates := dgmCrossedNumericGates_of_minimalConvergent_strongIH
-    M ih B C P hP hInter μ E hE hmin hmeasure base hbase hb₁ hb₂
+    M ih B C P hP hFeasible μ E hE hmin hmeasure base hbase hb₁ hb₂
       νtail hext htail hD12 hpair1 hescape
   rcases hgates with ⟨hpair2, hne⟩
   have hinfeasible : patternSubsumSpectrum
@@ -6982,22 +7103,22 @@ theorem dgmCrossedContradiction_of_minimalConvergent_strongIH
   rcases hthree5 with ⟨hthree51, hthree52⟩
   have h4₁ := dgmCrossedEquationFour_of_threeSummand
     H1 H h1H B C P ν hb₁ hb₂ νtail hext htail hinfeasible
-      hP hInter S11 S12 D1
+      hP hFeasible S11 S12 D1
       (by simpa [H, H1, D1] using hstrict1)
       (by simpa [H, H1, S11, S12, D1] using hthree1)
   have h4₂ := dgmCrossedEquationFour_of_threeSummand
     H2 H h2H B C P ν hb₁ hb₂ νtail hext htail hinfeasible
-      hP hInter S21 S22 D2
+      hP hFeasible S21 S22 D2
       (by simpa [H, H2, D2] using hstrict2)
       (by simpa [H, H2, S21, S22, D2] using hthree2)
   have h5₁ := dgmCrossedEquationFive_of_threeSummand
     H12 H H1 h12H h121 B C P ν hb₁ hb₂ νtail hext htail
-      hinfeasible (by simpa [H] using hne) hP hInter S11 S12 D12
+      hinfeasible (by simpa [H] using hne) hP hFeasible S11 S12 D12
       (by simpa [H, H12, D12] using hstrict12)
       (by simpa [H, H12, H1, S11, S12, D12] using hthree51)
   have h5₂ := dgmCrossedEquationFive_of_threeSummand
     H12 H H2 h12H h122 B C P ν hb₁ hb₂ νtail hext htail
-      hinfeasible (by simpa [H] using hne) hP hInter S21 S22 D12
+      hinfeasible (by simpa [H] using hne) hP hFeasible S21 S22 D12
       (by simpa [H, H12, D12] using hstrict12)
       (by simpa [H, H12, H2, S21, S22, D12] using hthree52)
   have h4₁common :
@@ -7545,7 +7666,7 @@ theorem dgmPatternBound_of_preparedCrossed_strongIH
     {K : AddSubgroup A} {k : ℕ}
     [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
     (B C : Finset A) (P : List (Finset A))
-    (hP : IsNonemptySetPartition P) (hInter : (B ∩ C).Nonempty)
+    (hP : IsNonemptySetPartition P)
     (hBC : ¬B ⊆ C) (hCB : ¬C ⊆ B)
     (μ : QuotientPattern K (k + 2))
     (hmeasure : dgmPatternInnerMeasure (B :: C :: P) μ = M)
@@ -7580,8 +7701,12 @@ theorem dgmPatternBound_of_preparedCrossed_strongIH
       b₂, hb₂, hb₂B, νtail, hext, htail, hD12, hpair1⟩ :=
     exists_initialCrossedData_of_nontrivial_convergent
       B C P μ hTargetStab E hE hEnontrivial
+  have hFeasible : (layerSubsumSpectrum
+      (dgmInterUnionLayers B C P) (k + 2)).Nonempty :=
+    hTransformed.mono
+      (patternSubsumSpectrum_subset_layerSubsumSpectrum _ μ)
   exact dgmCrossedContradiction_of_minimalConvergent_strongIH
-    M ih B C P hP hInter μ E hE hmin hmeasure base hbase hb₁ hb₂
+    M ih B C P hP hFeasible μ E hE hmin hmeasure base hbase hb₁ hb₂
       νtail hext htail hD12 hpair1 hescape
 
 /-- Nonemptiness of every labelled cell is invariant under reordering. -/
@@ -7616,7 +7741,7 @@ theorem dgmPatternBound_of_perm_preparedCrossed_strongIH
     [Fintype (A ⧸ K)] [DecidableEq (A ⧸ K)]
     (Q : List (Finset A)) (B C : Finset A) (P : List (Finset A))
     (hperm : Q.Perm (B :: C :: P))
-    (hQ : IsNonemptySetPartition Q) (hInter : (B ∩ C).Nonempty)
+    (hQ : IsNonemptySetPartition Q)
     (hBC : ¬B ⊆ C) (hCB : ¬C ⊆ B)
     (μ : QuotientPattern K (k + 2))
     (hmeasure : dgmPatternInnerMeasure Q μ = M)
@@ -7640,7 +7765,7 @@ theorem dgmPatternBound_of_perm_preparedCrossed_strongIH
       (patternSubsumSpectrum (B :: C :: P) μ).addStab = {0} := by
     rwa [← hspec]
   have hboundHead := dgmPatternBound_of_preparedCrossed_strongIH
-    M ih B C P hP hInter hBC hCB μ hmeasureHead hTargetHead
+    M ih B C P hP hBC hCB μ hmeasureHead hTargetHead
       hTargetStabHead hTransformed
   exact (dgmPatternBound_iff_of_perm hperm μ).2 hboundHead
 
