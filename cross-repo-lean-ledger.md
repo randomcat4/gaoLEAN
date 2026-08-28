@@ -1,6 +1,6 @@
 # Cross-repository Gao Lean ledger
 
-Snapshot date: 2026-08-26 (America/New_York).
+Snapshot date: 2026-08-28 (America/New_York).
 
 This ledger deduplicates the substantive mathematical outputs in the GitHub
 repositories `randomcat4/gao0822`, `randomcat4/gao0823`, `randomcat4/gao0824`,
@@ -18,6 +18,7 @@ is listed for scope control and is never counted as a Lean failure.
 | `gao0823` | `18cdc6ee95b90f380b8a848fc285e30a2cbf6fde` plus the scoped formalization worktree | maintained theorem and Lean source |
 | `gao0824` | `711eefa35364ab9165cf354839904ae0321c0025` on the six-reflection branch | read-only method/source input |
 | `zhuang-gao-cyclic-index-two` | `33de3f6d2f0cd15a947713aa6db20d3d1279ee80` | read-only C8/local-lemma source |
+| `gaoLEAN` integration | `a553b2afb108dfd51f95c69877a3a3da30cbf0fc` | unconditional 13-page endpoint and kernel-checked proof graph |
 
 ## Canonical theorem ledger
 
@@ -30,8 +31,8 @@ is listed for scope control and is never counted as a Lean failure.
 | One-translation arbitrary-rank integration | `VERIFIED` after audit in `gao0823` | supersedes the incomplete standalone `range-proof03` route | `LEAN_FULL` as a reusable consumer (M43/M46) | none for the consumer; final theorem uses the direct structural controller |
 | `GAO-AR-v1`: `E((C_q^r)⋊C₂)=2q^r+r(q-1)+1` | `VERIFIED` for odd prime `q`, `r≥2` | absorbed by the broader p-group statement; direct rank 2/3 proofs also compiled | `LEAN_CONDITIONAL` | formalize/import the explicit cited-source package |
 | `HP-GAO-v1` homocyclic prime-power theorem | `VERIFIED` in `gao0823` | separate specialization, not implied by the prime-field M10 code | `NOT_FORMALIZED` | freeze exact source DAG and external zero-sum inputs |
-| `PG-GAO-v1`: `E(A⋊_{-1}C₂)=2|A|+D(A)` for odd abelian p-groups | `VERIFIED` in `gao0823`; method refinements in `gao0824` | one canonical theorem across both repositories | `LEAN_CONDITIONAL` (M48 final frozen statement) | formalize/import ordinary/weighted/structural GMO, restricted coefficients, and GJM/Olson inputs |
-| Fixed-target subgroup descent | `PROVED` in `gao0824` | now realized by the checked simultaneous `RC`/`ZR` controller under source inputs | `LEAN_CONDITIONAL` | external source inputs only |
+| `PG-GAO-v1`: `E(A⋊_{-1}C₂)=2|A|+D(A)` for odd abelian p-groups | `VERIFIED` in `gao0823`; 13-page statement frozen from `gao0824` PR #7 | one canonical theorem across both repositories | `LEAN_FULL`; endpoint `GaoLean.ConcreteGDihedral.pr7ThirteenPageMain` | none |
+| Fixed-target subgroup descent | `PROVED` in `gao0824` | realized by the checked simultaneous `RC`/`ZR` controller and canonical ordinary extension | `LEAN_FULL` for the final odd-prime p-group route | none for the frozen theorem |
 | Capacity-flag surplus and stability theorem | `PROVED` in `gao0824` | independent reusable structure theorem | `LEAN_PARTIAL` arithmetic only | migrate full flag recurrence, equality, and near-equality classification |
 | Low-reflection affine front end | `PROVED` in `gao0824`; final existence is standard GMO | overlaps PG low branch | `LEAN_PARTIAL` | formalize the precise affine/anchored output alternative |
 | Exact `a=2,3,4,5,6` reflection origin-entry front ends | corrected versions `PROVED` in `gao0824` | `a=2,3` overlap the earlier front end; `a=4,5,6` are new sharpenings | `LEAN_PARTIAL` arithmetic/word fragments | formalize gap classifications, exceptional groups, labelled outputs, and GMO application |
@@ -68,8 +69,11 @@ is listed for scope control and is never counted as a Lean failure.
 1. Close self-contained negative certificates and M10 internal mathematics.
 2. Close the reusable `gao0824` structure theorems and repaired reflection
    front ends, preserving every exceptional group.
-3. Formalize the external ordinary/weighted zero-sum theorems needed by
-   PG-GAO; do not replace them by final-output assumptions.
+3. Formalize the ordinary/weighted zero-sum theorems needed by PG-GAO without
+   replacing them by final-output assumptions. **Completed** by the canonical
+   ordinary target/extension and signed General-DGM provider routes.
 4. Formalize the Paper 2 constructions and the stable C8 L-lemma modules.
-5. Only then issue theorem-level `LEAN_FULL`, `LEAN_DISPROVED`, or exact
-   `OPEN/CONDITIONAL` verdicts for every row above.
+5. Issue theorem-level `LEAN_FULL`, `LEAN_DISPROVED`, or exact
+   `OPEN/CONDITIONAL` verdicts per row.  The 13-page PG-GAO row is now
+   `LEAN_FULL`; unrelated Paper 2, C8, and mixed-prime rows retain their prior
+   status.

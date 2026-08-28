@@ -80,3 +80,4 @@ import GaoLean.PGWeightedGMOBridge
 import GaoLean.PGSourceAssembly
 import GaoLean.SequenceEntryCounterexample
 import GaoLean.A6RawCounterexample
+import GaoLean.PGGaoOrdinaryComplete

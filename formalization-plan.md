@@ -8,9 +8,13 @@ natural-language/Lean statement comparison.  External mathematics absent from
 Mathlib may appear only as an explicit theorem parameter; it must then be
 reported as `LEAN_CONDITIONAL`, never as an axiom or a completed Gao proof.
 
-Current overall status: `LEAN_CONDITIONAL`.  The internal proof graph and the
-fully quantified frozen statement are compiled; only the explicitly listed
-literature inputs remain parameters.
+Current overall status for the frozen 13-page `gao0824` PR #7 theorem:
+`LEAN_FULLY_CHECKED`.  The endpoint
+`GaoLean.ConcreteGDihedral.pr7ThirteenPageMain` has the exact frozen
+quantifiers and no remaining-input, provider, or recursive-output argument.
+The older conditional interfaces and the milestone text below are retained as
+an audit trail of how the boundary was reduced; they are not dependencies of
+the final endpoint.
 
 ## Dependency DAG
 
@@ -39,13 +43,13 @@ PG-GAO-v1 (separate paper branch; it does not depend on affine matching)
     ├── occurrence-sensitive sequence/product-one semantics
     ├── concrete A ⋊_{-1} C₂ and exact E/d statements
     ├── PG-O1 lower bound
-    │      ├── Olson D(A) formula                         [external blocker]
-    │      └── GJM d(A⋊C₂)=D(A)                         [external blocker]
-    ├── PG-PM: D±(A) ≤ (D(A)+1)/2
-    │      └── Troi–Zannier/CFS restricted coefficients [external blocker]
+    │      ├── Olson D(A) formula                         [CHECKED]
+    │      └── GJM d(A⋊C₂)=D(A)                         [CHECKED]
+    ├── PG-PM: D±(A) ≤ (D(A)+1)/2                       [CHECKED]
+    │      └── restricted-coefficient group-algebra proof [CHECKED]
     ├── PG-O2 reflection-count front end
     │      ├── balanced-sign literal ordering            [CHECKED]
-    │      └── GMO prescribed-length theorem             [external blocker]
+    │      └── ordinary/signed GMO providers             [CHECKED internally]
     ├── PG-O3 RC_S(K)/ZR_A(X,K)
     │      ├── quotient projection and kernel deletion  [CHECKED]
     │      ├── labelled occurrence preservation         [CHECKED]
@@ -56,9 +60,9 @@ PG-GAO-v1 (separate paper branch; it does not depend on affine matching)
     │      │                                                CHECKED]
     │      ├── strict simultaneous subgroup induction     [scheduler CHECKED]
     │      ├── nonzero positive RC/ZR branch consumers     [CHECKED from preparations]
-    │      └── quotient extraction + GMO preparations      [OPEN: external/source bridge]
+    │      └── quotient extraction + GMO preparations      [CHECKED]
     └── PG-O4 exact 2|A| synthesis
-           └── PG-GAO-v1                                [only after every edge closes]
+           └── PG-GAO-v1                                [LEAN_FULLY_CHECKED]
 ```
 
 ## Milestones
@@ -80,39 +84,41 @@ PG-GAO-v1 (separate paper branch; it does not depend on affine matching)
 | M10 | Affine exchange and arbitrary-rank integration | `LEAN_CHECKED` components; the final p-group route is closed independently by the structural residual controller |
 | M46 | Disjoint cross-pair construction, `e≥q-1` full exchange, and raw-support affine dichotomy | `LEAN_CHECKED` |
 | P1 | Occurrence/product-one semantics and concrete generalized-dihedral model | `LEAN_CHECKED` |
-| P2 | PG-PM restricted-coefficient deletion bridge and odd arithmetic | `LEAN_CONDITIONAL` on external output |
+| P2 | PG-PM restricted-coefficient deletion bridge and odd arithmetic | `LEAN_CHECKED`; restricted-coefficient output is now internal |
 | P3 | Middle-regime arithmetic, odd-quotient descent leaf, padding and translation pullback | `LEAN_CHECKED` |
 | P4 | Concrete quotient projection `G(A)→G(A/K)` and rotation-coordinate formulas | `LEAN_CHECKED` |
 | P5a | Exact quotient guard, identity deletion, label preservation, kernel translation and `H≤K` guard descent | `LEAN_CHECKED` |
-| P5b1 | Maximum product-one core, both `K=0` bases, finite strict-subgroup scheduler, exact all-rotation pullback | `LEAN_CHECKED`; bases conditional on explicit GJM bound |
+| P5b1 | Maximum product-one core, both `K=0` bases, finite strict-subgroup scheduler, exact all-rotation pullback | `LEAN_CHECKED`; GJM bound is now internal |
 | P5b2a | Actual translated-list occurrence reindex, guard/count transport, recursive `ZR` invocation and pullback | `LEAN_CHECKED` |
 | P5b2b | Strict quotient cardinality and (5.10)-(5.11) capacity composition through a labelled affine-coset set | `LEAN_CHECKED` |
 | P5b2c | Occurrence complement (5.15), all-rotation zero-sum ordering, and exact `2Q` full-spectrum closure | `LEAN_CHECKED` |
 | P5b2d | Abstract single-reservoir ordinary GMO full/non-full consumer | consumer `LEAN_CHECKED`; not the exact Section 5.2 `C/Bprime` interface |
 | P5b2e | Positive balanced reflection signs plus arbitrary rotation signs: explicit literal ordering and occurrence lift | `LEAN_CHECKED` |
 | P5b2f | Signed same-type pair output: reverse negative reflection pairs and close exact `q` pairs to `2q` occurrences | `LEAN_CHECKED` |
-| P5b2g | Canonical occurrence-labelled same-type reservoir and explicit signed-selection-to-balanced-assignment bridge | `LEAN_CHECKED`; GMO existence remains external |
-| P5b2h | Source-shaped high-reflection branch: (4.1), forced reflection, `Q • A={0}`, and exact `2Q` consumer | internal closure `LEAN_CHECKED`; weighted GMO output `LEAN_CONDITIONAL` |
-| P5b2i | Middle full-spectrum branch: balanced reflection occurrence choice, signed carrier, exact `ell+e=2Q` consumer | internal closure `LEAN_CHECKED`; GMO full-spectrum output `LEAN_CONDITIONAL` |
-| P5b2j | Middle non-full front end: odd quotient, weighted-coset descent, labelled capacity, and `RC_S(K)` invocation | internal closure `LEAN_CHECKED`; GMO concentration and controller remain explicit inputs |
-| P5b2k | Middle full/non-full assembly from a minimal post-GMO disjunction | consumer `LEAN_CHECKED`; alternative and controller remain explicit inputs |
-| P5b2l | At-most-one-reflection branch: threshold, raw `2Q • A` target, annihilation, exact all-rotation block | internal closure `LEAN_CHECKED`; ordinary GMO output `LEAN_CONDITIONAL` |
-| P5b2m | Exhaustive reflection-count dispatch across low, high, and middle outputs | internal assembly `LEAN_CHECKED`; exact outputs/controller remain conditional |
-| P5b2n | Source-faithful rotation-only channel with separate `C` and `Bprime`, full complement, non-full descent, and positive `ZR` step | consumer and step construction `LEAN_CHECKED`; preparation `LEAN_CONDITIONAL` |
-| P5b2o | Reflection-containing full/non-full consumers and positive fixed-source `RC` step | consumer and step construction `LEAN_CHECKED`; preparation `LEAN_CONDITIONAL` |
-| P5b2p | Channel preparations, zero bases, and strict simultaneous induction assembled into `PGO3ControllerSkeleton` | assembly `LEAN_CHECKED`; GJM and preparation families explicit |
-| P5b2q | Labelled `B=B0⊔Bprime` quotient extraction, free remainder, (5.12)-(5.16) arithmetic, and rotation preparation from narrow providers | internal extraction `LEAN_CHECKED`; quotient small-Davenport and GMO provider explicit |
-| P5b2r | Labelled reflection quotient extraction `T=U⊔R`, lifted defect/parity, (5.6)-(5.9) arithmetic, and reflection preparation from a narrow provider | internal extraction `LEAN_CHECKED`; quotient small-Davenport and signed GMO provider explicit |
-| P5b2 | Nonzero proper-subgroup RC/ZR branch proofs and controller assembly | both labelled extractions and internal consumers/scheduler `LEAN_CHECKED`; GMO/GJM providers remain |
-| P5c | PG-O4 occurrence split, exact upper synthesis, PG-O1c lower-bound construction, and conditional PG-GAO composition | internal dispatcher/lower construction `LEAN_CHECKED`; final equality `LEAN_CONDITIONAL` on explicit external providers |
+| P5b2g | Canonical occurrence-labelled same-type reservoir and explicit signed-selection-to-balanced-assignment bridge | `LEAN_CHECKED`; signed GMO existence is now supplied internally |
+| P5b2h | Source-shaped high-reflection branch: (4.1), forced reflection, `Q • A={0}`, and exact `2Q` consumer | `LEAN_CHECKED`; weighted GMO output is now internal |
+| P5b2i | Middle full-spectrum branch: balanced reflection occurrence choice, signed carrier, exact `ell+e=2Q` consumer | `LEAN_CHECKED`; signed full-spectrum output is now internal |
+| P5b2j | Middle non-full front end: odd quotient, weighted-coset descent, labelled capacity, and `RC_S(K)` invocation | `LEAN_CHECKED`; concentration and controller inputs are now internally supplied |
+| P5b2k | Middle full/non-full assembly from a minimal post-GMO disjunction | `LEAN_CHECKED`; alternative and controller are now internally supplied |
+| P5b2l | At-most-one-reflection branch: threshold, raw `2Q • A` target, annihilation, exact all-rotation block | `LEAN_CHECKED`; ordinary GMO output is now internal |
+| P5b2m | Exhaustive reflection-count dispatch across low, high, and middle outputs | `LEAN_CHECKED`; all outputs/controllers are now internally supplied |
+| P5b2n | Source-faithful rotation-only channel with separate `C` and `Bprime`, full complement, non-full descent, and positive `ZR` step | `LEAN_CHECKED`; preparation is now internal |
+| P5b2o | Reflection-containing full/non-full consumers and positive fixed-source `RC` step | `LEAN_CHECKED`; preparation is now internal |
+| P5b2p | Channel preparations, zero bases, and strict simultaneous induction assembled into `PGO3ControllerSkeleton` | `LEAN_CHECKED`; GJM and preparation families are now internal |
+| P5b2q | Labelled `B=B0⊔Bprime` quotient extraction, free remainder, (5.12)-(5.16) arithmetic, and rotation preparation from narrow providers | `LEAN_CHECKED`; quotient and ordinary GMO inputs are now internal |
+| P5b2r | Labelled reflection quotient extraction `T=U⊔R`, lifted defect/parity, (5.6)-(5.9) arithmetic, and reflection preparation from a narrow provider | `LEAN_CHECKED`; quotient and signed GMO inputs are now internal |
+| P5b2 | Nonzero proper-subgroup RC/ZR branch proofs and controller assembly | `LEAN_CHECKED`; labelled extractions, consumers, scheduler, and source providers are closed |
+| P5c | PG-O4 occurrence split, exact upper synthesis, PG-O1c lower-bound construction, and PG-GAO composition | `LEAN_FULLY_CHECKED`; final equality has no external provider |
 | R3-P | Rank-three plane descent and complete rank-three upper bound | `LEAN_CHECKED` |
-| RF | Direct ordinary/signed structural-GMO residual producer and simultaneous controller | `LEAN_CHECKED` conditional only on named source inputs |
-| Z | Fully quantified frozen main statement from final cited-source package | `LEAN_CONDITIONAL` |
+| RF | Direct ordinary/signed structural-GMO residual producer and simultaneous controller | `LEAN_CHECKED`; former named source inputs now have internal producers |
+| Z | Fully quantified frozen 13-page main statement | `LEAN_FULLY_CHECKED`; endpoint `GaoLean.ConcreteGDihedral.pr7ThirteenPageMain` |
 
-M48 supersedes the historical open-boundary narrative below: the rank-free
-residual producer and final frozen-statement assembly are now compiled in
-`GAOARResidualController.lean` and `GAOARFinal.lean`.  External source theorems
-remain explicit, so the result is conditional rather than unconditional.
+The 2026-08-28 ordinary completion supersedes the historical open-boundary
+narrative below.  `PGGaoOrdinaryComplete.lean` constructs the last ordinary
+prescribed-length and all-subgroup structural providers from the canonical
+`d*` target induction and canonical subgroup extension, then combines them
+with the already checked signed providers.  The historical M48 conditional
+endpoint remains available, but the frozen final theorem is now unconditional.
 
 M9 is closed. M39–M46 close the labelled affine reverse/full-exchange
 consumers, the full raw-support affine dichotomy, and the one-translation

@@ -8,10 +8,14 @@ Lean 4.32 的版本控制形式化伴随工程。当前只按实际机械覆盖�
 independent-difference matching、occurrence-labelled fixed-cardinality
 exchange、affine-hyperplane 双向证书及自动几何前端、one-translation 内部机械链，
 秩二/秩三上界、任意秩同时残差控制器及最终冻结主命题装配，均已经由 Lean
-检查。当前准确总状态为 `LEAN_CONDITIONAL`：主控制器与顶层条件式装配已经闭合，
-但 GMO、受限系数、small-Davenport，以及论文内部 Davenport 拼接/子群界的若干
-source-facing 输入仍是显式 theorem parameters，因此不是无条件顶层定理，也不能
-说成“只剩已发表文献输入”。
+检查。13 页基准的当前准确状态为 `LEAN_FULLY_CHECKED`：公开端点
+`GaoLean.ConcreteGDihedral.pr7ThirteenPageMain` 直接实现
+`PR7ThirteenPageMainStatement`，不接收 remaining-input、provider 或递归结论参数。
+ordinary prescribed-length 由 canonical `d*` target theorem 给出，ordinary
+structural 由 odd-prime `p`-group canonical extension 给出；signed 三项、Olson、
+restricted coefficients、GJM 与 Davenport subgroup--quotient 拼接也均已在仓库内
+闭合。历史上的条件接口仍保留，作为分层复用 API 和审计证据，而不是最终端点的
+假设。
 
 `gao0824` 的无条件 sequence-level raw/padded capacity-entry 命题也已由完整
 无限循环族在 Lean 中证否：原序列的 labelled exact-target 规避、每个真子群
@@ -30,14 +34,25 @@ lake build GaoFormal.AxiomAudit
 ```
 
 工具链固定为 Lean `v4.32.0`，Mathlib 固定为公开标签 `v4.32.0`。
-最新验收点见 `milestone-62.md`：DGM crossed `D12` 基础、普通 GMO 的完整
-Definition 1 有限极值链，以及 signed Step 5 的 quotient concentration 无损回拉均已
-在服务器验证。M62 还公开修正了 Theorem E 在 `N=0` 时的自然数截断误编码，并以
-机械回归锁定差异。顶层仍为 `LEAN_CONDITIONAL`；DGM 的 D1/D2/D12 矛盾、
-Theorem E 的 exchange/factor-form Lemmas 1--5 与 signed Step 1/5/6 尚未闭合。
+当前发布聚合入口为 `GaoLean.lean`，其中显式导入
+`GaoLean.PGGaoOrdinaryComplete`，因此默认 `lake build` 会实际构建最终模块。
+最终四个关键端点是
+`ordinaryGMOPrescribedLengthProvider_of_canonicalDStar`、
+`ordinaryGMOStructuralProvider_addSubgroup_of_oddPrimePGroup`、
+`ConcreteGDihedral.pgGaoOrdinaryRemainingInputs` 与
+`ConcreteGDihedral.pr7ThirteenPageMain`。它们的公理输出只含 Lean/Mathlib 常规的
+`propext`、`Classical.choice`、`Quot.sound`（各定理可使用其子集），没有
+`sorryAx` 或项目自定义公理。发布聚合后的默认 `lake build` 已实际完成 8819 个
+任务并以 exit 0 结束。
 
-下文保留各历史里程碑当时的边界描述；其中写有“仍缺”“partial”或
-“NOT_FORMALIZED”的段落是过程记录，应以 M62 的最新缺口账为准。
+下文保留各历史里程碑当时的边界描述与反例；其中写有“仍缺”“partial”、
+“conditional”或“NOT_FORMALIZED”的段落是过程记录，不应覆盖上述最终发布状态。
+被 Lean 证否的 raw/padded capacity 与 `C₃` gap 接口仍然保持为反例，最终证明没有
+通过恢复这些错误接口来闭合。
+
+## 历史里程碑记录
+
+以下各段的“当前”“仍缺”均指对应里程碑落地时的状态。
 
 PG 分支的真实覆盖与外部阻塞见 `pg-coverage.md`。冻结 PG-GAO 陈述已编译，
 但陈述定义不计作证明；当前 PG-PM 仅为显式外部参数下的条件结论。PG-O3

@@ -989,3 +989,25 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
 - The manuscript remains conditional only on the still-unproved General DGM
   pattern-minimality core and the ordinary Definition 1/Lemmas 1--5
   structural output; no provider has been hidden or renamed away.
+
+## 2026-08-28: unconditional 13-page ordinary completion and release aggregation
+
+- Added the unconditional endpoint
+  `GaoLean.ConcreteGDihedral.pr7ThirteenPageMain`, whose type is exactly the
+  frozen `PR7ThirteenPageMainStatement` and which accepts no provider,
+  remaining-input package, or recursive conclusion.
+- `ordinaryGMOPrescribedLengthProvider_of_canonicalDStar` derives the ordinary
+  prescribed-length field from the canonical `d*` target theorem;
+  `ordinaryGMOStructuralProvider_addSubgroup_of_oddPrimePGroup` supplies the
+  structural field uniformly in every additive subgroup.  The already proved
+  signed General-DGM providers complete the source package.
+- Updated the default aggregation module `GaoLean.lean` to import
+  `GaoLean.PGGaoOrdinaryComplete`; default `lake build` therefore exercised the
+  final module and completed successfully: 8819 jobs, exit 0.
+- The four final endpoint audits report only `propext`, `Classical.choice`, and
+  `Quot.sound`.  The release scan contains no `sorry`, `admit`, declaration
+  `axiom`, `unsafe`, `native_decide`, or `sorryAx` in project Lean sources.
+- Historical conditional interfaces, failed raw/padded capacity statements,
+  and the `C₃` gap counterexamples remain in the repository as audit evidence.
+  This aggregation does not claim that a new independent two-reviewer release
+  audit has already been performed.
