@@ -131,8 +131,8 @@ theorem c3SquaredPaddedLowerWord_no_eighteenBlock :
       c3SquaredProductOneFreeWord_isProductOneFree (by omega)
 
 /-- The complete numerical threshold displayed for `C₃²`: every source of
-length 23 has an 18-term product-one block, while smaller lengths admit the
-required counterexamples. -/
+length 23 has an 18-term product-one block, while counterexamples exist at
+every smaller length. -/
 theorem pgGao_c3Squared_threshold :
     IsExactProductOneThreshold
       (Group (HomocyclicKernel 3 1 2)) 23 18 := by
