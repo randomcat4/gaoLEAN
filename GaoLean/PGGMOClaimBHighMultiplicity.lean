@@ -1,4 +1,4 @@
-import GaoLean.PGGMOClaimBEnvelope
+import GaoLean.PGGMOClaimBMaximal
 import Mathlib.Data.Fintype.EquivFin
 
 /-!
@@ -307,50 +307,50 @@ noncomputable def OrdinaryGMOClaimBOutput.highMultiplicityLength
 families are injections into the original source occurrence type. -/
 structure OrdinaryGMOClaimBHighMultiplicityCore
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    (E : OrdinaryGMOClaimBEnvelope xs seed n) (z : A ⧸ E.W.K) where
-  proper : E.W.K ≠ ⊤
+    (W : OrdinaryGMOClaimBOutput xs seed n) (z : A ⧸ W.K) where
+  proper : W.K ≠ ⊤
   nonzero : z ≠ 0
-  highSource : Fin (E.W.highMultiplicityLength z) ↪ Occurrence xs
-  high_mem_fiber : ∀ t, highSource t ∈ E.W.sourceQuotientFiber z
-  reserveSource : Fin (E.W.highMultiplicityLength z) ↪ Occurrence xs
+  highSource : Fin (W.highMultiplicityLength z) ↪ Occurrence xs
+  high_mem_fiber : ∀ t, highSource t ∈ W.sourceQuotientFiber z
+  reserveSource : Fin (W.highMultiplicityLength z) ↪ Occurrence xs
   reserve_mem : ∀ t,
-    reserveSource t ∈ E.W.partition.unusedInAddCoset E.W.K E.W.g
+    reserveSource t ∈ W.partition.unusedInAddCoset W.K W.g
 
 /-- The high multiplicity bound supplies exactly `d*(L/K)` genuine nonzero
 source positions, while the Claim-B remaining-occurrence ledger supplies the
 same number of distinct zero-fiber reserve positions. -/
 theorem exists_ordinaryGMOClaimBHighMultiplicityCore
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    (E : OrdinaryGMOClaimBEnvelope xs seed n)
-    (hKtop : E.W.K ≠ ⊤) (hnA : Nat.card A ≤ n)
-    (z : A ⧸ E.W.K) (hz : z ≠ 0)
-    (hmult : pGroupDStar (A ⧸ E.W.K) ≤
-      (E.W.sourceQuotientFiber z).card) :
-    Nonempty (OrdinaryGMOClaimBHighMultiplicityCore E z) := by
+    (W : OrdinaryGMOClaimBOutput xs seed n)
+    (hKtop : W.K ≠ ⊤) (hnA : Nat.card A ≤ n)
+    (z : A ⧸ W.K) (hz : z ≠ 0)
+    (hmult : pGroupDStar (A ⧸ W.K) ≤
+      (W.sourceQuotientFiber z).card) :
+    Nonempty (OrdinaryGMOClaimBHighMultiplicityCore W z) := by
   classical
-  let r := E.W.highMultiplicityLength z
-  have hrAmbient : r ≤ pGroupDStar (A ⧸ E.W.K) := by
+  let r := W.highMultiplicityLength z
+  have hrAmbient : r ≤ pGroupDStar (A ⧸ W.K) := by
     simpa only [r, OrdinaryGMOClaimBOutput.highMultiplicityLength] using
-      E.W.pGroupDStar_internalQuotient_le_ambientQuotient z
-  have hrFiber : r ≤ (E.W.sourceQuotientFiber z).card :=
+      W.pGroupDStar_internalQuotient_le_ambientQuotient z
+  have hrFiber : r ≤ (W.sourceQuotientFiber z).card :=
     hrAmbient.trans hmult
   obtain ⟨highSet, hhighSub, hhighCard⟩ :=
     Finset.exists_subset_card_eq hrFiber
   let highSource : Fin r ↪ Occurrence xs :=
     (highSet.equivFinOfCardEq hhighCard).symm.toEmbedding.trans
       (Function.Embedding.subtype _)
-  have hhigh (t : Fin r) : highSource t ∈ E.W.sourceQuotientFiber z := by
+  have hhigh (t : Fin r) : highSource t ∈ W.sourceQuotientFiber z := by
     exact hhighSub ((highSet.equivFinOfCardEq hhighCard).symm t).property
-  have hLlen : pGroupDStar (E.W.highMultiplicityExtensionSubgroup z) ≤ n :=
+  have hLlen : pGroupDStar (W.highMultiplicityExtensionSubgroup z) ≤ n :=
     pGroupDStar_addSubgroup_le_of_natCard_le
-      (E.W.highMultiplicityExtensionSubgroup z) hnA
-  have hconv := E.W.pGroupDStar_K_add_internalQuotient_le_extension z
-  have hrSub : r ≤ n - pGroupDStar E.W.K := by
+      (W.highMultiplicityExtensionSubgroup z) hnA
+  have hconv := W.pGroupDStar_K_add_internalQuotient_le_extension z
+  have hrSub : r ≤ n - pGroupDStar W.K := by
     dsimp only [r, OrdinaryGMOClaimBOutput.highMultiplicityLength]
     omega
   have hrReserve : r ≤
-      (E.W.partition.unusedInAddCoset E.W.K E.W.g).card := by
-    have hremaining := E.W.remaining_in_coset
+      (W.partition.unusedInAddCoset W.K W.g).card := by
+    have hremaining := W.remaining_in_coset
     omega
   obtain ⟨reserveSet, hreserveSub, hreserveCard⟩ :=
     Finset.exists_subset_card_eq hrReserve
@@ -359,7 +359,7 @@ theorem exists_ordinaryGMOClaimBHighMultiplicityCore
       (Function.Embedding.subtype _)
   have hreserve (t : Fin r) :
       reserveSource t ∈
-        E.W.partition.unusedInAddCoset E.W.K E.W.g := by
+        W.partition.unusedInAddCoset W.K W.g := by
     exact hreserveSub
       ((reserveSet.equivFinOfCardEq hreserveCard).symm t).property
   refine ⟨{
@@ -374,97 +374,97 @@ theorem exists_ordinaryGMOClaimBHighMultiplicityCore
 /-- Range of the selected high-fiber source injection. -/
 noncomputable def OrdinaryGMOClaimBHighMultiplicityCore.highSourceRange
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z) : Selection xs := by
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z) : Selection xs := by
   classical
   exact Finset.univ.map D.highSource
 
 /-- Range of the selected zero-fiber reserve injection. -/
 noncomputable def OrdinaryGMOClaimBHighMultiplicityCore.reserveSourceRange
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z) : Selection xs := by
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z) : Selection xs := by
   classical
   exact Finset.univ.map D.reserveSource
 
 @[simp]
 theorem OrdinaryGMOClaimBHighMultiplicityCore.card_highSourceRange
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z) :
-    D.highSourceRange.card = E.W.highMultiplicityLength z := by
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z) :
+    D.highSourceRange.card = W.highMultiplicityLength z := by
   classical
   simp [OrdinaryGMOClaimBHighMultiplicityCore.highSourceRange]
 
 @[simp]
 theorem OrdinaryGMOClaimBHighMultiplicityCore.card_reserveSourceRange
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z) :
-    D.reserveSourceRange.card = E.W.highMultiplicityLength z := by
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z) :
+    D.reserveSourceRange.card = W.highMultiplicityLength z := by
   classical
   simp [OrdinaryGMOClaimBHighMultiplicityCore.reserveSourceRange]
 
 theorem OrdinaryGMOClaimBHighMultiplicityCore.highSource_mem_nonzeroOccurrences
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z) (hz : z ≠ 0)
-    (t : Fin (E.W.highMultiplicityLength z)) :
-    D.highSource t ∈ E.W.sourceNonzeroQuotientOccurrences :=
-  E.W.sourceQuotientFiber_subset_sourceNonzeroOccurrences hz
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z) (hz : z ≠ 0)
+    (t : Fin (W.highMultiplicityLength z)) :
+    D.highSource t ∈ W.sourceNonzeroQuotientOccurrences :=
+  W.sourceQuotientFiber_subset_sourceNonzeroOccurrences hz
     (D.high_mem_fiber t)
 
 theorem OrdinaryGMOClaimBHighMultiplicityCore.highSource_not_mem_support
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z) (hz : z ≠ 0)
-    (t : Fin (E.W.highMultiplicityLength z)) :
-    D.highSource t ∉ E.W.partition.support := by
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z) (hz : z ≠ 0)
+    (t : Fin (W.highMultiplicityLength z)) :
+    D.highSource t ∉ W.partition.support := by
   intro ht
-  have hcoset := E.W.support_in_coset (D.highSource t) ht
-  have hmemK : occurrenceValue xs (D.highSource t) - E.W.g ∈ E.W.K :=
-    (mem_addCosetFinset_iff E.W.K E.W.g
+  have hcoset := W.support_in_coset (D.highSource t) ht
+  have hmemK : occurrenceValue xs (D.highSource t) - W.g ∈ W.K :=
+    (mem_addCosetFinset_iff W.K W.g
       (occurrenceValue xs (D.highSource t))).1 hcoset
-  have hzero : E.W.centeredQuotientValue (D.highSource t) = 0 :=
+  have hzero : W.centeredQuotientValue (D.highSource t) = 0 :=
     (QuotientAddGroup.eq_zero_iff _).2 hmemK
   have hzFiber :=
-    (E.W.mem_sourceQuotientFiber_iff z (D.highSource t)).1
+    (W.mem_sourceQuotientFiber_iff z (D.highSource t)).1
       (D.high_mem_fiber t)
   exact hz (hzFiber.symm.trans hzero)
 
 theorem OrdinaryGMOClaimBHighMultiplicityCore.reserveSource_centered_eq_zero
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z)
-    (t : Fin (E.W.highMultiplicityLength z)) :
-    E.W.centeredQuotientValue (D.reserveSource t) = 0 := by
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z)
+    (t : Fin (W.highMultiplicityLength z)) :
+    W.centeredQuotientValue (D.reserveSource t) = 0 := by
   have hcoset :=
-    (E.W.partition.mem_unusedInAddCoset_iff E.W.K E.W.g
+    (W.partition.mem_unusedInAddCoset_iff W.K W.g
       (D.reserveSource t)).1 (D.reserve_mem t) |>.2
   exact (QuotientAddGroup.eq_zero_iff _).2
-    ((mem_addCosetFinset_iff E.W.K E.W.g
+    ((mem_addCosetFinset_iff W.K W.g
       (occurrenceValue xs (D.reserveSource t))).1 hcoset)
 
 theorem OrdinaryGMOClaimBHighMultiplicityCore.reserveSource_not_mem_support
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z)
-    (t : Fin (E.W.highMultiplicityLength z)) :
-    D.reserveSource t ∉ E.W.partition.support :=
-  (E.W.partition.mem_unusedInAddCoset_iff E.W.K E.W.g
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z)
+    (t : Fin (W.highMultiplicityLength z)) :
+    D.reserveSource t ∉ W.partition.support :=
+  (W.partition.mem_unusedInAddCoset_iff W.K W.g
     (D.reserveSource t)).1 (D.reserve_mem t) |>.1
 
 /-- A nonzero-fiber source position can never equal a chosen zero-fiber
 reserve position. -/
 theorem OrdinaryGMOClaimBHighMultiplicityCore.highSource_ne_reserveSource
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z) (hz : z ≠ 0)
-    (s t : Fin (E.W.highMultiplicityLength z)) :
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z) (hz : z ≠ 0)
+    (s t : Fin (W.highMultiplicityLength z)) :
     D.highSource s ≠ D.reserveSource t := by
   intro heq
   have hhigh :=
-    (E.W.mem_sourceQuotientFiber_iff z (D.highSource s)).1
+    (W.mem_sourceQuotientFiber_iff z (D.highSource s)).1
       (D.high_mem_fiber s)
   have hreserve := D.reserveSource_centered_eq_zero t
   rw [heq] at hhigh
@@ -472,8 +472,8 @@ theorem OrdinaryGMOClaimBHighMultiplicityCore.highSource_ne_reserveSource
 
 theorem OrdinaryGMOClaimBHighMultiplicityCore.disjoint_sourceRanges
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z) (hz : z ≠ 0) :
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z) (hz : z ≠ 0) :
     Disjoint D.highSourceRange D.reserveSourceRange := by
   classical
   rw [Finset.disjoint_left]
@@ -484,9 +484,9 @@ theorem OrdinaryGMOClaimBHighMultiplicityCore.disjoint_sourceRanges
 
 theorem OrdinaryGMOClaimBHighMultiplicityCore.highSourceRange_disjoint_support
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z) (hz : z ≠ 0) :
-    Disjoint D.highSourceRange E.W.partition.support := by
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z) (hz : z ≠ 0) :
+    Disjoint D.highSourceRange W.partition.support := by
   classical
   rw [Finset.disjoint_left]
   intro i hiHigh hiSupport
@@ -495,9 +495,9 @@ theorem OrdinaryGMOClaimBHighMultiplicityCore.highSourceRange_disjoint_support
 
 theorem OrdinaryGMOClaimBHighMultiplicityCore.reserveSourceRange_disjoint_support
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z) :
-    Disjoint D.reserveSourceRange E.W.partition.support := by
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z) :
+    Disjoint D.reserveSourceRange W.partition.support := by
   classical
   rw [Finset.disjoint_left]
   intro i hiReserve hiSupport
@@ -507,16 +507,16 @@ theorem OrdinaryGMOClaimBHighMultiplicityCore.reserveSourceRange_disjoint_suppor
 /-- Every selected high-fiber value lies in the affine `g + L` coset. -/
 theorem OrdinaryGMOClaimBHighMultiplicityCore.highSource_value_mem_extensionCoset
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z)
-    (t : Fin (E.W.highMultiplicityLength z)) :
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z)
+    (t : Fin (W.highMultiplicityLength z)) :
     occurrenceValue xs (D.highSource t) ∈
-      addCosetFinset (E.W.highMultiplicityExtensionSubgroup z) E.W.g := by
+      addCosetFinset (W.highMultiplicityExtensionSubgroup z) W.g := by
   apply (mem_addCosetFinset_iff
-    (E.W.highMultiplicityExtensionSubgroup z) E.W.g _).2
-  change E.W.centeredQuotientValue (D.highSource t) ∈
-    E.W.highMultiplicityQuotientSubgroup z
-  rw [(E.W.mem_sourceQuotientFiber_iff z (D.highSource t)).1
+    (W.highMultiplicityExtensionSubgroup z) W.g _).2
+  change W.centeredQuotientValue (D.highSource t) ∈
+    W.highMultiplicityQuotientSubgroup z
+  rw [(W.mem_sourceQuotientFiber_iff z (D.highSource t)).1
     (D.high_mem_fiber t)]
   exact AddSubgroup.subset_closure (Set.mem_singleton z)
 
@@ -524,35 +524,35 @@ theorem OrdinaryGMOClaimBHighMultiplicityCore.highSource_value_mem_extensionCose
 same class as the fixed representative of `z`. -/
 theorem OrdinaryGMOClaimBHighMultiplicityCore.highSource_internalQuotient_eq_representative
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z)
-    (t : Fin (E.W.highMultiplicityLength z)) :
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z)
+    (t : Fin (W.highMultiplicityLength z)) :
     QuotientAddGroup.mk'
-        (internalAddSubgroup E.W.K
-          (E.W.highMultiplicityExtensionSubgroup z))
-        (⟨occurrenceValue xs (D.highSource t) - E.W.g,
+        (internalAddSubgroup W.K
+          (W.highMultiplicityExtensionSubgroup z))
+        (⟨occurrenceValue xs (D.highSource t) - W.g,
           (mem_addCosetFinset_iff
-            (E.W.highMultiplicityExtensionSubgroup z) E.W.g _).1
+            (W.highMultiplicityExtensionSubgroup z) W.g _).1
               (D.highSource_value_mem_extensionCoset t)⟩ :
-          E.W.highMultiplicityExtensionSubgroup z) =
+          W.highMultiplicityExtensionSubgroup z) =
       QuotientAddGroup.mk'
-        (internalAddSubgroup E.W.K
-          (E.W.highMultiplicityExtensionSubgroup z))
-        (⟨E.W.quotientRepresentative z - E.W.g,
-          E.W.centeredRepresentative_mem_extension z⟩ :
-          E.W.highMultiplicityExtensionSubgroup z) := by
+        (internalAddSubgroup W.K
+          (W.highMultiplicityExtensionSubgroup z))
+        (⟨W.quotientRepresentative z - W.g,
+          W.centeredRepresentative_mem_extension z⟩ :
+          W.highMultiplicityExtensionSubgroup z) := by
   apply QuotientAddGroup.eq_iff_sub_mem.mpr
-  change (occurrenceValue xs (D.highSource t) - E.W.g) -
-      (E.W.quotientRepresentative z - E.W.g) ∈ E.W.K
+  change (occurrenceValue xs (D.highSource t) - W.g) -
+      (W.quotientRepresentative z - W.g) ∈ W.K
   apply QuotientAddGroup.eq_iff_sub_mem.mp
   calc
-    QuotientAddGroup.mk' E.W.K
-        (occurrenceValue xs (D.highSource t) - E.W.g) = z :=
-      (E.W.mem_sourceQuotientFiber_iff z (D.highSource t)).1
+    QuotientAddGroup.mk' W.K
+        (occurrenceValue xs (D.highSource t) - W.g) = z :=
+      (W.mem_sourceQuotientFiber_iff z (D.highSource t)).1
         (D.high_mem_fiber t)
-    _ = QuotientAddGroup.mk' E.W.K
-        (E.W.quotientRepresentative z - E.W.g) :=
-      (E.W.centeredQuotientValue_representative z).symm
+    _ = QuotientAddGroup.mk' W.K
+        (W.quotientRepresentative z - W.g) :=
+      (W.centeredQuotientValue_representative z).symm
 
 end LabelledSelection
 

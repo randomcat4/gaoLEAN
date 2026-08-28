@@ -95,12 +95,12 @@ partition.  The extra singleton positions are selected from the old
 `g+K` reserve after deleting the already reserved zero positions. -/
 structure OrdinaryGMOClaimBHighMultiplicityAssemblyData
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z) where
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z) where
   singletonSource :
-    Fin (E.W.highMultiplicitySingletonLength z) ↪ Occurrence xs
+    Fin (W.highMultiplicitySingletonLength z) ↪ Occurrence xs
   singleton_mem : ∀ t,
-    singletonSource t ∈ E.W.partition.unusedInAddCoset E.W.K E.W.g
+    singletonSource t ∈ W.partition.unusedInAddCoset W.K W.g
   singleton_not_reserve : ∀ s t,
     singletonSource s ≠ D.reserveSource t
 
@@ -108,8 +108,8 @@ structure OrdinaryGMOClaimBHighMultiplicityAssemblyData
 noncomputable def
     OrdinaryGMOClaimBHighMultiplicityAssemblyData.singletonSourceRange
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D) : Selection xs := by
   classical
   exact Finset.univ.map M.singletonSource
@@ -117,55 +117,55 @@ noncomputable def
 @[simp]
 theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.card_singletonSourceRange
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D) :
     M.singletonSourceRange.card =
-      E.W.highMultiplicitySingletonLength z := by
+      W.highMultiplicitySingletonLength z := by
   classical
   simp [OrdinaryGMOClaimBHighMultiplicityAssemblyData.singletonSourceRange]
 
 theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.singletonSource_not_mem_support
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D)
-    (t : Fin (E.W.highMultiplicitySingletonLength z)) :
-    M.singletonSource t ∉ E.W.partition.support :=
-  (E.W.partition.mem_unusedInAddCoset_iff E.W.K E.W.g
+    (t : Fin (W.highMultiplicitySingletonLength z)) :
+    M.singletonSource t ∉ W.partition.support :=
+  (W.partition.mem_unusedInAddCoset_iff W.K W.g
     (M.singletonSource t)).1 (M.singleton_mem t) |>.1
 
 theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.singletonSource_value_mem_KCoset
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D)
-    (t : Fin (E.W.highMultiplicitySingletonLength z)) :
+    (t : Fin (W.highMultiplicitySingletonLength z)) :
     occurrenceValue xs (M.singletonSource t) ∈
-      addCosetFinset E.W.K E.W.g :=
-  (E.W.partition.mem_unusedInAddCoset_iff E.W.K E.W.g
+      addCosetFinset W.K W.g :=
+  (W.partition.mem_unusedInAddCoset_iff W.K W.g
     (M.singletonSource t)).1 (M.singleton_mem t) |>.2
 
 theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.singletonSource_value_mem_extensionCoset
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D)
-    (t : Fin (E.W.highMultiplicitySingletonLength z)) :
+    (t : Fin (W.highMultiplicitySingletonLength z)) :
     occurrenceValue xs (M.singletonSource t) ∈
-      addCosetFinset (E.W.highMultiplicityExtensionSubgroup z) E.W.g := by
+      addCosetFinset (W.highMultiplicityExtensionSubgroup z) W.g := by
   apply (mem_addCosetFinset_iff
-    (E.W.highMultiplicityExtensionSubgroup z) E.W.g _).2
-  exact E.W.K_le_highMultiplicityExtensionSubgroup z
-    ((mem_addCosetFinset_iff E.W.K E.W.g _).1
+    (W.highMultiplicityExtensionSubgroup z) W.g _).2
+  exact W.K_le_highMultiplicityExtensionSubgroup z
+    ((mem_addCosetFinset_iff W.K W.g _).1
       (M.singletonSource_value_mem_KCoset t))
 
 theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.singletonRange_disjoint_support
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D) :
-    Disjoint M.singletonSourceRange E.W.partition.support := by
+    Disjoint M.singletonSourceRange W.partition.support := by
   classical
   rw [Finset.disjoint_left]
   intro i hi hsupp
@@ -174,8 +174,8 @@ theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.singletonRange_disjoint_su
 
 theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.singletonRange_disjoint_reserveRange
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D) :
     Disjoint M.singletonSourceRange D.reserveSourceRange := by
   classical
@@ -187,8 +187,8 @@ theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.singletonRange_disjoint_re
 
 theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.singletonRange_disjoint_highRange
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D) :
     Disjoint M.singletonSourceRange D.highSourceRange := by
   classical
@@ -196,13 +196,13 @@ theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.singletonRange_disjoint_hi
   intro i hi hs
   obtain ⟨s, -, rfl⟩ := Finset.mem_map.mp hi
   obtain ⟨t, -, htEq⟩ := Finset.mem_map.mp hs
-  have hzero : E.W.centeredQuotientValue (M.singletonSource s) = 0 := by
+  have hzero : W.centeredQuotientValue (M.singletonSource s) = 0 := by
     exact (QuotientAddGroup.eq_zero_iff _).2
-      ((mem_addCosetFinset_iff E.W.K E.W.g _).1
+      ((mem_addCosetFinset_iff W.K W.g _).1
         (M.singletonSource_value_mem_KCoset s))
   have hhigh :
-      E.W.centeredQuotientValue (D.highSource t) = z :=
-    (E.W.mem_sourceQuotientFiber_iff z (D.highSource t)).1
+      W.centeredQuotientValue (D.highSource t) = z :=
+    (W.mem_sourceQuotientFiber_iff z (D.highSource t)).1
       (D.high_mem_fiber t)
   rw [htEq] at hhigh
   exact D.nonzero (hhigh.symm.trans hzero)
@@ -211,16 +211,16 @@ theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.singletonRange_disjoint_hi
 residual singleton block after deleting the already selected reserve range. -/
 theorem exists_ordinaryGMOClaimBHighMultiplicityAssemblyData
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z)
-    (hnL : E.W.highMultiplicityExtensionLength z ≤ n) :
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z)
+    (hnL : W.highMultiplicityExtensionLength z ≤ n) :
     Nonempty (OrdinaryGMOClaimBHighMultiplicityAssemblyData D) := by
   classical
-  let reserve := E.W.partition.unusedInAddCoset E.W.K E.W.g
+  let reserve := W.partition.unusedInAddCoset W.K W.g
   let used := D.reserveSourceRange
   let available := reserve \ used
-  let rQ := E.W.highMultiplicityPairLength z
-  let s := E.W.highMultiplicitySingletonLength z
+  let rQ := W.highMultiplicityPairLength z
+  let s := W.highMultiplicitySingletonLength z
   have husedSub : used ⊆ reserve := by
     intro i hi
     obtain ⟨t, -, rfl⟩ := Finset.mem_map.mp hi
@@ -229,16 +229,16 @@ theorem exists_ordinaryGMOClaimBHighMultiplicityAssemblyData
     simp [used, rQ,
       OrdinaryGMOClaimBOutput.highMultiplicityPairLength]
   have hreserve :
-      n - E.W.highMultiplicityOldLength + (xs.length - seed.card) ≤
+      n - W.highMultiplicityOldLength + (xs.length - seed.card) ≤
         reserve.card := by
     simpa [reserve,
       OrdinaryGMOClaimBOutput.highMultiplicityOldLength] using
-      E.W.remaining_in_coset
+      W.remaining_in_coset
   have hrs : rQ + s =
-      E.W.highMultiplicityExtensionLength z -
-        E.W.highMultiplicityOldLength :=
-    E.W.pair_add_singleton_eq_extension_sub_old z
-  have hrsLe : rQ + s ≤ n - E.W.highMultiplicityOldLength := by
+      W.highMultiplicityExtensionLength z -
+        W.highMultiplicityOldLength :=
+    W.pair_add_singleton_eq_extension_sub_old z
+  have hrsLe : rQ + s ≤ n - W.highMultiplicityOldLength := by
     omega
   have hinter : used ∩ reserve = used := Finset.inter_eq_left.mpr husedSub
   have hsAvailable : s ≤ available.card := by
@@ -255,7 +255,7 @@ theorem exists_ordinaryGMOClaimBHighMultiplicityAssemblyData
       hsingleSub ((singleSet.equivFinOfCardEq hsingleCard).symm t).property
     exact (Finset.mem_sdiff.mp ht).1
   have hsingleNotReserve (q : Fin s)
-      (t : Fin (E.W.highMultiplicityLength z)) :
+      (t : Fin (W.highMultiplicityLength z)) :
       singletonSource q ≠ D.reserveSource t := by
     intro heq
     have hqAvail : singletonSource q ∈ available :=
@@ -282,28 +282,28 @@ section HonestPartition
 pairs, and residual singleton cells. -/
 abbrev OrdinaryGMOClaimBHighMultiplicityAssemblyData.BlockIndex
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (_M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D) :=
-  Fin E.W.highMultiplicityOldLength ⊕
-    (Fin (E.W.highMultiplicityPairLength z) ⊕
-      Fin (E.W.highMultiplicitySingletonLength z))
+  Fin W.highMultiplicityOldLength ⊕
+    (Fin (W.highMultiplicityPairLength z) ⊕
+      Fin (W.highMultiplicitySingletonLength z))
 
 /-- Order-preserving identification of the `d*(L)` final cell positions with
 the three literal blocks. -/
 noncomputable def
     OrdinaryGMOClaimBHighMultiplicityAssemblyData.blockIndexEquiv
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D) :
-    Fin (E.W.highMultiplicityExtensionLength z) ≃ M.BlockIndex := by
-  let hlen : E.W.highMultiplicityOldLength +
-        (E.W.highMultiplicityPairLength z +
-          E.W.highMultiplicitySingletonLength z) =
-      E.W.highMultiplicityExtensionLength z := by
+    Fin (W.highMultiplicityExtensionLength z) ≃ M.BlockIndex := by
+  let hlen : W.highMultiplicityOldLength +
+        (W.highMultiplicityPairLength z +
+          W.highMultiplicitySingletonLength z) =
+      W.highMultiplicityExtensionLength z := by
     simpa only [Nat.add_assoc] using
-      E.W.old_add_pair_add_singleton_eq_extensionLength z
+      W.old_add_pair_add_singleton_eq_extensionLength z
   exact (finCongr hlen.symm).trans
     (finSumFinEquiv.symm.trans
       (Equiv.sumCongr (Equiv.refl _ ) finSumFinEquiv.symm))
@@ -311,9 +311,9 @@ noncomputable def
 /-- A genuine two-occurrence cell, retaining both source labels. -/
 noncomputable def OrdinaryGMOClaimBHighMultiplicityCore.pairCell
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z)
-    (t : Fin (E.W.highMultiplicityPairLength z)) : Selection xs := by
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z)
+    (t : Fin (W.highMultiplicityPairLength z)) : Selection xs := by
   classical
   exact {D.highSource t, D.reserveSource t}
 
@@ -321,10 +321,10 @@ noncomputable def OrdinaryGMOClaimBHighMultiplicityCore.pairCell
 noncomputable def
     OrdinaryGMOClaimBHighMultiplicityAssemblyData.singletonCell
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D)
-    (t : Fin (E.W.highMultiplicitySingletonLength z)) : Selection xs := by
+    (t : Fin (W.highMultiplicitySingletonLength z)) : Selection xs := by
   classical
   exact {M.singletonSource t}
 
@@ -333,25 +333,25 @@ proved equality `dK + (rQ+s) = dL`. -/
 noncomputable def
     OrdinaryGMOClaimBHighMultiplicityAssemblyData.rawCells
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D) :
-    Fin (E.W.highMultiplicityOldLength +
-      (E.W.highMultiplicityPairLength z +
-        E.W.highMultiplicitySingletonLength z)) → Selection xs :=
-  Fin.append E.W.partition.cells
+    Fin (W.highMultiplicityOldLength +
+      (W.highMultiplicityPairLength z +
+        W.highMultiplicitySingletonLength z)) → Selection xs :=
+  Fin.append W.partition.cells
     (Fin.append D.pairCell M.singletonCell)
 
 theorem OrdinaryGMOClaimBHighMultiplicityCore.highSource_value_ne_reserveSource_value
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z)
-    (t : Fin (E.W.highMultiplicityPairLength z)) :
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z)
+    (t : Fin (W.highMultiplicityPairLength z)) :
     occurrenceValue xs (D.highSource t) ≠
       occurrenceValue xs (D.reserveSource t) := by
   intro hval
-  have hhigh : E.W.centeredQuotientValue (D.highSource t) = z :=
-    (E.W.mem_sourceQuotientFiber_iff z (D.highSource t)).1
+  have hhigh : W.centeredQuotientValue (D.highSource t) = z :=
+    (W.mem_sourceQuotientFiber_iff z (D.highSource t)).1
       (D.high_mem_fiber t)
   have hzero := D.reserveSource_centered_eq_zero t
   simp only [OrdinaryGMOClaimBOutput.centeredQuotientValue] at hhigh hzero
@@ -360,18 +360,18 @@ theorem OrdinaryGMOClaimBHighMultiplicityCore.highSource_value_ne_reserveSource_
 
 theorem OrdinaryGMOClaimBHighMultiplicityCore.pairCell_nonempty
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z)
-    (t : Fin (E.W.highMultiplicityPairLength z)) :
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z)
+    (t : Fin (W.highMultiplicityPairLength z)) :
     (D.pairCell t).Nonempty := by
   classical
   exact ⟨D.highSource t, by simp [OrdinaryGMOClaimBHighMultiplicityCore.pairCell]⟩
 
 theorem OrdinaryGMOClaimBHighMultiplicityCore.pairCell_value_injective
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z)
-    (t : Fin (E.W.highMultiplicityPairLength z)) :
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z)
+    (t : Fin (W.highMultiplicityPairLength z)) :
     Set.InjOn (occurrenceValue xs) (D.pairCell t : Set (Occurrence xs)) := by
   classical
   intro i hi j hj hij
@@ -386,16 +386,16 @@ theorem OrdinaryGMOClaimBHighMultiplicityCore.pairCell_value_injective
 
 theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.oldCell_disjoint_pairCell
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D)
-    (j : Fin E.W.highMultiplicityOldLength)
-    (t : Fin (E.W.highMultiplicityPairLength z)) :
-    Disjoint (E.W.partition.cells j) (D.pairCell t) := by
+    (j : Fin W.highMultiplicityOldLength)
+    (t : Fin (W.highMultiplicityPairLength z)) :
+    Disjoint (W.partition.cells j) (D.pairCell t) := by
   classical
   rw [Finset.disjoint_left]
   intro i hiOld hiPair
-  have hiSupport : i ∈ E.W.partition.support := by
+  have hiSupport : i ∈ W.partition.support := by
     exact Finset.mem_biUnion.mpr ⟨j, Finset.mem_univ _, hiOld⟩
   simp only [OrdinaryGMOClaimBHighMultiplicityCore.pairCell,
     Finset.mem_insert, Finset.mem_singleton] at hiPair
@@ -405,16 +405,16 @@ theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.oldCell_disjoint_pairCell
 
 theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.oldCell_disjoint_singletonCell
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D)
-    (j : Fin E.W.highMultiplicityOldLength)
-    (t : Fin (E.W.highMultiplicitySingletonLength z)) :
-    Disjoint (E.W.partition.cells j) (M.singletonCell t) := by
+    (j : Fin W.highMultiplicityOldLength)
+    (t : Fin (W.highMultiplicitySingletonLength z)) :
+    Disjoint (W.partition.cells j) (M.singletonCell t) := by
   classical
   rw [Finset.disjoint_left]
   intro i hiOld hiSingle
-  have hiSupport : i ∈ E.W.partition.support :=
+  have hiSupport : i ∈ W.partition.support :=
     Finset.mem_biUnion.mpr ⟨j, Finset.mem_univ _, hiOld⟩
   have hiEq : i = M.singletonSource t := by
     simpa [OrdinaryGMOClaimBHighMultiplicityAssemblyData.singletonCell] using
@@ -424,9 +424,9 @@ theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.oldCell_disjoint_singleton
 
 theorem OrdinaryGMOClaimBHighMultiplicityCore.pairCell_disjoint_of_ne
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z)
-    {s t : Fin (E.W.highMultiplicityPairLength z)} (hst : s ≠ t) :
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z)
+    {s t : Fin (W.highMultiplicityPairLength z)} (hst : s ≠ t) :
     Disjoint (D.pairCell s) (D.pairCell t) := by
   classical
   rw [Finset.disjoint_left]
@@ -441,11 +441,11 @@ theorem OrdinaryGMOClaimBHighMultiplicityCore.pairCell_disjoint_of_ne
 
 theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.pairCell_disjoint_singletonCell
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D)
-    (t : Fin (E.W.highMultiplicityPairLength z))
-    (q : Fin (E.W.highMultiplicitySingletonLength z)) :
+    (t : Fin (W.highMultiplicityPairLength z))
+    (q : Fin (W.highMultiplicitySingletonLength z)) :
     Disjoint (D.pairCell t) (M.singletonCell q) := by
   classical
   rw [Finset.disjoint_left]
@@ -472,10 +472,10 @@ theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.pairCell_disjoint_singleto
 
 theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.singletonCell_disjoint_of_ne
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D)
-    {s t : Fin (E.W.highMultiplicitySingletonLength z)} (hst : s ≠ t) :
+    {s t : Fin (W.highMultiplicitySingletonLength z)} (hst : s ≠ t) :
     Disjoint (M.singletonCell s) (M.singletonCell t) := by
   classical
   rw [Finset.disjoint_left]
@@ -488,15 +488,15 @@ theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.singletonCell_disjoint_of_
 
 theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.rawCells_nonempty
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D) :
     ∀ c, (M.rawCells c).Nonempty := by
   intro c
   induction c using Fin.addCases with
   | left j =>
       simpa [OrdinaryGMOClaimBHighMultiplicityAssemblyData.rawCells] using
-        E.W.partition.cells_nonempty j
+        W.partition.cells_nonempty j
   | right q =>
       induction q using Fin.addCases with
       | left t =>
@@ -509,8 +509,8 @@ theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.rawCells_nonempty
 
 theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.rawCells_pairwise_disjoint
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D)
     {c d} (hcd : c ≠ d) : Disjoint (M.rawCells c) (M.rawCells d) := by
   induction c using Fin.addCases with
@@ -519,7 +519,7 @@ theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.rawCells_pairwise_disjoint
       | left k =>
           have hjk : j ≠ k := by intro h; subst k; exact hcd rfl
           simpa [OrdinaryGMOClaimBHighMultiplicityAssemblyData.rawCells] using
-            E.W.partition.cells_pairwise_disjoint hjk
+            W.partition.cells_pairwise_disjoint hjk
       | right q =>
           induction q using Fin.addCases with
           | left t =>
@@ -561,15 +561,15 @@ theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.rawCells_pairwise_disjoint
 
 theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.rawCells_value_injective
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D) :
     ∀ c, Set.InjOn (occurrenceValue xs) (M.rawCells c : Set (Occurrence xs)) := by
   intro c
   induction c using Fin.addCases with
   | left j =>
       simpa [OrdinaryGMOClaimBHighMultiplicityAssemblyData.rawCells] using
-        E.W.partition.value_injective j
+        W.partition.value_injective j
   | right q =>
       induction q using Fin.addCases with
       | left t =>
@@ -585,11 +585,11 @@ theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.rawCells_value_injective
 /-- Literal support of the three raw blocks. -/
 theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.biUnion_rawCells
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D) :
     Finset.univ.biUnion M.rawCells =
-      E.W.partition.support ∪
+      W.partition.support ∪
         (D.highSourceRange ∪
           (D.reserveSourceRange ∪ M.singletonSourceRange)) := by
   classical
@@ -626,16 +626,16 @@ theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.biUnion_rawCells
       exact ⟨Fin.castAdd _ j, by
         simpa [OrdinaryGMOClaimBHighMultiplicityAssemblyData.rawCells] using hij⟩
     · obtain ⟨t, -, hit⟩ := Finset.mem_map.mp hiHigh
-      exact ⟨Fin.natAdd E.W.highMultiplicityOldLength (Fin.castAdd _ t), by
+      exact ⟨Fin.natAdd W.highMultiplicityOldLength (Fin.castAdd _ t), by
         simp [OrdinaryGMOClaimBHighMultiplicityAssemblyData.rawCells,
           OrdinaryGMOClaimBHighMultiplicityCore.pairCell, hit.symm]⟩
     · obtain ⟨t, -, hit⟩ := Finset.mem_map.mp hiReserve
-      exact ⟨Fin.natAdd E.W.highMultiplicityOldLength (Fin.castAdd _ t), by
+      exact ⟨Fin.natAdd W.highMultiplicityOldLength (Fin.castAdd _ t), by
         simp [OrdinaryGMOClaimBHighMultiplicityAssemblyData.rawCells,
           OrdinaryGMOClaimBHighMultiplicityCore.pairCell, hit.symm]⟩
     · obtain ⟨s, -, his⟩ := Finset.mem_map.mp hiSingle
-      exact ⟨Fin.natAdd E.W.highMultiplicityOldLength
-          (Fin.natAdd (E.W.highMultiplicityPairLength z) s), by
+      exact ⟨Fin.natAdd W.highMultiplicityOldLength
+          (Fin.natAdd (W.highMultiplicityPairLength z) s), by
         simp [OrdinaryGMOClaimBHighMultiplicityAssemblyData.rawCells,
           OrdinaryGMOClaimBHighMultiplicityAssemblyData.singletonCell, his.symm]⟩
 
@@ -643,16 +643,16 @@ theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.biUnion_rawCells
 noncomputable def
     OrdinaryGMOClaimBHighMultiplicityAssemblyData.assembledSupportCard
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (_M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D) : ℕ :=
-  E.W.supportCard + 2 * E.W.highMultiplicityPairLength z +
-    E.W.highMultiplicitySingletonLength z
+  W.supportCard + 2 * W.highMultiplicityPairLength z +
+    W.highMultiplicitySingletonLength z
 
 theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.card_biUnion_rawCells
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D) :
     (Finset.univ.biUnion M.rawCells).card = M.assembledSupportCard := by
   classical
@@ -663,7 +663,7 @@ theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.card_biUnion_rawCells
     Finset.disjoint_union_right.mpr
       ⟨D.disjoint_sourceRanges D.nonzero,
         M.singletonRange_disjoint_highRange.symm⟩
-  have hOldRest : Disjoint E.W.partition.support
+  have hOldRest : Disjoint W.partition.support
       (D.highSourceRange ∪
         (D.reserveSourceRange ∪ M.singletonSourceRange)) :=
     Finset.disjoint_union_right.mpr
@@ -675,7 +675,7 @@ theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.card_biUnion_rawCells
     Finset.card_union_of_disjoint hOldRest,
     Finset.card_union_of_disjoint hHRS,
     Finset.card_union_of_disjoint hRS,
-    E.W.partition.card_support_eq,
+    W.partition.card_support_eq,
     D.card_highSourceRange, D.card_reserveSourceRange,
     M.card_singletonSourceRange]
   simp only [OrdinaryGMOClaimBOutput.highMultiplicityPairLength,
@@ -686,18 +686,18 @@ theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.card_biUnion_rawCells
 noncomputable def
     OrdinaryGMOClaimBHighMultiplicityAssemblyData.partition
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D) :
-    Theorem21SetPartition xs (E.W.highMultiplicityExtensionLength z)
+    Theorem21SetPartition xs (W.highMultiplicityExtensionLength z)
       M.assembledSupportCard := by
   classical
-  let hlen : E.W.highMultiplicityOldLength +
-        (E.W.highMultiplicityPairLength z +
-          E.W.highMultiplicitySingletonLength z) =
-      E.W.highMultiplicityExtensionLength z := by
+  let hlen : W.highMultiplicityOldLength +
+        (W.highMultiplicityPairLength z +
+          W.highMultiplicitySingletonLength z) =
+      W.highMultiplicityExtensionLength z := by
     simpa only [Nat.add_assoc] using
-      E.W.old_add_pair_add_singleton_eq_extensionLength z
+      W.old_add_pair_add_singleton_eq_extensionLength z
   refine {
     cells := fun c ↦ M.rawCells (Fin.cast hlen.symm c)
     cells_nonempty := fun c ↦ M.rawCells_nonempty (Fin.cast hlen.symm c)
@@ -726,39 +726,39 @@ noncomputable def
 /-- Canonical positions of the three blocks in the final `Fin dL` index. -/
 noncomputable def OrdinaryGMOClaimBHighMultiplicityAssemblyData.oldIndex
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D)
-    (j : Fin E.W.highMultiplicityOldLength) :
-    Fin (E.W.highMultiplicityExtensionLength z) :=
+    (j : Fin W.highMultiplicityOldLength) :
+    Fin (W.highMultiplicityExtensionLength z) :=
   M.blockIndexEquiv.symm (Sum.inl j)
 
 noncomputable def OrdinaryGMOClaimBHighMultiplicityAssemblyData.pairIndex
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D)
-    (t : Fin (E.W.highMultiplicityPairLength z)) :
-    Fin (E.W.highMultiplicityExtensionLength z) :=
+    (t : Fin (W.highMultiplicityPairLength z)) :
+    Fin (W.highMultiplicityExtensionLength z) :=
   M.blockIndexEquiv.symm (Sum.inr (Sum.inl t))
 
 noncomputable def OrdinaryGMOClaimBHighMultiplicityAssemblyData.singletonIndex
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D)
-    (t : Fin (E.W.highMultiplicitySingletonLength z)) :
-    Fin (E.W.highMultiplicityExtensionLength z) :=
+    (t : Fin (W.highMultiplicitySingletonLength z)) :
+    Fin (W.highMultiplicityExtensionLength z) :=
   M.blockIndexEquiv.symm (Sum.inr (Sum.inr t))
 
 @[simp]
 theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.cells_oldIndex
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D)
-    (j : Fin E.W.highMultiplicityOldLength) :
-    M.partition.cells (M.oldIndex j) = E.W.partition.cells j := by
+    (j : Fin W.highMultiplicityOldLength) :
+    M.partition.cells (M.oldIndex j) = W.partition.cells j := by
   simp [OrdinaryGMOClaimBHighMultiplicityAssemblyData.partition,
     OrdinaryGMOClaimBHighMultiplicityAssemblyData.oldIndex,
     OrdinaryGMOClaimBHighMultiplicityAssemblyData.blockIndexEquiv,
@@ -767,10 +767,10 @@ theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.cells_oldIndex
 @[simp]
 theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.cells_pairIndex
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D)
-    (t : Fin (E.W.highMultiplicityPairLength z)) :
+    (t : Fin (W.highMultiplicityPairLength z)) :
     M.partition.cells (M.pairIndex t) = D.pairCell t := by
   simp [OrdinaryGMOClaimBHighMultiplicityAssemblyData.partition,
     OrdinaryGMOClaimBHighMultiplicityAssemblyData.pairIndex,
@@ -780,10 +780,10 @@ theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.cells_pairIndex
 @[simp]
 theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.cells_singletonIndex
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D)
-    (t : Fin (E.W.highMultiplicitySingletonLength z)) :
+    (t : Fin (W.highMultiplicitySingletonLength z)) :
     M.partition.cells (M.singletonIndex t) = M.singletonCell t := by
   simp [OrdinaryGMOClaimBHighMultiplicityAssemblyData.partition,
     OrdinaryGMOClaimBHighMultiplicityAssemblyData.singletonIndex,
@@ -794,39 +794,39 @@ theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.cells_singletonIndex
 single affine extension coset `g+L`. -/
 theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.support_value_mem_extensionCoset
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D)
     (i : Occurrence xs) (hi : i ∈ M.partition.support) :
     occurrenceValue xs i ∈
-      addCosetFinset (E.W.highMultiplicityExtensionSubgroup z) E.W.g := by
+      addCosetFinset (W.highMultiplicityExtensionSubgroup z) W.g := by
   have hraw : i ∈ Finset.univ.biUnion M.rawCells := by
-    have hlen : E.W.highMultiplicityOldLength +
-          (E.W.highMultiplicityPairLength z +
-            E.W.highMultiplicitySingletonLength z) =
-        E.W.highMultiplicityExtensionLength z := by
+    have hlen : W.highMultiplicityOldLength +
+          (W.highMultiplicityPairLength z +
+            W.highMultiplicitySingletonLength z) =
+        W.highMultiplicityExtensionLength z := by
       simpa only [Nat.add_assoc] using
-        E.W.old_add_pair_add_singleton_eq_extensionLength z
+        W.old_add_pair_add_singleton_eq_extensionLength z
     obtain ⟨c, -, hic⟩ := Finset.mem_biUnion.mp hi
     exact Finset.mem_biUnion.mpr
       ⟨Fin.cast hlen.symm c, Finset.mem_univ _, hic⟩
   rw [M.biUnion_rawCells] at hraw
   rcases Finset.mem_union.mp hraw with hOld | hNew
   · apply (mem_addCosetFinset_iff
-      (E.W.highMultiplicityExtensionSubgroup z) E.W.g _).2
-    exact E.W.K_le_highMultiplicityExtensionSubgroup z
-      ((mem_addCosetFinset_iff E.W.K E.W.g _).1
-        (E.W.support_in_coset i hOld))
+      (W.highMultiplicityExtensionSubgroup z) W.g _).2
+    exact W.K_le_highMultiplicityExtensionSubgroup z
+      ((mem_addCosetFinset_iff W.K W.g _).1
+        (W.support_in_coset i hOld))
   · rcases Finset.mem_union.mp hNew with hHigh | hRest
     · obtain ⟨t, -, rfl⟩ := Finset.mem_map.mp hHigh
       exact D.highSource_value_mem_extensionCoset t
     · rcases Finset.mem_union.mp hRest with hReserve | hSingle
       · obtain ⟨t, -, rfl⟩ := Finset.mem_map.mp hReserve
         apply (mem_addCosetFinset_iff
-          (E.W.highMultiplicityExtensionSubgroup z) E.W.g _).2
-        exact E.W.K_le_highMultiplicityExtensionSubgroup z
-          ((mem_addCosetFinset_iff E.W.K E.W.g _).1
-            ((E.W.partition.mem_unusedInAddCoset_iff E.W.K E.W.g _).1
+          (W.highMultiplicityExtensionSubgroup z) W.g _).2
+        exact W.K_le_highMultiplicityExtensionSubgroup z
+          ((mem_addCosetFinset_iff W.K W.g _).1
+            ((W.partition.mem_unusedInAddCoset_iff W.K W.g _).1
               (D.reserve_mem t) |>.2))
       · obtain ⟨t, -, rfl⟩ := Finset.mem_map.mp hSingle
         exact M.singletonSource_value_mem_extensionCoset t
@@ -850,9 +850,9 @@ theorem listOfFn_image_finAppend
 instance hidden behind a stable noncomputable interface. -/
 noncomputable def OrdinaryGMOClaimBHighMultiplicityCore.pairValueCell
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z)
-    (t : Fin (E.W.highMultiplicityPairLength z)) : Finset A := by
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z)
+    (t : Fin (W.highMultiplicityPairLength z)) : Finset A := by
   classical
   exact (D.pairCell t).image (occurrenceValue xs)
 
@@ -860,10 +860,10 @@ noncomputable def OrdinaryGMOClaimBHighMultiplicityCore.pairValueCell
 noncomputable def
     OrdinaryGMOClaimBHighMultiplicityAssemblyData.singletonValueCell
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D)
-    (t : Fin (E.W.highMultiplicitySingletonLength z)) : Finset A := by
+    (t : Fin (W.highMultiplicitySingletonLength z)) : Finset A := by
   classical
   exact (M.singletonCell t).image (occurrenceValue xs)
 
@@ -871,28 +871,28 @@ noncomputable def
 increment. -/
 theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.valueCells_eq_append_blocks
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D) :
     M.partition.valueCells =
-      E.W.partition.valueCells ++
-        (List.ofFn fun t : Fin (E.W.highMultiplicityPairLength z) ↦
+      W.partition.valueCells ++
+        (List.ofFn fun t : Fin (W.highMultiplicityPairLength z) ↦
           D.pairValueCell t) ++
-        (List.ofFn fun t : Fin (E.W.highMultiplicitySingletonLength z) ↦
+        (List.ofFn fun t : Fin (W.highMultiplicitySingletonLength z) ↦
           M.singletonValueCell t) := by
   classical
-  let hlen : E.W.highMultiplicityOldLength +
-        (E.W.highMultiplicityPairLength z +
-          E.W.highMultiplicitySingletonLength z) =
-      E.W.highMultiplicityExtensionLength z := by
+  let hlen : W.highMultiplicityOldLength +
+        (W.highMultiplicityPairLength z +
+          W.highMultiplicitySingletonLength z) =
+      W.highMultiplicityExtensionLength z := by
     simpa only [Nat.add_assoc] using
-      E.W.old_add_pair_add_singleton_eq_extensionLength z
-  let F := fun c : Fin (E.W.highMultiplicityOldLength +
-      (E.W.highMultiplicityPairLength z +
-        E.W.highMultiplicitySingletonLength z)) ↦
+      W.old_add_pair_add_singleton_eq_extensionLength z
+  let F := fun c : Fin (W.highMultiplicityOldLength +
+      (W.highMultiplicityPairLength z +
+        W.highMultiplicitySingletonLength z)) ↦
     (M.rawCells c).image (occurrenceValue xs)
   have hcast := (List.ofFn_congr hlen F).symm
-  change List.ofFn (fun c : Fin (E.W.highMultiplicityExtensionLength z) ↦
+  change List.ofFn (fun c : Fin (W.highMultiplicityExtensionLength z) ↦
       (M.rawCells (Fin.cast hlen.symm c)).image (occurrenceValue xs)) = _
   rw [hcast]
   simp only [F, OrdinaryGMOClaimBHighMultiplicityAssemblyData.rawCells]
@@ -901,14 +901,14 @@ theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.valueCells_eq_append_block
     OrdinaryGMOClaimBHighMultiplicityCore.pairValueCell,
     OrdinaryGMOClaimBHighMultiplicityAssemblyData.singletonValueCell,
     List.append_assoc]
-  have hold (i : Fin E.W.highMultiplicityOldLength) :
-      (E.W.partition.cells i).image (occurrenceValue xs) =
-        E.W.partition.valueCell i := by
+  have hold (i : Fin W.highMultiplicityOldLength) :
+      (W.partition.cells i).image (occurrenceValue xs) =
+        W.partition.valueCell i := by
     unfold Theorem21SetPartition.valueCell
     exact congrArg
       (fun d : DecidableEq A =>
         @Finset.image (Occurrence xs) A d
-          (occurrenceValue xs) (E.W.partition.cells i))
+          (occurrenceValue xs) (W.partition.cells i))
       (Subsingleton.elim (inferInstance : DecidableEq A)
         (Classical.decEq A))
   simp_rw [hold]
@@ -919,22 +919,22 @@ classical finite-set operations hidden in the definition. -/
 noncomputable def
     OrdinaryGMOClaimBHighMultiplicityAssemblyData.assembledBlockIteratedSum
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D) : Finset A := by
   classical
-  exact iteratedFinsetSum E.W.partition.valueCells +
+  exact iteratedFinsetSum W.partition.valueCells +
     (iteratedFinsetSum
-      (List.ofFn fun t : Fin (E.W.highMultiplicityPairLength z) ↦
+      (List.ofFn fun t : Fin (W.highMultiplicityPairLength z) ↦
         D.pairValueCell t) +
       iteratedFinsetSum
-      (List.ofFn fun t : Fin (E.W.highMultiplicitySingletonLength z) ↦
+      (List.ofFn fun t : Fin (W.highMultiplicitySingletonLength z) ↦
         M.singletonValueCell t))
 
 theorem OrdinaryGMOClaimBHighMultiplicityAssemblyData.sumset_eq_assembledBlockIteratedSum
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    {D : OrdinaryGMOClaimBHighMultiplicityCore E z}
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    {D : OrdinaryGMOClaimBHighMultiplicityCore W z}
     (M : OrdinaryGMOClaimBHighMultiplicityAssemblyData D) :
     M.partition.sumset = M.assembledBlockIteratedSum := by
   classical

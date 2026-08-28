@@ -69,16 +69,16 @@ noncomputable def
 /-- Every selected high value projects to the fixed representative class. -/
 theorem OrdinaryGMOClaimBHighMultiplicityCore.highSource_centeredExtension_eq
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z)
-    (t : Fin (E.W.highMultiplicityPairLength z)) :
-    E.W.centeredExtensionQuotientValue z
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z)
+    (t : Fin (W.highMultiplicityPairLength z)) :
+    W.centeredExtensionQuotientValue z
         (occurrenceValue xs (D.highSource t)) =
-      E.W.highMultiplicityInternalRepresentative z := by
-  have hL : occurrenceValue xs (D.highSource t) - E.W.g ∈
-      E.W.highMultiplicityExtensionSubgroup z :=
+      W.highMultiplicityInternalRepresentative z := by
+  have hL : occurrenceValue xs (D.highSource t) - W.g ∈
+      W.highMultiplicityExtensionSubgroup z :=
     (mem_addCosetFinset_iff
-      (E.W.highMultiplicityExtensionSubgroup z) E.W.g _).1
+      (W.highMultiplicityExtensionSubgroup z) W.g _).1
       (D.highSource_value_mem_extensionCoset t)
   simp only [OrdinaryGMOClaimBOutput.centeredExtensionQuotientValue,
     dif_pos hL]
@@ -88,19 +88,19 @@ theorem OrdinaryGMOClaimBHighMultiplicityCore.highSource_centeredExtension_eq
 The proof uses its labelled membership in the old `g + K` reserve. -/
 theorem OrdinaryGMOClaimBHighMultiplicityCore.reserveSource_centeredExtension_eq_zero
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z)
-    (t : Fin (E.W.highMultiplicityPairLength z)) :
-    E.W.centeredExtensionQuotientValue z
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z)
+    (t : Fin (W.highMultiplicityPairLength z)) :
+    W.centeredExtensionQuotientValue z
         (occurrenceValue xs (D.reserveSource t)) = 0 := by
   have hcoset :=
-    (E.W.partition.mem_unusedInAddCoset_iff E.W.K E.W.g
+    (W.partition.mem_unusedInAddCoset_iff W.K W.g
       (D.reserveSource t)).1 (D.reserve_mem t) |>.2
-  have hK : occurrenceValue xs (D.reserveSource t) - E.W.g ∈ E.W.K :=
-    (mem_addCosetFinset_iff E.W.K E.W.g _).1 hcoset
-  have hL : occurrenceValue xs (D.reserveSource t) - E.W.g ∈
-      E.W.highMultiplicityExtensionSubgroup z :=
-    E.W.K_le_highMultiplicityExtensionSubgroup z hK
+  have hK : occurrenceValue xs (D.reserveSource t) - W.g ∈ W.K :=
+    (mem_addCosetFinset_iff W.K W.g _).1 hcoset
+  have hL : occurrenceValue xs (D.reserveSource t) - W.g ∈
+      W.highMultiplicityExtensionSubgroup z :=
+    W.K_le_highMultiplicityExtensionSubgroup z hK
   simp only [OrdinaryGMOClaimBOutput.centeredExtensionQuotientValue,
     dif_pos hL]
   exact (QuotientAddGroup.eq_zero_iff _).2 hK
@@ -111,22 +111,22 @@ value set. -/
 noncomputable def
     OrdinaryGMOClaimBHighMultiplicityCore.pairInternalQuotientValueCell
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z)
-    (t : Fin (E.W.highMultiplicityPairLength z)) :
-    Finset (E.W.HighMultiplicityInternalQuotient z) := by
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z)
+    (t : Fin (W.highMultiplicityPairLength z)) :
+    Finset (W.HighMultiplicityInternalQuotient z) := by
   classical
   exact (D.pairCell t).image fun i ↦
-    E.W.centeredExtensionQuotientValue z (occurrenceValue xs i)
+    W.centeredExtensionQuotientValue z (occurrenceValue xs i)
 
 /-- Each paired cell projects exactly to `{a, 0}`. -/
 theorem OrdinaryGMOClaimBHighMultiplicityCore.pairInternalQuotientValueCell_eq
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z)
-    (t : Fin (E.W.highMultiplicityPairLength z)) :
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z)
+    (t : Fin (W.highMultiplicityPairLength z)) :
     D.pairInternalQuotientValueCell t =
-      E.W.pairInternalGenerator z := by
+      W.pairInternalGenerator z := by
   classical
   simp only [OrdinaryGMOClaimBHighMultiplicityCore.pairInternalQuotientValueCell,
     OrdinaryGMOClaimBHighMultiplicityCore.pairCell,
@@ -139,15 +139,15 @@ theorem OrdinaryGMOClaimBHighMultiplicityCore.pairInternalQuotientValueCell_eq
 force the original selected quotient value `z` to be zero. -/
 theorem OrdinaryGMOClaimBHighMultiplicityCore.internalRepresentative_ne_zero
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z) :
-    E.W.highMultiplicityInternalRepresentative z ≠ 0 := by
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z) :
+    W.highMultiplicityInternalRepresentative z ≠ 0 := by
   intro ha
-  have haK : E.W.quotientRepresentative z - E.W.g ∈ E.W.K := by
+  have haK : W.quotientRepresentative z - W.g ∈ W.K := by
     have hmem := (QuotientAddGroup.eq_zero_iff _).1 ha
     exact hmem
   apply D.nonzero
-  rw [← E.W.centeredQuotientValue_representative z]
+  rw [← W.centeredQuotientValue_representative z]
   exact (QuotientAddGroup.eq_zero_iff _).2 haK
 
 /-- Under the established first-isomorphism equivalence, the fixed internal
@@ -241,25 +241,25 @@ theorem OrdinaryGMOClaimBOutput.closure_internalRepresentative_eq_top
 noncomputable def
     OrdinaryGMOClaimBHighMultiplicityCore.pairInternalQuotientValueCells
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z) :
-    List (Finset (E.W.HighMultiplicityInternalQuotient z)) :=
-  List.ofFn fun t : Fin (E.W.highMultiplicityPairLength z) ↦
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z) :
+    List (Finset (W.HighMultiplicityInternalQuotient z)) :=
+  List.ofFn fun t : Fin (W.highMultiplicityPairLength z) ↦
     D.pairInternalQuotientValueCell t
 
 /-- All projected paired cells are the same literal two-point generating set. -/
 theorem OrdinaryGMOClaimBHighMultiplicityCore.pairInternalQuotientValueCells_eq_replicate
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z) :
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z) :
     D.pairInternalQuotientValueCells =
-      List.replicate (E.W.highMultiplicityPairLength z)
-        (E.W.pairInternalGenerator z) := by
+      List.replicate (W.highMultiplicityPairLength z)
+        (W.pairInternalGenerator z) := by
   classical
   calc
     D.pairInternalQuotientValueCells =
-        List.ofFn (fun _ : Fin (E.W.highMultiplicityPairLength z) ↦
-          E.W.pairInternalGenerator z) := by
+        List.ofFn (fun _ : Fin (W.highMultiplicityPairLength z) ↦
+          W.pairInternalGenerator z) := by
       unfold OrdinaryGMOClaimBHighMultiplicityCore.pairInternalQuotientValueCells
       exact congrArg List.ofFn
         (funext fun t ↦ D.pairInternalQuotientValueCell_eq t)
@@ -293,9 +293,9 @@ classical finite-set operations hidden from public statements. -/
 noncomputable def
     OrdinaryGMOClaimBHighMultiplicityCore.pairInternalQuotientIteratedSum
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z) :
-    Finset (E.W.HighMultiplicityInternalQuotient z) := by
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z) :
+    Finset (W.HighMultiplicityInternalQuotient z) := by
   classical
   exact iteratedFinsetSum D.pairInternalQuotientValueCells
 
@@ -325,36 +325,36 @@ definitionally `d* (L / K)`, and ordinary Lemma 4.2 therefore gives the full
 internal quotient. -/
 theorem OrdinaryGMOClaimBHighMultiplicityCore.iterated_pairInternalQuotientValueCells_eq_univ
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z) :
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z) :
     D.pairInternalQuotientIteratedSum =
-      E.W.fullHighMultiplicityInternalQuotient z := by
+      W.fullHighMultiplicityInternalQuotient z := by
   classical
-  letI : Fintype (E.W.HighMultiplicityInternalQuotient z) :=
-    Fintype.ofFinite (E.W.HighMultiplicityInternalQuotient z)
+  letI : Fintype (W.HighMultiplicityInternalQuotient z) :=
+    Fintype.ofFinite (W.HighMultiplicityInternalQuotient z)
   unfold OrdinaryGMOClaimBHighMultiplicityCore.pairInternalQuotientIteratedSum
   unfold OrdinaryGMOClaimBOutput.fullHighMultiplicityInternalQuotient
   rw [D.pairInternalQuotientValueCells_eq_replicate]
-  have hzero : (0 : E.W.HighMultiplicityInternalQuotient z) ∈
-      E.W.pairInternalGenerator z := by
+  have hzero : (0 : W.HighMultiplicityInternalQuotient z) ∈
+      W.pairInternalGenerator z := by
     simp [OrdinaryGMOClaimBOutput.pairInternalGenerator]
-  have hgen := E.W.closure_pairInternalGenerator_eq_top z
+  have hgen := W.closure_pairInternalGenerator_eq_top z
   simpa only [OrdinaryGMOClaimBOutput.highMultiplicityPairLength,
     OrdinaryGMOClaimBOutput.highMultiplicityLength,
     OrdinaryGMOClaimBOutput.HighMultiplicityInternalQuotient] using
       iteratedFinsetSum_replicate_pGroupDStar_eq_univ
-        (E.W.pairInternalGenerator z) hzero hgen
+        (W.pairInternalGenerator z) hzero hgen
 
 /-- Coset form of the same exact quotient saturation endpoint. -/
 theorem OrdinaryGMOClaimBHighMultiplicityCore.iterated_pairInternalQuotientValueCells_eq_fullCoset
     {xs : List A} {seed : Selection xs} {n : ℕ}
-    {E : OrdinaryGMOClaimBEnvelope xs seed n} {z : A ⧸ E.W.K}
-    (D : OrdinaryGMOClaimBHighMultiplicityCore E z) :
+    {W : OrdinaryGMOClaimBOutput xs seed n} {z : A ⧸ W.K}
+    (D : OrdinaryGMOClaimBHighMultiplicityCore W z) :
     D.pairInternalQuotientIteratedSum =
-      E.W.fullHighMultiplicityInternalCoset z := by
+      W.fullHighMultiplicityInternalCoset z := by
   classical
-  letI : Fintype (E.W.HighMultiplicityInternalQuotient z) :=
-    Fintype.ofFinite (E.W.HighMultiplicityInternalQuotient z)
+  letI : Fintype (W.HighMultiplicityInternalQuotient z) :=
+    Fintype.ofFinite (W.HighMultiplicityInternalQuotient z)
   rw [D.iterated_pairInternalQuotientValueCells_eq_univ]
   unfold OrdinaryGMOClaimBOutput.fullHighMultiplicityInternalQuotient
   unfold OrdinaryGMOClaimBOutput.fullHighMultiplicityInternalCoset
