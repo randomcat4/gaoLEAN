@@ -445,7 +445,7 @@ strict-subgroup scheduler. -/
 noncomputable local instance subgroupFintype (K : AddSubgroup A) : Fintype K :=
   Fintype.ofFinite K
 
-noncomputable local instance quotientFintype (K : AddSubgroup A) :
+noncomputable local instance gmoTheorem11QuotientFintype (K : AddSubgroup A) :
     Fintype (A ⧸ K) := Fintype.ofFinite (A ⧸ K)
 
 /-! ## Exact Theorem 2.1 large branch -/

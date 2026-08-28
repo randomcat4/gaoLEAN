@@ -22,7 +22,7 @@ universe u v
 
 variable {A : Type u} [AddCommGroup A] [Fintype A]
 
-noncomputable local instance quotientFintype (H : AddSubgroup A) :
+noncomputable local instance ordinaryStep1QuotientFintype (H : AddSubgroup A) :
     Fintype (A ⧸ H) := Fintype.ofFinite (A ⧸ H)
 
 section MaximalQuotientBlock

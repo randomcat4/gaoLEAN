@@ -249,7 +249,7 @@ theorem closure_claimBCenteredGenerators_eq_top
 
 /-- Translating the subtype-valued generator set back by `ḡ` recovers
 the literal quotient layer of the common core. -/
-noncomputable local instance quotientFintype (H : AddSubgroup A) :
+noncomputable local instance claimBSubgroupQuotientFintype (H : AddSubgroup A) :
     Fintype (A ⧸ H) := Fintype.ofFinite (A ⧸ H)
 
 theorem affineSubgroupFinset_claimBCenteredGenerators_eq_quotientLayer
