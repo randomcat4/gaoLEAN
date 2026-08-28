@@ -9092,6 +9092,355 @@ theorem Theorem21SetPartition.tailPeriod_ne_bot_of_deficit
   rw [hlength, hsum] at hdgm
   omega
 
+/-- Thickening a nonempty replacement cell by the whole ambient subgroup
+gives the whole ambient group. -/
+@[simp]
+theorem Theorem21SetPartition.thickenedCell_top
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
+    (c : Fin n) :
+    P.thickenedCell (⊤ : AddSubgroup A) c = Finset.univ := by
+  classical
+  apply Finset.eq_univ_iff_forall.mpr
+  intro x
+  obtain ⟨a, ha⟩ := P.valueCells_nonempty (P.valueCell c) (by
+    simp [Theorem21SetPartition.valueCells])
+  unfold Theorem21SetPartition.thickenedCell
+  apply Finset.mem_add.mpr
+  refine ⟨a, ha, x - a, ?_, ?_⟩
+  · simp
+  · abel
+
+/-- Consequently the common top-thickened core is all of the ambient
+group. -/
+@[simp]
+theorem Theorem21SetPartition.commonCore_top
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m) :
+    P.commonCore (⊤ : AddSubgroup A) = Finset.univ := by
+  classical
+  apply Finset.eq_univ_iff_forall.mpr
+  intro x
+  exact (P.mem_commonCore_iff (⊤ : AddSubgroup A) x).2 fun c ↦ by simp
+
+/-- At top period there is exactly one common coset. -/
+@[simp]
+theorem Theorem21SetPartition.commonCosetCount_top
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m) :
+    P.commonCosetCount (⊤ : AddSubgroup A) = 1 := by
+  classical
+  unfold Theorem21SetPartition.commonCosetCount
+  rw [Theorem21SetPartition.commonCore_top P, Finset.card_univ]
+  have htopCard : Nat.card (⊤ : AddSubgroup A) = Nat.card A := by
+    simp [Nat.card_eq_fintype_card]
+  rw [htopCard]
+  simpa only [Nat.card_eq_fintype_card] using
+    Nat.div_self (Nat.card_pos : 0 < Nat.card A)
+
+/-- At top period every value of every cell lies in the common core, so the
+exception defect vanishes. -/
+@[simp]
+theorem Theorem21SetPartition.exceptionDefect_top
+    {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m) :
+    P.exceptionDefect (⊤ : AddSubgroup A) = 0 := by
+  classical
+  simp [Theorem21SetPartition.exceptionDefect,
+    Theorem21SetPartition.cellExceptionDefect]
+
+/-- A top tail period already yields the literal source Theorem E output.
+This is the full-source-failure contradiction used to keep the new period
+proper after equation (3.5). -/
+theorem nonempty_gmoTheoremESourceOutput_of_tailPeriod_eq_top
+    {xs : List A} {seed : Selection xs} {n s : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (P : Theorem21SetPartition xs n seed.card)
+    (hadmissible : GMOReplacementAdmissible I P)
+    (htop : P.tailPeriod s = ⊤) :
+    Nonempty (GMOTheoremESourceOutput I) := by
+  classical
+  have hperiod : (⊤ : AddSubgroup A) ≤
+      AddAction.stabilizer A (P.sumset : Set A) := by
+    have hmono := P.stabilizer_tailSumset_antitone
+      (show 0 ≤ s from Nat.zero_le s)
+    change P.tailPeriod s ≤ P.tailPeriod 0 at hmono
+    rw [htop] at hmono
+    simpa [Theorem21SetPartition.tailPeriod,
+      Theorem21SetPartition.tailSumset,
+      Theorem21SetPartition.tailValueCells,
+      Theorem21SetPartition.sumset] using hmono
+  have hstabTop : AddAction.stabilizer A (P.sumset : Set A) = ⊤ :=
+    top_unique hperiod
+  have hsumset : P.sumset = Finset.univ := by
+    by_contra hne
+    have hlt := stabilizer_lt_top_of_finset_nonempty_ne_univ
+      P.sumset P.sumset_nonempty hne
+    rw [hstabTop] at hlt
+    exact (lt_irrefl _ hlt)
+  refine ⟨{
+    partition := P
+    H := ⊤
+    periodic := hperiod
+    admissible := hadmissible
+    card_lower := ?_
+    unused_mem_commonCore := ?_
+  }⟩
+  · rw [Theorem21SetPartition.commonCosetCount_top P,
+      Theorem21SetPartition.exceptionDefect_top P, hsumset,
+      Finset.card_univ]
+    simp only [one_mul, add_zero]
+    have hcoeff : (n + 1) - n = 1 := by omega
+    rw [hcoeff, one_mul]
+    simp [Nat.card_eq_fintype_card]
+  · intro _ i _
+    rw [Theorem21SetPartition.commonCore_top P]
+    exact Finset.mem_univ _
+
+/-- The honest doubled branch up through equation (3.5): after simultaneous
+tail reindexing and recentering, the genuinely chosen member of the new
+`Upsilon` is a factor form whose next tail has strict deficit and a proper,
+nontrivial actual stabilizer.  Both endpoint exclusions use failure of the
+full literal source output. -/
+theorem FactorForm.exists_reindexed_next_deficit_proper
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (F : FactorForm I rho)
+    (hfail : ¬ Nonempty (GMOTheoremESourceOutput I)) :
+    ∃ (sigma : Equiv.Perm (Fin n))
+      (G : FactorForm (I.reindex sigma) rho) (y : A),
+      G.partition = G.next.chosen ∧
+      y ∈ G.partition.valueCell ⟨rho, by have := F.range; omega⟩ ∧
+      G.partition.IsHException (G.partition.tailPeriod rho) y ∧
+      (G.partition.tailSumset (rho + 1)).card <
+        (∑ c ∈ tailIndices n (rho + 1),
+          (G.partition.valueCell c).card) - (n - (rho + 1)) + 1 ∧
+      G.partition.tailPeriod (rho + 1) ≠ ⊥ ∧
+      G.partition.tailPeriod (rho + 1) < ⊤ := by
+  classical
+  obtain ⟨sigma, _hfix, W, x, hFcenter, _hpartition,
+      hxException, hxDouble⟩ :=
+    F.exists_reindexed_recentered_doubled hfail
+  have hfail' : ¬ Nonempty
+      (GMOTheoremESourceOutput (I.reindex sigma)) := by
+    rintro ⟨out⟩
+    exact hfail ⟨out.inverseReindex sigma⟩
+  let Gweak : WeakFactorForm (I.reindex sigma) rho :=
+    W.nextChosenWeak_of_recentered hFcenter
+  let G : FactorForm (I.reindex sigma) rho :=
+    Gweak.toFactorForm
+      (not_nonempty_trivialConclusion_of_no_sourceOutput hfail')
+  have hGmem : G.partition ∈ W.next.upsilon := by
+    exact W.next.chosen_mem
+  have hrhon : rho < n := by
+    have := F.range
+    omega
+  let q : Fin n := ⟨rho, hrhon⟩
+  have hxCell : x ∈ W.partition.valueCell q := hxDouble.1
+  have hxQuot : QuotientAddGroup.mk' (W.partition.tailPeriod rho) x ∈
+      quotientLayer (W.partition.tailPeriod rho)
+        (W.partition.valueCell q) :=
+    (mem_quotientLayer_iff _ _ _).2 ⟨x, hxCell, rfl⟩
+  have hqeq := W.quotientLayer_eq_of_mem_next_of_recentered
+    hFcenter G.partition hGmem q
+  have hxQuotG : QuotientAddGroup.mk' (W.partition.tailPeriod rho) x ∈
+      quotientLayer (W.partition.tailPeriod rho)
+        (G.partition.valueCell q) := by
+    rw [hqeq]
+    exact hxQuot
+  obtain ⟨y, hyCell, hyQuot⟩ :=
+    (mem_quotientLayer_iff (W.partition.tailPeriod rho)
+      (G.partition.valueCell q) _).1 hxQuotG
+  have hxExceptionG : G.partition.IsHException
+      (W.partition.tailPeriod rho) x :=
+    W.isHException_of_mem_next_of_recentered hFcenter
+      G.partition hGmem x hxException
+  have hyExceptionOld : G.partition.IsHException
+      (W.partition.tailPeriod rho) y := by
+    obtain ⟨d, hd⟩ := hxExceptionG
+    refine ⟨d, ?_⟩
+    intro hyMem
+    apply hd
+    rw [← hyQuot]
+    exact hyMem
+  have hGdata := (W.transition.mem_next_upsilon_iff G.partition).1 hGmem
+  have htail : G.partition.tailSumset rho = W.partition.tailSumset rho :=
+    hGdata.2.1.trans W.inLambda.2.1.symm
+  have hperiod : G.partition.tailPeriod rho =
+      W.partition.tailPeriod rho := by
+    unfold Theorem21SetPartition.tailPeriod
+    rw [htail]
+  have hyException : G.partition.IsHException
+      (G.partition.tailPeriod rho) y := by
+    rw [hperiod]
+    exact hyExceptionOld
+  have h35 := G.next_tail_deficit_of_exception_at_rho y
+    (by simpa only [q] using hyCell) hyException
+  have hKbot : G.partition.tailPeriod (rho + 1) ≠ ⊥ :=
+    G.partition.tailPeriod_ne_bot_of_deficit h35
+  have hKtop : G.partition.tailPeriod (rho + 1) ≠ ⊤ := by
+    intro htop
+    apply hfail'
+    exact nonempty_gmoTheoremESourceOutput_of_tailPeriod_eq_top
+      G.partition G.admissible htop
+  refine ⟨sigma, G, y, rfl, ?_, hyException, h35, hKbot,
+    lt_top_iff_ne_top.mpr hKtop⟩
+  simpa only [q] using hyCell
+
+/-- Complete successor step of dissertation Lemma 5 in the doubled branch.
+The new stage is selected afresh from the recentered `Upsilon_{rho+1}`:
+`G.next` is the actual previous state, and `Fnext` comes from a new call to
+Definition 1 at `rho+1`.  Earlier periods and exceptions are transported
+through the genuine source chain, not through the obsolete pre-recentering
+choice. -/
+theorem FactorForm.exists_reindexed_succ
+    {xs : List A} {seed : Selection xs} {n rho : ℕ}
+    {I : GMOTheoremEInput xs seed n}
+    (F : FactorForm I rho)
+    (hfail : ¬ Nonempty (GMOTheoremESourceOutput I)) :
+    ∃ sigma : Equiv.Perm (Fin n),
+      Nonempty (FactorForm (I.reindex sigma) (rho + 1)) := by
+  classical
+  obtain ⟨sigma, G, y, hGchosen, hyCell, hyException,
+      h35, hKbot, hKtop⟩ :=
+    F.exists_reindexed_next_deficit_proper hfail
+  have hfail' : ¬ Nonempty
+      (GMOTheoremESourceOutput (I.reindex sigma)) := by
+    rintro ⟨out⟩
+    exact hfail ⟨out.inverseReindex sigma⟩
+  let chainSucc : Definition1SourceChain
+      (I.reindex sigma) (rho + 1) G.next :=
+    Definition1SourceChain.next G.chain G.next G.F G.transition
+  obtain ⟨next2, Fnext, step2⟩ :=
+    exists_definition1Transition (rho + 1) G.next
+  have hGmem : G.partition ∈ G.next.upsilon := by
+    rw [hGchosen]
+    exact G.next.chosen_mem
+  have hrangeSucc : rho + 1 + 2 ≤ n := by
+    have htwo := G.partition.two_le_tail_length_of_deficit
+      (s := rho + 1) (by have := G.range; omega) h35
+    omega
+  let Wsucc : WeakFactorForm (I.reindex sigma) (rho + 1) := {
+    range := hrangeSucc
+    partition := Fnext
+    admissible := chainSucc.admissible_of_mem Fnext step2.F_mem_previous
+    previous := G.next
+    chain := chainSucc
+    next := next2
+    F := Fnext
+    transition := step2
+    partition_inLambda :=
+      ⟨step2.F_mem_previous, step2.F_tail_fixed, rfl⟩
+    tail_actual := by
+      intro s hs
+      by_cases hsr : s = rho + 1
+      · subst s
+        have htail : Fnext.tailSumset (rho + 1) =
+            G.partition.tailSumset (rho + 1) := by
+          calc
+            Fnext.tailSumset (rho + 1) =
+                G.next.chosen.tailSumset (rho + 1) := step2.F_tail_fixed
+            _ = G.partition.tailSumset (rho + 1) := by rw [hGchosen]
+        have hperiod : Fnext.tailPeriod (rho + 1) =
+            G.partition.tailPeriod (rho + 1) := by
+          unfold Theorem21SetPartition.tailPeriod
+          rw [htail]
+        rw [hperiod]
+        exact ⟨bot_lt_iff_ne_bot.mpr hKbot, hKtop⟩
+      · have hslt : s < rho + 1 := by omega
+        have htail := chainSucc.tailSumset_eq_of_mem Fnext G.partition
+          step2.F_mem_previous hGmem hslt
+        have hperiod : Fnext.tailPeriod s = G.partition.tailPeriod s := by
+          unfold Theorem21SetPartition.tailPeriod
+          rw [htail]
+        rw [hperiod]
+        exact G.tail_actual s (by omega)
+    leading_exception := by
+      intro c hc
+      have hcr : c.val ≤ rho := by omega
+      by_cases hceq : c.val = rho
+      · have hqmem : QuotientAddGroup.mk'
+              (G.partition.tailPeriod rho) y ∈
+            quotientLayer (G.partition.tailPeriod rho)
+              (G.partition.valueCell c) := by
+          have hcfin : c = ⟨rho, by have := F.range; omega⟩ := by
+            apply Fin.ext
+            exact hceq
+          rw [hcfin]
+          exact (mem_quotientLayer_iff _ _ _).2 ⟨y, hyCell, rfl⟩
+        have hqeq := chainSucc.quotientLayer_eq_of_mem
+          G.partition Fnext hGmem step2.F_mem_previous
+          (j := rho) (by omega) c
+        have hqmemF : QuotientAddGroup.mk'
+              (G.partition.tailPeriod rho) y ∈
+            quotientLayer (G.partition.tailPeriod rho)
+              (Fnext.valueCell c) := by
+          rw [← hqeq]
+          exact hqmem
+        obtain ⟨z, hzCell, hzQuot⟩ :=
+          (mem_quotientLayer_iff (G.partition.tailPeriod rho)
+            (Fnext.valueCell c) _).1 hqmemF
+        have hzExceptionOld : Fnext.IsHException
+            (G.partition.tailPeriod rho) z := by
+          obtain ⟨d, hd⟩ := hyException
+          refine ⟨d, ?_⟩
+          intro hzMem
+          have hqeqd := chainSucc.quotientLayer_eq_of_mem
+            G.partition Fnext hGmem step2.F_mem_previous
+            (j := rho) (by omega) d
+          apply hd
+          rw [hqeqd]
+          rw [← hzQuot]
+          exact hzMem
+        have htail := chainSucc.tailSumset_eq_of_mem Fnext G.partition
+          step2.F_mem_previous hGmem (j := rho) (by omega)
+        have hperiod : Fnext.tailPeriod rho =
+            G.partition.tailPeriod rho := by
+          unfold Theorem21SetPartition.tailPeriod
+          rw [htail]
+        refine ⟨z, hzCell, ?_⟩
+        rw [hceq, hperiod]
+        exact hzExceptionOld
+      · have hclt : c.val < rho := by omega
+        obtain ⟨x, hxCell, hxException⟩ := G.leading_exception c hclt
+        have hqmem : QuotientAddGroup.mk'
+              (G.partition.tailPeriod c.val) x ∈
+            quotientLayer (G.partition.tailPeriod c.val)
+              (G.partition.valueCell c) :=
+          (mem_quotientLayer_iff _ _ _).2 ⟨x, hxCell, rfl⟩
+        have hqeq := chainSucc.quotientLayer_eq_of_mem
+          G.partition Fnext hGmem step2.F_mem_previous
+          (j := c.val) (by omega) c
+        have hqmemF : QuotientAddGroup.mk'
+              (G.partition.tailPeriod c.val) x ∈
+            quotientLayer (G.partition.tailPeriod c.val)
+              (Fnext.valueCell c) := by
+          rw [← hqeq]
+          exact hqmem
+        obtain ⟨z, hzCell, hzQuot⟩ :=
+          (mem_quotientLayer_iff (G.partition.tailPeriod c.val)
+            (Fnext.valueCell c) _).1 hqmemF
+        have hzExceptionOld : Fnext.IsHException
+            (G.partition.tailPeriod c.val) z := by
+          obtain ⟨d, hd⟩ := hxException
+          refine ⟨d, ?_⟩
+          intro hzMem
+          have hqeqd := chainSucc.quotientLayer_eq_of_mem
+            G.partition Fnext hGmem step2.F_mem_previous
+            (j := c.val) (by omega) d
+          apply hd
+          rw [hqeqd]
+          rw [← hzQuot]
+          exact hzMem
+        have htail := chainSucc.tailSumset_eq_of_mem Fnext G.partition
+          step2.F_mem_previous hGmem (j := c.val) (by omega)
+        have hperiod : Fnext.tailPeriod c.val =
+            G.partition.tailPeriod c.val := by
+          unfold Theorem21SetPartition.tailPeriod
+          rw [htail]
+        refine ⟨z, hzCell, ?_⟩
+        rw [hperiod]
+        exact hzExceptionOld
+  }
+  exact ⟨sigma, ⟨Wsucc.toFactorForm
+    (not_nonempty_trivialConclusion_of_no_sourceOutput hfail')⟩⟩
+
 /-- Honest proved DGM endpoint for a source whose own occurrences already
 satisfy the setpartition criterion.  This is strictly weaker than Theorem
 2.1: it does not perform the replacement/structural induction, but it does

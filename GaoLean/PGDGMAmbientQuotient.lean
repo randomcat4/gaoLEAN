@@ -599,4 +599,100 @@ theorem dgmPatternBound_of_ambientStabilizerQuotient
           (dgmCappedMultiplicitySum K P n - n) := by
       rw [Nat.mul_add, hTcard, ← Nat.mul_assoc, hKcard]
 
+/-- Quotienting a finite additive group by a nontrivial subgroup strictly
+decreases its cardinality. -/
+theorem natCard_quotient_lt_of_ne_bot [Fintype A]
+    (J : AddSubgroup A) (hJ : J ≠ ⊥) :
+    Nat.card (A ⧸ J) < Nat.card A := by
+  have hJpos : 0 < Nat.card J := Nat.card_pos
+  have hJone : Nat.card J ≠ 1 := by
+    simpa using hJ
+  have hJgt : 1 < Nat.card J := by omega
+  rw [J.card_eq_card_quotient_mul_card_addSubgroup]
+  exact lt_mul_of_one_lt_right Nat.card_pos hJgt
+
+/-- The generalized pattern theorem restricted to targets with trivial
+stabilizer.  This remains an explicit input to the outer quotient driver. -/
+def AperiodicGeneralDGMPatternTheorem
+    (A : Type*) [AddCommGroup A] [Fintype A] [DecidableEq A] : Prop :=
+  ∀ (K : AddSubgroup A) (n : ℕ)
+    (_ : Fintype (A ⧸ K)) (_ : DecidableEq (A ⧸ K))
+    (P : List (Finset A)) (μ : QuotientPattern K n),
+    (patternSubsumSpectrum P μ).Nonempty →
+    (patternSubsumSpectrum P μ).addStab = {0} →
+    DGMPatternBound P μ
+
+/-- Universe-polymorphic outer induction predicate, indexed only by the
+finite cardinality of the ambient group. -/
+def DGMPatternAtGroupCard (m : ℕ) : Prop :=
+  ∀ (B : Type u) [AddCommGroup B] [Fintype B] [DecidableEq B],
+    Nat.card B = m → GeneralDGMPatternTheorem B
+
+/-- Mechanical outer quotient driver.  Its explicit `haper` premise is the
+only generalized DGM input: the theorem removes only a nontrivial final
+target stabilizer by strong induction on the ambient group cardinality. -/
+theorem generalDGMPatternTheorem_of_aperiodic
+    (haper : ∀ (B : Type u) [AddCommGroup B] [Fintype B] [DecidableEq B],
+      AperiodicGeneralDGMPatternTheorem B) :
+    ∀ (B : Type u) [AddCommGroup B] [Fintype B] [DecidableEq B],
+      GeneralDGMPatternTheorem B := by
+  have outer : ∀ m : ℕ, DGMPatternAtGroupCard.{u} m := by
+    intro m
+    induction m using Nat.strong_induction_on with
+    | h m ih =>
+        intro B _instGroup _instFintype _instDecEq hm
+        intro K n instQFintype instQDecEq P μ hT
+        let T : Finset B := patternSubsumSpectrum P μ
+        let J : AddSubgroup B := AddAction.stabilizer B (T : Set B)
+        have hJK : J ≤ K := by
+          simpa [J, T] using
+            patternSpectrum_stabilizer_le_patternSubgroup K n P μ hT
+        by_cases hJbot : J = ⊥
+        · apply haper B K n instQFintype instQDecEq P μ hT
+          apply Finset.ext
+          intro x
+          rw [← Finset.mem_coe, Finset.coe_addStab hT]
+          change x ∈ J ↔ x ∈ ({0} : Finset B)
+          rw [hJbot]
+          simp
+        · letI : Fintype (B ⧸ J) := Fintype.ofFinite _
+          letI : DecidableEq (B ⧸ J) := Classical.decEq _
+          let qJ : B →+ B ⧸ J := QuotientAddGroup.mk' J
+          let Kbar : AddSubgroup (B ⧸ J) := K.map qJ
+          letI : Fintype ((B ⧸ J) ⧸ Kbar) := Fintype.ofFinite _
+          letI : DecidableEq ((B ⧸ J) ⧸ Kbar) := Classical.decEq _
+          let Pbar : List (Finset (B ⧸ J)) :=
+            P.map fun C ↦ C.image qJ
+          let μbar : QuotientPattern Kbar n :=
+            μ.ambientQuotient J K hJK
+          have hsmall : Nat.card (B ⧸ J) < m := by
+            rw [← hm]
+            exact natCard_quotient_lt_of_ne_bot J hJbot
+          have hgeneralBar : GeneralDGMPatternTheorem (B ⧸ J) :=
+            ih (Nat.card (B ⧸ J)) hsmall (B ⧸ J) rfl
+          have hTbar : (patternSubsumSpectrum Pbar μbar).Nonempty := by
+            have himage := hT.image qJ
+            rw [image_patternSubsumSpectrum_ambientQuotient
+              J K hJK P μ] at himage
+            simpa [Pbar, μbar, Kbar, qJ] using himage
+          have hQ : DGMPatternBound Pbar μbar :=
+            hgeneralBar Kbar n inferInstance inferInstance Pbar μbar hTbar
+          exact dgmPatternBound_of_ambientStabilizerQuotient
+            J K hJK P μ hT (by simp [J, T]) (by
+              simpa [Pbar, μbar, Kbar, qJ] using hQ)
+  intro B _instGroup _instFintype _instDecEq
+  exact outer (Nat.card B) B rfl
+
+/-- Setpartition endpoint of the same outer driver.  The only unresolved
+mathematical input remains the explicitly displayed aperiodic generalized
+pattern theorem. -/
+theorem generalDGMSetpartitionTheorem_of_aperiodicPattern
+    (haper : ∀ (B : Type u) [AddCommGroup B] [Fintype B] [DecidableEq B],
+      AperiodicGeneralDGMPatternTheorem B) :
+    ∀ (B : Type u) [AddCommGroup B] [Fintype B] [DecidableEq B],
+      GeneralDGMSetpartitionTheorem B := by
+  intro B _instGroup _instFintype _instDecEq
+  exact generalDGMSetpartitionTheorem_of_generalPatternTheorem
+    (generalDGMPatternTheorem_of_aperiodic haper B)
+
 end GaoLean
