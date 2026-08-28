@@ -34,14 +34,15 @@ namespace ConcreteGDihedral
 
 variable {A : Type*} [AddCommGroup A] [Fintype A]
 
-/-- Minimal occurrence-labelled projection consumed from the non-full
-weighted GMO branch in A-R6 Section 4.3.  The center `β` may depend on the occurrence,
-as in the source assertion that `x` and `-x` lie in one `K`-coset for every
-concentrated rotation coordinate `x`.
+/-- Minimal occurrence-labelled projection consumed by this historical
+non-full middle-branch interface.  The downstream odd-quotient argument only
+needs a pointwise witness `β`, so this deliberately weakened consumer permits
+choosing one separately for each occurrence.
 
-The source's additional ordinary-coset condition is not stored because this
-front end never uses it.  This is a structure parameter, not an assertion
-that the external GMO output has been proved in Lean. -/
+This must not be confused with the source-facing GMO theorem: its common-coset
+concentration retains one global center `β` for the whole concentrated source.
+That stronger statement is proved and transported elsewhere; this record only
+forgets information that the present consumer does not use. -/
 structure MiddleNonfullConcentrationOutput
     (s : List (Group A)) (b : ℕ) (K : AddSubgroup A) where
   concentrated : Selection s

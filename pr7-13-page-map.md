@@ -24,7 +24,7 @@
 | Abstract, Introduction Theorem 1.1 | `E(Dih(A))=2|A|+D(A)`，奇阿贝尔 `p` 群核 | `PGStatements.PGGaoV1Statement`; `PR7ThirteenPage.PR7ThirteenPageMainStatement`; `ConcreteGDihedral.pr7ThirteenPageMain` | `FULLY_CHECKED`；无 remaining-input/provider 参数，完整量词、exact `2|A|`、exact/at-least 语义桥与 `|Dih(A)|=2|A|` 均已证 |
 | Introduction, explicit invariant-factor formula | `D(A)=1+sum(p^lambda_i-1)` | `PGOlson.exists_olsonInvariantProduct`; `PGOlson.isOrdinaryDavenportConstant_invariantProduct` | `CHECKED`；从有限阿贝尔 `p` 群分类构造有限循环直积，并在 Lean 内证明精确 ordinary Davenport 常数公式 |
 | Introduction, `d(Dih(A))=D(A)` equivalence | GJM small Davenport identity | `PGGJM.smallDavenportProductOneFreeAtMost_of_ordinaryDavenport`; `PGDavenportBridge.smallDavenportWitness_of_isOrdinaryDavenportConstant` | `CHECKED`；长度 `D` 的 product-one-free 下界见证与任意长度至多 `D` 的上界均已 occurrence-faithfully 证明 |
-| Introduction, `C_3^2` example | 五项积一自由见证与 17 个单位元补齐 | 通用 `PGDavenportBridge` 与 `PGLowerBound` | `PARTIAL`；通用构造已核验，正文的字面五项例子未单独命名 |
+| Introduction, `C_3^2` example | 五项积一自由见证、17 个单位元补齐与 `E=23` | `PGManuscriptConsequences.c3SquaredDavenportWitness`; `c3SquaredDavenportWitnessOccurrenceEquiv`; `c3SquaredProductOneFreeWord_isProductOneFree`; `c3SquaredPaddedLowerWord_no_eighteenBlock`; `pgGao_c3Squared_threshold` | `CHECKED`；四个 additive occurrences 由 `Σ i : Fin 2, Fin 2` 标记，故是两坐标各两份生成元；再接一枚反射与 17 个单位元，长度 22 且无 18 项积一块。内部枚举顺序未冒充正文的字面排列，但 occurrence-labelled 多重集与数值阈值均已核验 |
 | §2 sequence semantics | 按位置选择、重复值保持、可重排积一 | `Sequence`, `Ordering`, `OccurrenceOrdering` | `CHECKED` |
 | §2 group law | 广义二面体乘法、rotation/reflection | `GDihedral`, `ConcreteGDihedral` | `CHECKED` |
 | Lemma 2.1 | 平衡反射符号与任意旋转符号的排序实现 | `PGReflectionOrdering`; `PGReflectionPairs` | `CHECKED`；保持 occurrence 标签与精确重数 |
@@ -55,7 +55,7 @@
 | Theorem 5.1 base cases | `P_S(0)` 与 `Q(0)` 分别证明 | `PGBase`; `PGInduction.concreteControllerAt_bot_of_smallDavenport`; `PGGJM` | `CHECKED`；所需 small-Davenport 上界已内部供给 |
 | Theorem 5.1 induction | 每次严格下降 `H<K`，同时强归纳 | `PGInduction`; `PGControllerClosure`; `GAOARResidualController`; `ordinaryGMOStructuralProvider_addSubgroup_of_oddPrimePGroup` | `CHECKED`；source providers 已内部实现 |
 | §6 main completion | 三个 reflection regimes 与上下界装配 | `PGReflectionRegimes`; `PGSynthesis`; `GAOARFinal`; `ConcreteGDihedral.pr7ThirteenPageMain` | `FULLY_CHECKED`；未把 desired upper bound 作为参数 |
-| Corollary 6.1 | homocyclic / elementary-abelian 数值公式 | `PGHomocyclic.pgGao_homocyclic_display_of_structuralRemainingInputs`; `PGHomocyclic.pgGao_elementaryAbelian_display_of_structuralRemainingInputs`; `ConcreteGDihedral.pr7ThirteenPageMain` | `CHECKED`；Lean 核验 `|C_(p^k)^r|=p^(kr)`、`D=1+r(p^k-1)`，其继承的主定理边界现已无条件闭合 |
+| Corollary 6.1 | homocyclic / elementary-abelian 数值公式 | `PGManuscriptConsequences.pgGao_homocyclic_display`; `PGManuscriptConsequences.pgGao_elementaryAbelian_display` | `FULLY_CHECKED`；无 remaining-input 参数，保持原来的 prime/odd/Nontrivial 量词；Lean 核验 `|C_(p^k)^r|=p^(kr)` 与 `D=1+r(p^k-1)` |
 
 ## 当前严格裁决
 
