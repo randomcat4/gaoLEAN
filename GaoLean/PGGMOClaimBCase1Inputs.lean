@@ -157,26 +157,18 @@ end PGroupInheritance
 
 section DavenportLength
 
-/-- The canonical `d*(K)` never exceeds the ambient cardinality.  Hence the
-paper hypothesis `|A| ≤ n` supplies the embedding length needed by the
-labelled subpartition assembly. -/
-theorem pGroupDStar_claimBIntermediateSubgroup_le_of_natCard_le
+/-- Subgroup--quotient convolution bounds the intermediate `d*(K)` by the
+canonical ambient `d*(A)`.  Thus the ambient Davenport budget supplies the
+embedding length needed by the labelled subpartition assembly. -/
+theorem pGroupDStar_claimBIntermediateSubgroup_le_of_ambient_budget
     {xs : List A} {n m : ℕ} (P : Theorem21SetPartition xs n m)
     (H : AddSubgroup A) (g : A)
-    (hn : Nat.card A ≤ n) :
+    (hambient : pGroupDStar A ≤ n) :
     pGroupDStar (claimBIntermediateSubgroup P H g) ≤ n := by
   let K := claimBIntermediateSubgroup P H g
-  letI : Fintype K := Fintype.ofFinite K
-  have hD : ordinaryDavenportValue K ≤ Nat.card K :=
-    ordinaryDavenportConstant_le_natCard
-      (ordinaryDavenportValue K) (ordinaryDavenportValue_spec K)
-  have hrecover := pGroupDStar_add_one K
-  have hstar : pGroupDStar K ≤ Nat.card K := by
-    omega
-  have hKcard : Nat.card K ≤ Nat.card A :=
-    Nat.card_le_card_of_injective (fun x : K ↦ (x.1 : A))
-      (fun x y hxy ↦ Subtype.ext hxy)
-  exact hstar.trans (hKcard.trans hn)
+  have hconv := pGroupDStar_subgroup_quotient_le K
+  dsimp [K] at hconv ⊢
+  omega
 
 end DavenportLength
 
@@ -319,7 +311,7 @@ end GaoLean
 #print axioms GaoLean.isPGroup_claimBIntermediateSubgroup
 #print axioms GaoLean.isPGroup_claimBIntermediateQuotientSubgroup
 #print axioms GaoLean.isPGroup_claimBInternalQuotient
-#print axioms GaoLean.pGroupDStar_claimBIntermediateSubgroup_le_of_natCard_le
+#print axioms GaoLean.pGroupDStar_claimBIntermediateSubgroup_le_of_ambient_budget
 #print axioms GaoLean.Theorem21SetPartition.insideCoreCell_nonempty_of_mem_commonCore
 #print axioms GaoLean.GMOTheoremESourceOutput.period_ne_bot_of_not_large
 #print axioms GaoLean.GMOTheoremESourceOutput.unused_value_mem_claimBCoset

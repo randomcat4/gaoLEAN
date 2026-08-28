@@ -76,35 +76,30 @@ theorem GMOTheoremESourceOutput.nonempty_ordinaryGMOClaimBEnvelope_case1
     (out : GMOTheoremESourceOutput I)
     (p : ℕ) (hp : p.Prime) (hpTwo : p ≠ 2)
     (hA : IsPGroup p (Multiplicative A))
-    (hnA : Nat.card A ≤ n)
+    (hambient : pGroupDStar A ≤ n)
     (hN : 2 ≤ out.partition.commonCosetCount out.H)
     (hnotLarge :
       ¬ GMOTheorem21LargeAlternative xs seed n out.partition) :
     Nonempty (OrdinaryGMOClaimBEnvelope xs seed n) := by
   classical
-  letI : Fintype (A ⧸ out.H) := Fintype.ofFinite (A ⧸ out.H)
-  have hNquot : out.partition.commonCosetCount out.H ≤
-      Nat.card (A ⧸ out.H) := by
-    rw [← out.partition.card_quotientLayer_commonCore_eq_commonCosetCount
-      out.H]
-    simpa using Finset.card_le_univ
-      (quotientLayer out.H (out.partition.commonCore out.H))
-  have hquotA : Nat.card (A ⧸ out.H) ≤ Nat.card A :=
-    Nat.le_of_dvd Nat.card_pos out.H.card_quotient_dvd_card
+  have hH : out.H ≠ ⊥ := out.period_ne_bot_of_not_large hnotLarge
+  letI : Nontrivial out.H :=
+    (AddSubgroup.nontrivial_iff_ne_bot out.H).2 hH
+  letI : Nontrivial A :=
+    Function.Injective.nontrivial out.H.subtype_injective
   have hnTwo : 2 ≤ n :=
-    hN.trans (hNquot.trans (hquotA.trans hnA))
+    (two_le_pGroupDStar_of_odd_pGroup p hp hpTwo hA).trans hambient
   obtain ⟨g, hg, j, k, hjk, hthick⟩ :=
     out.exists_commonCore_two_cells_large_slice hnTwo hN hnotLarge
   let K := claimBIntermediateSubgroup out.partition out.H g
-  have hH : out.H ≠ ⊥ := out.period_ne_bot_of_not_large hnotLarge
   have hK : K ≠ ⊥ := by
     dsimp [K]
     exact claimBIntermediateSubgroup_ne_bot_of_two_le_commonCosetCount
       out.partition out.H g hN
   have hr : pGroupDStar K ≤ n := by
     dsimp [K]
-    exact pGroupDStar_claimBIntermediateSubgroup_le_of_natCard_le
-      out.partition out.H g hnA
+    exact pGroupDStar_claimBIntermediateSubgroup_le_of_ambient_budget
+      out.partition out.H g hambient
   obtain ⟨e, hne, hfront, hsaturation⟩ :=
     out.partition.exists_pairFrontEmbedding_exact_saturation
       p hp hpTwo hA out.H hH g hg j k hjk hthick (by
