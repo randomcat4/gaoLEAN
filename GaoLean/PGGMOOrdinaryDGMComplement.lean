@@ -24,7 +24,7 @@ universe u v
 
 variable {A : Type u} [AddCommGroup A] [Fintype A]
 
-noncomputable local instance quotientFintype
+noncomputable local instance ordinaryDGMComplementQuotientFintype
     (K : AddSubgroup A) : Fintype (A ⧸ K) :=
   Fintype.ofFinite (A ⧸ K)
 
