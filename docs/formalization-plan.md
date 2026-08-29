@@ -197,7 +197,7 @@ Build success alone never promotes `PARTIALLY_VERIFIED` to
 ## Historical milestone index
 
 The detailed milestone narratives remain immutable audit snapshots in
-`milestone-01.md` through `milestone-70.md`. They are intentionally not copied
+`milestones/milestone-01.md` through `milestones/milestone-70.md`. They are intentionally not copied
 here as a running diary:
 
 - M1--M10: independent-difference matching and affine exchange;

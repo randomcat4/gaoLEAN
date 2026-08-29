@@ -1,104 +1,107 @@
 # Gao Lean
 
-**广义二面体群上的精确积一子序列：13 页论文与 Lean 形式化**
+**广义二面体群 Gao 常数的精确公式与 Lean 形式化**
+**The exact Gao constant of generalized dihedral groups, formalized in Lean**
 
-[中文](#中文说明) · [English](#english)
+> **[📄 阅读 13 页论文 / Read the 13-page paper (PDF)](paper/arxiv/main.pdf)**
+>
+> [LaTeX 源稿 / Sources](paper/arxiv/) ·
+> [论文—Lean 逐段映射 / Evidence map](docs/pr7-13-page-map.md) ·
+> [形式化状态 / Formalization status](docs/formalization-plan.md)
+
+**本仓库是欧拉（Euler）第一批可公开成果中的形式化仓库之一。**
+**This is one of the formalization repositories in Euler's first batch of
+publicly releasable results.**
 
 ---
 
-## 中文说明
+## 中文
 
-### 项目简介
+### Gao 问题是什么？
 
-本仓库研究有限奇阶阿贝尔 \(p\) 群 \(A\) 的广义二面体群
-\(\operatorname{Dih}(A)=A\rtimes_{-1}C_2\)，并形式化验证精确积一子序列阈值
+对有限群 \(G\)，Gao 常数 \(E(G)\) 是使下述性质成立的最小整数 \(L\)：
+任意长度至少为 \(L\) 的群元素序列，都包含一个**恰好由 \(|G|\) 项组成**、
+并且可以重新排序为乘积 \(1\) 的子序列。
+
+标准构造给出下界
 
 \[
-E\bigl(\operatorname{Dih}(A)\bigr)=2|A|+D(A).
+E(G)\ge |G|+d(G),
 \]
 
-这里 \(D(A)\) 是阿贝尔群 \(A\) 的 Davenport 常数。仓库同时保存：
+其中 \(d(G)\) 是 small Davenport 常数。Gao 问题的核心是：这个下界何时恰好取等？
 
-- 一份自包含、可独立编译的 13 页 arXiv 论文源稿；
-- 对论文主定理及其依赖结果的 Lean 4 形式化；
-- 逐段对应表、公理审计、负面反例和仍待完成的一般权重 GMO 路线。
+### 哪一年解决了什么？
 
-**本仓库是欧拉（Euler）第一批可公开成果中的形式化仓库之一。**
-它以公开、可复现、可审计的方式保存欧拉参与完成的数学证明形式化成果。
+| 年份 | 进展 |
+|---|---|
+| **1996** | 高卫东证明了所有有限阿贝尔群的精确公式 \(E(G)=|G|+D(G)-1=|G|+d(G)\)。这是通常所说的 Gao 阿贝尔情形的解决。 |
+| **2005** | Zhuang–Gao 猜想同一等式对每个有限群都成立。这个全体有限群猜想至今仍不是本仓库声称解决的问题。 |
+| **2026** | 本仓库记录的结果解决了一个新的非阿贝尔无限族：核为任意有限阿贝尔奇 \(p\) 群的广义二面体群。 |
 
-本项目是独立仓库。理解、编译或审计论文与 Lean 代码，不需要访问其他仓库、
-历史分支或外部任务记录。
+历史来源：
+[Gao 1996](https://doi.org/10.1006/jnth.1996.0067) ·
+[Zhuang–Gao 2005](https://doi.org/10.1016/j.ejc.2004.06.014) ·
+[Godara–Joshi–Mazumdar 2026](https://doi.org/10.1016/j.jnt.2025.11.011)
 
-### 论文
+### 我们具体解决了什么？
 
-完整论文源文件位于 [paper/arxiv/](paper/arxiv/)：
+设 \(p\) 是奇素数，
 
-- [main.tex](paper/arxiv/main.tex)：主 LaTeX 入口；
-- [sections/](paper/arxiv/sections/)：六个正文分节；
-- [references.bib](paper/arxiv/references.bib)：参考文献；
-- [PROOF-AUDIT.md](paper/arxiv/PROOF-AUDIT.md)：自然语言证明义务审计；
-- [INDEPENDENT-VERIFICATION.md](paper/arxiv/INDEPENDENT-VERIFICATION.md)：独立核验说明；
-- [BUILD-REPORT.md](paper/arxiv/BUILD-REPORT.md)：13 页 PDF 的可复现构建记录；
-- [MANIFEST.sha256](paper/arxiv/MANIFEST.sha256)：论文交付文件校验清单。
+\[
+A=\bigoplus_{i=1}^{r} C_{p^{\lambda_i}},
+\qquad
+\operatorname{Dih}(A)=A\rtimes_{-1}C_2,
+\]
 
-使用标准 TeX Live 环境即可重建论文：
+其中 \(C_2\) 通过取逆作用在 \(A\) 上。本项目证明并形式化核验
 
-~~~bash
-cd paper/arxiv
-make pdf
-~~~
+\[
+E\bigl(\operatorname{Dih}(A)\bigr)
+ =2|A|+D(A)
+ =2|A|+1+\sum_{i=1}^{r}\bigl(p^{\lambda_i}-1\bigr).
+\]
 
-等价的手动命令见 [paper/arxiv/README.md](paper/arxiv/README.md)。生成的 PDF
-不是仓库的逻辑依赖；权威输入是 LaTeX 源文件、参考文献和 Lean 声明。
+结合 \(d(\operatorname{Dih}(A))=D(A)\)，这正是
 
-### 已经验证的结果
+\[
+E\bigl(\operatorname{Dih}(A)\bigr)
+ =|\operatorname{Dih}(A)|+d\bigl(\operatorname{Dih}(A)\bigr).
+\]
 
-核心公开端点是：
+它把普通二面体群的**循环核**公式推广到任意有限阿贝尔奇 \(p\) 群核，包括非循环核。
+例如，本结果给出
 
-~~~lean
-GaoLean.ConcreteGDihedral.pr7ThirteenPageMain
-~~~
+\[
+E\bigl(\operatorname{Dih}(C_3^2)\bigr)=23.
+\]
 
-该定理直接证明冻结的 13 页稿主陈述，不接收 remaining-input、provider 或递归结论
-作为参数。现有 Lean 结果包括：
+本项目不声称覆盖混合素数核、\(2\) 群核、所有有限群或逆问题。
 
-- occurrence-labelled 序列语义：重复群元素按位置区分；
-- 广义二面体群的 rotation/reflection 分解；
-- Olson 的奇素数群 Davenport 常数公式；
-- 正负权重 Davenport 上界与 GJM small-Davenport 结果；
-- 论文主证明实际使用的 \(W=\{1\}\) 与 \(W=\{\pm1\}\) GMO；
-- 商群抽取、缺陷修正、平移保持和严格子群下降；
-- 三个 reflection regimes 的上界、标准下界及最终等式；
-- homocyclic、elementary-abelian 数值推论与 \(C_3^2\) 显式见证；
-- 任意非空整数权集 GMO 所需的大量基础设施，包括 labelled Lemma 3.5、
-  gcd–torsion 分层、Step 1 仿射扩张、Step 6 kernel/range 分叉，以及
-  Theorem 1.1 式 (3)–(9) 的强递归状态和平凡 overgroup 基例。
+### 论文与形式化
 
-逐段证据索引见 [pr7-13-page-map.md](pr7-13-page-map.md)，当前推进计划见
-[formalization-plan.md](formalization-plan.md)。
+仓库自包含保存：
 
-### 当前认证边界
+- [可直接阅读的 13 页 PDF](paper/arxiv/main.pdf)；
+- [完整 LaTeX 源文件、参考文献和构建说明](paper/arxiv/)；
+- Lean 4 主证明、依赖定理与公理审计；
+- [论文每一部分对应的 Lean 证据](docs/pr7-13-page-map.md)；
+- [开放义务与发布门槛](docs/formalization-plan.md)。
 
-当前严格裁决是 **PARTIALLY_VERIFIED**，需要区分两件事：
+当前认证状态：
 
-1. **论文的最终 Gao 主结论已经无条件通过 Lean 核验。**
-2. **论文中按任意非空 \(W\subseteq\mathbb Z\) 陈述的完整一般权重 GMO
-   Theorem 2.2 尚未全部闭合。**
+| 范围 | 状态 |
+|---|---|
+| 上述广义二面体群 Gao 精确公式 | **已无条件通过 Lean 核验** |
+| 主证明实际使用的 \(W=\{1\}\)、\(W=\{\pm1\}\) GMO 特化 | **已核验** |
+| 论文中任意非空整数权集 \(W\) 的完整一般权重 GMO 定理 | **仍在形式化，PARTIALLY_VERIFIED** |
 
-一般权重 GMO 目前仍缺非平凡递归支中的完整强状态构造，特别是实际产生：
+这里的 PARTIALLY_VERIFIED 只描述整篇逐命题覆盖尚有一般权重缺口，不表示最终
+Gao 公式依赖隐藏前提。仓库不会把条件 engine、provider 或结论型参数冒充完成证明。
 
-- \(H\)-full core；
-- 一个全程固定的中心 \(\beta\)；
-- exact-spectrum 的 \(H\)-周期性；
-- small carrier \(S_0\) 的精确谱等式；
-- 跨商群类型、按 \(\operatorname{Nat.card}\) 良基的无条件递归闭合。
+### 复现
 
-仓库不会把只覆盖 \(W=\{1\}\)、\(W=\{\pm1\}\) 的结果冒充任意权集定理，也不会把
-条件 engine、provider 或结论型参数标记为完成证明。
-
-### 复现 Lean 验证
-
-工具链固定为 Lean v4.32.0 与 Mathlib v4.32.0。
+Lean 工具链固定为 Lean v4.32.0 与 Mathlib v4.32.0。
 
 ~~~bash
 lake update
@@ -106,137 +109,106 @@ lake exe cache get
 lake build GaoLean GaoFormal.AxiomAudit
 ~~~
 
-最近一次服务器集成构建完成 **8850/8850 jobs**，退出码为 0。关键端点的
-#print axioms 只报告 Lean/Mathlib 常规公理 propext、Classical.choice、
-Quot.sound（各定理使用其子集）。发布入口与审计扫描中没有 sorry、admit、
-项目自定义顶层公理、unsafe、native_decide 或 sorryAx 逃逸。
+最近一次服务器集成构建完成 **8850/8850 jobs**，退出码为 0。公开审计端点只使用
+Lean/Mathlib 常规公理 propext、Classical.choice 与 Quot.sound（按定理实际需要）；
+扫描未发现 sorry、admit、项目自定义顶层公理、unsafe、native_decide 或 sorryAx
+逃逸。
 
-历史独立冷克隆构建为 **8827 jobs**。它对应较早的已发布树，不能用来冒充当前
-工作分支的独立冷审计；当前分支在升级认证状态前仍需重新进行冷克隆验收。
-
-### 仓库结构
-
-~~~text
-GaoLean/                  论文数学主线与一般权重 GMO 形式化
-GaoFormal/                聚合入口与公理审计
-paper/arxiv/              自包含的 13 页论文 LaTeX 工程
-math/.../                 冻结定理、审计记录与独立复核材料
-pr7-13-page-map.md        论文段落到 Lean 端点的双向映射
-formalization-plan.md     当前状态、开放义务与发布门槛
-lakefile.toml             Lean 工程与依赖锁定
-lean-toolchain            Lean 版本锁定
-~~~
-
-详细里程碑没有堆叠在本 README 中；首页只保留理解、构建和审计项目所需的信息。
-
-### 反馈与贡献
-
-问题、复现失败和形式化建议可以通过 GitHub Issues 提交。报告 Lean 问题时，请附上
-工具链版本、失败目标和最小复现命令；报告数学问题时，请指明论文段落、对应 Lean
-端点以及问题属于陈述偏差、证明缺口还是认证范围。任何提升认证等级的修改都必须同时
-更新逐段映射和公理审计。
-
-### 审计原则
-
-- 构建成功只证明现有 Lean 声明通过内核检查，不自动证明论文每句话都已覆盖。
-- 自然语言稿、模型审阅和 PDF 编译均不能替代 Lean 证明。
-- 重复值必须保持 occurrence 标签，精确长度不能用集合去重或“至少”偷换。
-- 已发现的错误接口与反例保留在仓库中，作为防止回归的负证据。
-- 只有逐段映射、无逃逸公理扫描和独立冷构建同时通过，才会提升整篇认证状态。
-
----
-
-## English
-
-### Overview
-
-This repository studies exact product-one subsequences in the generalized
-dihedral group
-
-\[
-\operatorname{Dih}(A)=A\rtimes_{-1}C_2
-\]
-
-for a finite abelian \(p\)-group \(A\) with \(p\) odd. Its main formalized
-identity is
-
-\[
-E\bigl(\operatorname{Dih}(A)\bigr)=2|A|+D(A),
-\]
-
-where \(D(A)\) is the Davenport constant of \(A\).
-
-The repository contains both the self-contained 13-page arXiv manuscript and
-its Lean 4 formalization, together with source-to-Lean maps, axiom audits,
-counterexamples to invalid interfaces, and the active plan for the remaining
-general-weight GMO theorem.
-
-**This repository is one of Euler's first publicly releasable formalization
-repositories.** It preserves mathematical formalization work completed with
-Euler in a public, reproducible, and auditable form.
-
-The project is self-contained: building or reviewing the manuscript and the
-Lean development does not require another repository, a historical pull
-request, or private task logs.
-
-### Manuscript
-
-The complete manuscript source is under [paper/arxiv/](paper/arxiv/).
-It includes the master TeX file, six section files, bibliography, proof audit,
-independent-verification instructions, build report, and SHA-256 manifest.
+重建论文：
 
 ~~~bash
 cd paper/arxiv
 make pdf
 ~~~
 
-See [paper/arxiv/README.md](paper/arxiv/README.md) for the equivalent manual
-build. The generated PDF is not a logical dependency of the formalization; the
-authoritative artifacts are the TeX sources, bibliography, and Lean statements.
+已提交的 PDF 由仓库内源稿重新构建，共 13 页；最终日志中的未解析引用、未解析文献、
+overfull 与 underfull 警告扫描均为 0。
 
-### Formalized result
+### 仓库导航
 
-The principal public endpoint is:
-
-~~~lean
-GaoLean.ConcreteGDihedral.pr7ThirteenPageMain
+~~~text
+paper/arxiv/       论文 PDF、LaTeX 源稿、参考文献与构建报告
+GaoLean/           数学主线和一般权重 GMO 形式化
+GaoFormal/         聚合入口与公理审计
+docs/              当前计划、证据映射、覆盖表和构建记录
+docs/milestones/   归档的开发里程碑
+math/              冻结陈述与独立复核材料
 ~~~
 
-It proves the frozen main statement directly, without a remaining-input
-parameter, a provider premise, or a recursively assumed conclusion.
+问题、复现失败和证明建议可以通过 GitHub Issues 提交。认证状态的任何提升都必须同步
+更新逐段证据映射、公理审计和独立冷构建记录。
 
-The development formalizes occurrence-labelled sequence semantics, the
-rotation/reflection structure of generalized dihedral groups, Olson's
-Davenport-constant formula, the plus-minus bound, the GMO specializations
-actually used by the main proof, subgroup and quotient descent, the three
-reflection regimes, the final equality, and the displayed numerical
-consequences. It also contains substantial infrastructure toward the
-arbitrary-weight GMO theorem.
+---
 
-See [pr7-13-page-map.md](pr7-13-page-map.md) for the paragraph-level evidence
-map and [formalization-plan.md](formalization-plan.md) for the current proof
-frontier.
+## English
 
-### Certification boundary
+### The problem
 
-The repository-wide verdict is **PARTIALLY_VERIFIED**:
+For a finite group \(G\), the Gao constant \(E(G)\) is the least \(L\) such
+that every sequence of length at least \(L\) contains exactly \(|G|\) terms
+that can be reordered to have product one. The standard lower bound is
 
-- the final Gao theorem is unconditionally checked in Lean;
-- the full arbitrary-nonempty-weight version of GMO Theorem 2.2 is not yet
-  closed.
+\[
+E(G)\ge |G|+d(G),
+\]
 
-The remaining load-bearing obligations are the nontrivial strong recursive
-state: a genuine \(H\)-full core, a fixed center \(\beta\), periodicity of the
-exact spectrum, the small-carrier spectrum identity, and well-founded
-cross-type recursion through quotient groups.
+where \(d(G)\) is the small Davenport constant. The central question is when
+equality holds.
 
-The repository does not promote the \(W=\{1\}\) and \(W=\{\pm1\}\)
-specializations to a theorem about arbitrary \(W\), and it does not count a
-conditional engine or provider as an unconditional proof.
+### Historical timeline
 
-### Reproducing the Lean build
+- **1996:** Weidong Gao proved
+  \(E(G)=|G|+D(G)-1=|G|+d(G)\) for every finite abelian group.
+- **2005:** Zhuang and Gao conjectured the same equality for every finite
+  group. This repository does not claim to settle that full conjecture.
+- **2026:** The result recorded here settles a new nonabelian infinite family:
+  generalized dihedral groups with an arbitrary finite abelian odd
+  \(p\)-group kernel.
 
-The project is pinned to Lean v4.32.0 and Mathlib v4.32.0.
+Primary references:
+[Gao 1996](https://doi.org/10.1006/jnth.1996.0067) ·
+[Zhuang–Gao 2005](https://doi.org/10.1016/j.ejc.2004.06.014) ·
+[Godara–Joshi–Mazumdar 2026](https://doi.org/10.1016/j.jnt.2025.11.011)
+
+### Our result
+
+For an odd prime \(p\), let
+
+\[
+A=\bigoplus_{i=1}^{r} C_{p^{\lambda_i}},
+\qquad
+\operatorname{Dih}(A)=A\rtimes_{-1}C_2.
+\]
+
+This project proves and formalizes
+
+\[
+E\bigl(\operatorname{Dih}(A)\bigr)
+ =2|A|+D(A)
+ =2|A|+1+\sum_{i=1}^{r}\bigl(p^{\lambda_i}-1\bigr).
+\]
+
+Equivalently,
+\(E(\operatorname{Dih}(A))
+=|\operatorname{Dih}(A)|+d(\operatorname{Dih}(A))\).
+This extends the cyclic-kernel dihedral formula to every finite abelian odd
+\(p\)-group kernel, including noncyclic kernels. It does not cover mixed-prime
+kernels, \(2\)-group kernels, all finite groups, or the inverse problem.
+
+### Paper, Lean proof, and status
+
+- [Read the 13-page PDF](paper/arxiv/main.pdf).
+- [Build or inspect the complete manuscript source](paper/arxiv/).
+- [Follow the manuscript-to-Lean evidence map](docs/pr7-13-page-map.md).
+- [Read the current formalization plan](docs/formalization-plan.md).
+
+The exact generalized-dihedral Gao formula is **unconditionally checked in
+Lean**. The repository-wide verdict remains **PARTIALLY_VERIFIED** only because
+the manuscript also states a full arbitrary-weight GMO theorem whose complete
+source range is still being formalized. The \(W=\{1\}\) and \(W=\{\pm1\}\)
+instances actually used by the main Gao proof are checked.
+
+### Reproduction
 
 ~~~bash
 lake update
@@ -245,43 +217,17 @@ lake build GaoLean GaoFormal.AxiomAudit
 ~~~
 
 The latest integrated server build completed **8850/8850 jobs** with exit code
-0. Public endpoints use only the standard Lean/Mathlib axioms reported by
-#print axioms: propext, Classical.choice, and Quot.sound (as applicable).
-The release surface contains no sorry, admit, project-defined top-level axiom,
-unsafe, native_decide, or sorryAx escape.
+0. The public audit surface reports only the standard Lean/Mathlib axioms
+propext, Classical.choice, and Quot.sound as applicable, with no admitted or
+project-defined axiom escape.
 
-An earlier independent cold-clone build completed 8827 jobs. It belongs to an
-older published tree and is not relabelled as a cold audit of the current
-working branch.
+To rebuild the paper:
 
-### Repository layout
-
-~~~text
-GaoLean/                  Main formalization and general-weight GMO development
-GaoFormal/                Aggregate entry point and axiom audit
-paper/arxiv/              Self-contained 13-page LaTeX manuscript
-math/.../                 Frozen statements and independent audit records
-pr7-13-page-map.md        Bidirectional manuscript-to-Lean map
-formalization-plan.md     Current status, open obligations, and release gates
-lakefile.toml             Lean project and pinned dependencies
-lean-toolchain            Pinned Lean version
+~~~bash
+cd paper/arxiv
+make pdf
 ~~~
 
-### Feedback and contributions
-
-Questions, reproduction failures, and formalization proposals can be reported
-through GitHub Issues. Lean reports should include the toolchain version, the
-failing target, and a minimal command. Mathematical reports should identify the
-manuscript passage, the corresponding Lean endpoint, and whether the concern is
-about statement fidelity, proof completeness, or certification scope. Any
-change that upgrades certification must also update the paragraph map and the
-axiom audit.
-
-### Trust policy
-
-A successful build certifies the declarations that Lean checked; it does not
-by itself establish complete manuscript coverage. Natural-language review,
-model review, and PDF compilation are not substitutes for kernel-checked
-proof. Repository-wide certification is upgraded only after literal
-source-to-Lean coverage, escape-hatch scans, and an independent cold build all
-agree.
+The committed PDF has 13 pages and was rebuilt from the committed sources with
+resolved references and citations. Detailed development records are organized
+under [docs/](docs/) rather than exposed at repository root.

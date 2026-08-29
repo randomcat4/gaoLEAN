@@ -30,4 +30,4 @@ theorem, ordinary Theorem E/2.1, or signed Theorem 1.1.
 The three proof modules build together in 8707 tasks.  The forbidden
 declaration scan is clean, and printed dependencies of completed declarations
 contain only `propext`, `Classical.choice`, and `Quot.sound`.  A complete
-project build is recorded in `build-log.md` before publication.
+project build is recorded in `../build-log.md` before publication.

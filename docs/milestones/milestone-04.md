@@ -14,4 +14,4 @@
 - Ported into the target repository: occurrence semantics, literal ordering,
   abstract/concrete group model, plus-minus bridge, frozen PG statements,
   middle-regime/proper-subgroup leaves, and controller statement skeleton.
-- Exact blockers and fidelity classification: `pg-coverage.md`.
+- Exact blockers and fidelity classification: `../pg-coverage.md`.

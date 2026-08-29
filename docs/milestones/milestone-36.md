@@ -46,4 +46,4 @@ valid capacity entry is actually supplied.
 - Pinned Lean 4.32.0 / Lake 5.0.0-src+8c9756b.
 - Final single-file check: exit 0 with no diagnostics.
 - Full build, unified axiom audit, forbidden-declaration scan, and scoped
-  whitespace check are recorded in `build-log.md`.
+  whitespace check are recorded in `../build-log.md`.

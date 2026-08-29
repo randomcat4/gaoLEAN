@@ -1,37 +1,38 @@
-# Local build report
+# PDF build report
 
-## Status
+This report records reproducible document builds. A successful PDF build is a
+document-integrity check, not a mathematical correctness certificate.
 
-This report records a reproducible local build; it is not a mathematical
-correctness certificate.
+## Public repository PDF
 
-## Build facts
+- Build date: 2026-08-29.
+- Commands: `pdflatex`, `bibtex`, `pdflatex`, `pdflatex` as listed in README.
+- PDF producer: MiKTeX `pdfTeX-1.40.29`.
+- Output: 13 pages, 392918 bytes.
+- SHA-256:
+
+  ```text
+  056fb5eb460368a7a5fcc75a2f5397ff9a8c5356233ff7cf453244a5431e0f65  main.pdf
+  ```
+
+- The final log contained no matched unresolved-reference,
+  unresolved-citation, overfull-box, or underfull-box warning.
+- This PDF is tracked so a visitor can read the paper directly from the
+  repository. The LaTeX source remains authoritative.
+
+## Earlier independent TeX Live build
 
 - Build date: 2026-08-24.
-- Command: `make clean pdf` in `paper/arxiv/`.
+- Command: `make clean pdf`.
 - PDF producer: `pdfTeX-1.40.26`.
 - Output: 13 pages, 349826 bytes.
-- SHA-256 of the checked PDF:
+- SHA-256:
 
   ```text
   51ca4d4ca3fd56390451ecbcca78fdc85859ef1d4444457ef48f2e381de5a60f  main.pdf
   ```
 
-- Citations and cross-references resolved after the BibTeX and repeated
-  `pdflatex` passes.
-- The final log contained no unresolved-reference, unresolved-citation,
-  overfull-box, or underfull-box warning matched by the release scan.
-- The PDF was rendered page by page and inspected for broken equations,
-  clipped material, missing glyphs, and visibly blank or duplicated pages.
-
-## Remote runner note
-
-A GitHub Actions runner was attempted twice, but each attempt failed before any
-job step ran and produced no readable job log. This cannot be interpreted as a
-LaTeX failure or success. The non-starting workflow was removed from the pull
-request. The authoritative reproducible build surface is the source plus
-`Makefile`.
-
-The generated PDF is supplied with the delivery bundle but is not tracked in the
-Git repository. Independent reviewers should rebuild it themselves before
-checking the paper.
+The byte-level difference between the two PDFs reflects the TeX environment;
+the committed manuscript sources are unchanged. Independent reviewers should
+rebuild the PDF before checking the natural-language proof and then compare the
+paper with the Lean evidence map.

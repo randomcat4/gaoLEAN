@@ -1,30 +1,35 @@
-# ArXiv manuscript rewrite
+# ArXiv manuscript
 
-This directory contains the paper-first rewrite of the candidate proof
+This directory contains the self-contained 13-page manuscript proving
 
 \[
 E\bigl(A\rtimes_{-1}C_2\bigr)=2|A|+D(A)
 \]
 
-for nontrivial finite abelian `p`-groups `A`, with `p` odd.
+for nontrivial finite abelian `p`-groups `A`, with `p` odd. The checked PDF is
+available as [`main.pdf`](main.pdf); the complete LaTeX source is stored beside
+it and remains the authoritative build input.
 
-The manuscript is deliberately limited to this theorem. It does not claim a mixed-prime extension, an inverse theorem, a reusable general descent theorem, or a larger verification of the Zhuang-Gao conjecture. It also makes no priority claim.
+The theorem is deliberately limited to this family. It does not claim a
+mixed-prime extension, a `2`-group result, an inverse theorem, or a proof of the
+Zhuang--Gao conjecture for every finite group.
 
 ## Files
 
+- `main.pdf` - directly readable 13-page paper.
 - `main.tex` - master LaTeX source.
 - `sections/*.tex` - section sources.
-- `references.bib` - bibliography rebuilt from publisher, DOI, or arXiv metadata.
-- `PROOF-AUDIT.md` - explicit proof obligations and all five GMO instances.
+- `references.bib` - bibliography.
+- `PROOF-AUDIT.md` - explicit natural-language proof obligations.
 - `INDEPENDENT-VERIFICATION.md` - instructions for an independent verifier.
-- `REVISION-REPORT.md` - record of material changes from the Claude revision.
-- `BUILD-REPORT.md` - exact local build facts and the checked PDF checksum.
+- `BUILD-REPORT.md` - reproducible build facts and PDF checksums.
+- `MANIFEST.sha256` - integrity manifest for the public paper bundle.
 - `Makefile` - reproducible local build commands.
 
 ## Build
 
-A standard TeX Live installation with `pdflatex`, `bibtex`, `natbib`,
-`cleveref`, `aliascnt`, and Latin Modern fonts is sufficient.
+A standard TeX installation with `pdflatex`, `bibtex`, `natbib`, `cleveref`,
+`aliascnt`, and Latin Modern fonts is sufficient.
 
 ```bash
 make pdf
@@ -39,23 +44,19 @@ pdflatex -interaction=nonstopmode -halt-on-error main.tex
 pdflatex -interaction=nonstopmode -halt-on-error main.tex
 ```
 
-A local build produced a 13-page PDF with resolved references and citations, no
-overfull or underfull boxes, and no broken glyphs observed in a page-by-page
-render. GitHub Actions failed before executing any job step and supplied no job
-log, so this repository does not represent the remote runner as a successful or
-failed LaTeX check. The source and Makefile are the reproducible build surface.
+The public PDF was rebuilt from the committed sources as 13 pages with all
+citations and cross-references resolved and with no matched overfull or
+underfull box warning. See `BUILD-REPORT.md` for exact tool and hash details.
 
-## Status and reading order
+## Certification
 
-The result remains a **candidate natural-language proof**, not an independently
-certified theorem in this repository. The existence of source files, a compiled
-PDF, prior model reviews, or partial formalization is not evidence of correctness.
+The repository root contains the Lean 4 development and its axiom audit. The
+final generalized-dihedral Gao theorem stated in this manuscript has an
+unconditional Lean endpoint. The repository-wide verdict nevertheless remains
+`PARTIALLY_VERIFIED`, because the manuscript also states a general arbitrary-
+weight GMO theorem whose full source range is still being formalized. The root
+README and the [manuscript-to-Lean evidence map](../../docs/pr7-13-page-map.md)
+record this boundary precisely.
 
-An independent reviewer should build `main.pdf` from the source, read it without
-using the repository navigation or Lean materials, and then check
-`PROOF-AUDIT.md` against the original sources. The required audit is described
-in `INDEPENDENT-VERIFICATION.md` and issue #8.
-
-The author field is intentionally blank because no author metadata was supplied
-for this editing task. It must be completed by the authors before public
-submission.
+The author field is intentionally blank because author metadata has not been
+supplied. It must be completed before an external arXiv submission.
