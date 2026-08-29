@@ -83,8 +83,10 @@ import GaoLean.A6RawCounterexample
 import GaoLean.PGGeneralWeightedDefinitions
 import GaoLean.PGGeneralWeightedSubsequence
 import GaoLean.PGGeneralWeightedSelectionConvolution
+import GaoLean.PGGeneralWeightedReserveAssembly
 import GaoLean.PGGeneralWeightedDGMBridge
 import GaoLean.PGGeneralWeightedCappedIncidence
+import GaoLean.PGGeneralWeightedAperiodicSplit
 import GaoLean.PGGMOGeneralLemma35Core
 import GaoLean.PGGeneralWeightedLemma35
 import GaoLean.PGGeneralWeightedSpecializations
