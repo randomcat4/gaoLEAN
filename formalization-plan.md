@@ -53,6 +53,9 @@ manuscript Theorem 2.2 in its full source range
     ├── gcd--torsion kernel/range and singleton-layer arithmetic    [CHECKED]
     ├── arbitrary-W to primitive-W existence normalization           [CHECKED]
     ├── occurrence-subsequence weighted-sum transport                 [CHECKED]
+    ├── full labelled GMO Lemma 3.5 certificate                       [CHECKED]
+    ├── singleton-occurrence kernel subsequence                        [CHECKED]
+    ├── exact Step-6 subgroup/quotient length budgets                  [CHECKED]
     ├── prescribed-length singleton-layer recursive branch          [OPEN]
     ├── structural aperiodic/Lemma-3.5 branch under gcd(W)=1       [OPEN]
     └── literal source-statement and paragraph audit               [OPEN]
@@ -127,8 +130,9 @@ Completed infrastructure: common weighted cosets imply a common source coset,
 the exact quotient concentration lift, and the nontrivial-stabilizer recursive
 branch.  The canonical gcd--torsion modulus, `G[d]`, `dG`, singleton-locus
 equivalence, quotient singleton layers, and `G/G[d] ≃ dG` are also checked.
-The final labelled Lemma 3.5 certificate, Step 1 strong affine package, and
-the remaining aperiodic subgroup recursion are the mathematical core left.
+The complete labelled Lemma 3.5 certificate is now checked, including the
+greedy full branch and strict-stabilizer recursive branch.  Step 1's strong
+affine package and the remaining aperiodic subgroup recursion are the core left.
 
 Exit criterion: the G1 structural endpoint is unconditional and all
 specialized structural providers are derived from it.

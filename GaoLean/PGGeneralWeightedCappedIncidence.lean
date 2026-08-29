@@ -1,4 +1,5 @@
-import GaoLean.PGGeneralWeightedDGMBridge
+import GaoLean.PGGeneralWeightedQuotient
+import GaoLean.PGGeneralWeightedDavenportMinimum
 
 /-!
 # Capped incidence for arbitrary weighted occurrence layers
@@ -11,6 +12,8 @@ setpartition, then specializes it to general weighted occurrence blocks.
 -/
 
 namespace GaoLean
+
+open scoped Pointwise
 
 universe u
 
@@ -276,6 +279,48 @@ theorem weightedExactSpectrum_card_eq_univ_of_aperiodic_of_singletonsAtMost
   have hcardPos : 1 ≤ Nat.card A := Nat.card_pos
   omega
 
+/-- The same full-spectrum branch stated with the canonical spectrum
+stabilizer used by the general GMO induction driver. -/
+theorem weightedExactSpectrum_card_eq_univ_of_bottomStabilizer_of_singletonsAtMost
+    {W : Set ℤ} (hW : W.Nonempty) (xs : List A) (D : ℕ)
+    (hD : IsWeightedDavenportConstant W A D)
+    (hlen : Nat.card A + D - 1 ≤ xs.length)
+    (hstab : weightedSpectrumStabilizer W xs (Nat.card A) = ⊥)
+    (hsingle : weightedSingletonOccurrenceCount W xs ≤ D) :
+    weightedExactSpectrum W xs (Nat.card A) = Finset.univ := by
+  classical
+  have hDpos : 1 ≤ D := weightedDavenportConstant_pos W D hD
+  have hnlen : Nat.card A ≤ xs.length := by omega
+  have hfinStab :
+      (weightedExactSpectrum W xs (Nat.card A)).addStab = {0} := by
+    ext x
+    rw [← Finset.mem_coe,
+      Finset.coe_addStab
+        (weightedExactSpectrum_nonempty hW xs (Nat.card A) hnlen)]
+    change x ∈ AddAction.stabilizer A
+        (weightedExactSpectrum W xs (Nat.card A) : Set A) ↔
+      x ∈ ({0} : Finset A)
+    rw [← weightedSpectrumStabilizer, hstab]
+    simp
+  exact weightedExactSpectrum_card_eq_univ_of_aperiodic_of_singletonsAtMost
+    hW xs D hDpos hlen hfinStab hsingle
+
+/-- The full-spectrum Step 6 branch already contains the prescribed target
+`|A| • 0 = 0`, hence gives the cardinal-case existence conclusion. -/
+theorem weightedGMOExistenceConclusion_card_of_bottomStabilizer_of_singletonsAtMost
+    {W : Set ℤ} (hW : W.Nonempty) (xs : List A) (D : ℕ)
+    (hD : IsWeightedDavenportConstant W A D)
+    (hlen : Nat.card A + D - 1 ≤ xs.length)
+    (hstab : weightedSpectrumStabilizer W xs (Nat.card A) = ⊥)
+    (hsingle : weightedSingletonOccurrenceCount W xs ≤ D) :
+    WeightedGMOExistenceConclusion W xs (Nat.card A) := by
+  have hfull :=
+    weightedExactSpectrum_card_eq_univ_of_bottomStabilizer_of_singletonsAtMost
+      hW xs D hD hlen hstab hsingle
+  refine ⟨0, ?_⟩
+  rw [← mem_weightedExactSpectrum_iff, hfull]
+  simp
+
 end GaoLean
 
 #print axioms GaoLean.length_add_nonsingletonLayerCount_le_sum_card
@@ -287,3 +332,5 @@ end GaoLean
 #print axioms GaoLean.weightedSingleton_add_weightedNonsingleton
 #print axioms GaoLean.weightedExactSpectrum_eq_univ_of_aperiodic_of_manyNonsingleton
 #print axioms GaoLean.weightedExactSpectrum_card_eq_univ_of_aperiodic_of_singletonsAtMost
+#print axioms GaoLean.weightedExactSpectrum_card_eq_univ_of_bottomStabilizer_of_singletonsAtMost
+#print axioms GaoLean.weightedGMOExistenceConclusion_card_of_bottomStabilizer_of_singletonsAtMost

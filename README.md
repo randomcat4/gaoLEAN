@@ -39,6 +39,11 @@
   “至少 `|A|-1` 个非单点层”强迫精确谱为全集；
 - 权差与群指数生成的规范模数 `d`、`d`-torsion 核、`dA` 像、
   单点层判据、商层单点化及 `A/A[d] ≃ dA`；
+- 单点层的真实 occurrence 选择、精确计数、`G[d]` 子类型序列与回源嵌入；
+- Step 6 子群/商群临界长度的精确 `Nat.sub` 预算，并显式保留锋利预算所需的
+  `H≠0` 与 `H<G` 条件；
+- 原 GMO Lemma 3.5 的完整 labelled 证书：非平凡 `H≤K`、恰 `|H|-1`
+  个核心层覆盖一个完整 `H`-陪集、保留层统一模 `H` 单点及精确遗漏界；
 - 商群抽取、缺陷修正、平移保持、严格子群下降和同时归纳；
 - 三个 reflection regimes 的上界、标准下界以及最终 Gao 等式；
 - Corollary 6.1 的 homocyclic / elementary-abelian 数值式和 `C₃²` 显式见证。
@@ -54,7 +59,8 @@
 2. 闭合本原权集 aperiodic 分支中“单点层很多”的子群递归；
    “非单点层足够多则谱为全集”、稳定子商群分支和任意非空权集归一化已闭合；
 3. 在 `gcd(W)=1` 下闭合 aperiodic structural alternative；共同陪集算术、Lemma 3.5
-   账本、gcd--torsion 层、商群回升和归纳框架已完成或正在构建；
+   完整证书、gcd--torsion 层、商群回升和归纳框架已完成；剩余是把这些证书
+   组装进 Step 1/Step 6 的强 affine 递归包；
 4. 用一般定理反推/对照已核验的 `W={1}`、`W={±1}` 特化，并重新逐段冷审计。
 
 这部分完成前，准确表述始终是：**论文主结论及其实际调用的两个权重特化已无条件
@@ -76,9 +82,9 @@ lake build GaoFormal.AxiomAudit
 较早的合并工作区记录为默认构建与 `GaoFormal.AxiomAudit` 各 **8820 jobs**、退出码
 均为 0；8820 是历史回执，不应替代当前冷构建数值。
 
-当前一般权重开发分支的服务器集成构建（含 capped-incidence、gcd--torsion 与
-任意权集归一化、occurrence 子序列运输新模块）完成 **8836 jobs**，退出码为 0。
-它是工作分支集成回执，不冒充独立冷克隆验收。
+当前一般权重开发分支的服务器集成构建（含 capped-incidence、gcd--torsion、
+任意权集归一化、occurrence 子序列运输与完整 Lemma 3.5）完成 **8839 jobs**，
+退出码为 0。它是工作分支集成回执，不冒充独立冷克隆验收。
 
 关键端点的 `#print axioms` 只报告 Lean/Mathlib 常规的 `propext`、
 `Classical.choice`、`Quot.sound`（各定理使用其子集），没有 `sorryAx` 或项目自定义
@@ -98,7 +104,7 @@ lake build GaoFormal.AxiomAudit
   Davenport 数据必须同时传递。
 - **源定理范围。** `W={1}`、`W={±1}` 足以闭合本稿主证明，但不能冒充 Theorem 2.2
   对任意非空整数权重集的全称结论；目前最后承重边界是原 GMO 证明 Step 6 的
-  单点层子群递归、Lemma 3.5 最终证书与 Step 1 强递归包。
+  单点层子群递归与 Step 1 强 affine 递归包；Lemma 3.5 本身已经闭合。
 
 仓库还保留了两个重要的负证据：无限循环族否证无条件 raw/padded capacity-entry
 接口，`C₃` 例子否证错误的统一 gap 接口。最终证明没有恢复或改名使用这些错误接口。
