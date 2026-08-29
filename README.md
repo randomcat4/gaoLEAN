@@ -56,6 +56,12 @@
   个核心层覆盖一个完整 `H`-陪集、保留层统一模 `H` 单点及精确遗漏界；
 - 上述 Lemma 3.5 已专门化到真实 weighted occurrence cells，retained/core 都是
   原序列位置选择，不把重复值去重；
+- Step 1 的固定共同中心仿射容器及严格扩张证书：新容器是旧 complete
+  `H`-container 与 outside retained 的真实不交并，带精确基数、完整 lifted-container
+  下界和共同 source/weight 陪集；环境群分支给出 full affine core 或真实 concentration；
+- Step 6 的 primitive aperiodic 诚实装配：full-spectrum、底差分核和顶差分核已闭合；
+  proper nontrivial kernel 下，核预算实际调用严格子群 provider 并回升 exact `|K|`
+  零核，像预算实际调用 occurrence-labelled weighted Lemma 3.5；
 - 商群抽取、缺陷修正、平移保持、严格子群下降和同时归纳；
 - 三个 reflection regimes 的上界、标准下界以及最终 Gao 等式；
 - Corollary 6.1 的 homocyclic / elementary-abelian 数值式和 `C₃²` 显式见证。
@@ -68,12 +74,14 @@
 下一条承重边界不是最终 Gao 装配，而是把 GMO 源定理按正文原量词补齐：
 
 1. ~~定义并冻结 Theorem 2.2 对任意非空 `W : Set ℤ` 的统一 Lean 陈述~~（已完成）；
-2. 把已完成的单点核递归回升、核/像计数分叉和不交选择卷积装配成
-   本原权集 aperiodic prescribed-length 的最终 inhabitant；
-   “非单点层足够多则谱为全集”、稳定子商群分支和任意非空权集归一化已闭合；
+2. 把已完成的 primitive aperiodic kernel-zero-core / range-certificate 分叉接入原文
+   Theorem 1.1 的 overgroup-aware 强归纳状态；full、底核、顶核和 proper-kernel 的
+   真实局部输出均已闭合，但单个 corollary provider 不携带固定 `β`、`H`-full core、
+   周期谱与 small carrier，不能据此偷推最终 `n • β`；
 3. 在 `gcd(W)=1` 下闭合 aperiodic structural alternative；共同陪集算术、Lemma 3.5
-   完整证书、gcd--torsion 层、商群回升和归纳框架已完成；剩余是把这些证书
-   组装进 Step 1/Step 6 的强 affine 递归包；
+   完整证书、gcd--torsion 层、商群回升、Step 1 严格 affine 扩张和归纳框架已完成；
+   剩余是形式化并证明原文式 (3)--(9) 的强递归状态，尤其 `H`-full core、固定
+   `β`、exact-spectrum 周期性和 small carrier `S₀` 等式；
 4. 用一般定理反推/对照已核验的 `W={1}`、`W={±1}` 特化，并重新逐段冷审计。
 
 这部分完成前，准确表述始终是：**论文主结论及其实际调用的两个权重特化已无条件
@@ -96,8 +104,9 @@ lake build GaoFormal.AxiomAudit
 均为 0；8820 是历史回执，不应替代当前冷构建数值。
 
 当前一般权重开发分支的服务器集成构建（含 capped-incidence、gcd--torsion、
-任意权集归一化、occurrence 子序列运输、单点核递归、选择卷积与 weighted
-Lemma 3.5）完成 **8846 jobs**，
+任意权集归一化、occurrence 子序列运输、单点核递归、选择卷积、weighted
+Lemma 3.5、Step 1 affine enlargement 与 primitive Step 6 residual assembly）完成
+**8848 jobs**，
 退出码为 0。它是工作分支集成回执，不冒充独立冷克隆验收。
 
 关键端点的 `#print axioms` 只报告 Lean/Mathlib 常规的 `propext`、
@@ -117,9 +126,10 @@ Lemma 3.5）完成 **8846 jobs**，
 - **递归良基性。** rotation/reflection 两条通道共享严格真子群下降，商群与子群中的
   Davenport 数据必须同时传递。
 - **源定理范围。** `W={1}`、`W={±1}` 足以闭合本稿主证明，但不能冒充 Theorem 2.2
-  对任意非空整数权重集的全称结论；目前最后承重边界是把已经核验的 Step 6
-  单点核递归/核像分叉装配成最终存在性端点，以及 Step 1 强 affine 递归包；
-  Lemma 3.5 本身及其 weighted occurrence 专门化已经闭合。
+  对任意非空整数权重集的全称结论；目前最后承重边界已明确为原文 Theorem 1.1
+  式 (3)--(9) 的 overgroup-aware 强归纳返回值。Step 1 affine enlargement 与 Step 6
+  kernel/range 局部装配已闭合，但弱 corollary provider 丢失固定中心、full core、
+  周期谱和 small carrier，不能直接替代该强状态。
 
 仓库还保留了两个重要的负证据：无限循环族否证无条件 raw/padded capacity-entry
 接口，`C₃` 例子否证错误的统一 gap 接口。最终证明没有恢复或改名使用这些错误接口。

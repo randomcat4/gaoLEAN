@@ -371,6 +371,8 @@ import GaoFormal
 #print axioms GaoLean.generalLemma35Certificate_exists
 #print axioms GaoLean.generalWeightedLemma35Certificate_exists_of_quotient_singleton
 #print axioms GaoLean.generalWeightedLemma35Certificate_exists
+#print axioms GaoLean.generalWeightedStep1EnlargementCertificate_exists
+#print axioms GaoLean.generalWeightedStep1_fullAffineCore_or_concentration
 #print axioms GaoLean.weightedValueBlock_singleton_one
 #print axioms GaoLean.weightedValueBlock_plusMinus
 #print axioms GaoLean.weightedOccurrenceSetpartition_singleton_one
@@ -453,3 +455,7 @@ import GaoFormal
 #print axioms GaoLean.generalWeightedGMOConclusions_of_stabilizerQuotientPackage
 #print axioms GaoLean.generalWeighted_natCard_quotient_lt_of_bot_lt
 #print axioms GaoLean.generalWeightedGMOSourcePackage_of_aperiodicPackages
+#print axioms GaoLean.primitiveAperiodicExistence_or_step6KernelRangeResidual
+#print axioms GaoLean.hasWeightedSumOfCard_zero_of_kernelRecursiveProvider
+#print axioms GaoLean.generalWeightedLemma35Certificate_of_differenceRangeBudget
+#print axioms GaoLean.primitiveAperiodicExistence_or_kernelZeroCore_or_rangeCertificate

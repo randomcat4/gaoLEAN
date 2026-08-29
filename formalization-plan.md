@@ -62,8 +62,10 @@ manuscript Theorem 2.2 in its full source range
     ├── bottom difference-kernel singleton concentration               [CHECKED]
     ├── retained/core occurrence-reserve extraction                    [CHECKED]
     ├── weighted-occurrence specialization of Lemma 3.5                [CHECKED]
-    ├── prescribed-length singleton-layer recursive branch          [OPEN]
-    ├── structural aperiodic/Lemma-3.5 branch under gcd(W)=1       [OPEN]
+    ├── Step-1 fixed-centre affine strict enlargement                   [CHECKED]
+    ├── Step-6 primitive kernel-zero-core/range-certificate split       [CHECKED]
+    ├── Theorem-1.1 overgroup-aware strong recursion state           [OPEN]
+    ├── strong-state induction and corollary extraction              [OPEN]
     └── literal source-statement and paragraph audit               [OPEN]
 ```
 
@@ -119,8 +121,15 @@ full-spectrum branch.  The singleton-kernel subsequence, recursive-witness
 lift, kernel/range count dichotomy, and occurrence-faithful selection
 convolution are also complete.  Remaining boundary: assemble these checked
 components into the primitive-weight unconditional existence provider.  The
-nonprimitive normalization endpoint used by Corollary 1.2 is complete,
-including the zero-generator branch.
+primitive aperiodic split now closes the full-spectrum, bottom-kernel and
+top-kernel branches and converts the remaining proper-kernel count split into
+either a lifted exact-`|K|` zero core or a literal occurrence-labelled
+Lemma-3.5 certificate.  The remaining step is not arithmetic: these local
+outputs must be carried by the source Theorem 1.1 strong affine state, because
+the weaker corollary provider does not preserve the fixed centre, full core,
+periodicity, or small-carrier spectrum identity.  The nonprimitive
+normalization endpoint used by Corollary 1.2 is complete, including the
+zero-generator branch.
 
 Exit criterion: the G1 existence endpoint has an unconditional inhabitant
 and specializes definitionally or by proved transport to the current
@@ -142,8 +151,14 @@ equivalence, quotient singleton layers, and `G/G[d] ≃ dG` are also checked.
 The complete labelled Lemma 3.5 certificate is now checked, including the
 greedy full branch and strict-stabilizer recursive branch, and is specialized
 to literal weighted occurrence cells without deduplicating repeated values.
-Step 1's strong affine package and final assembly of the checked aperiodic
-kernel/range branches are the core left.
+Step 1 now has a fixed-centre affine certificate and a strict enlargement
+certificate whose enlarged occurrence set is the disjoint union of the old
+complete container and the outside retained set, with exact cardinality and
+common source/weight cosets.  What remains is the source-level Theorem 1.1
+state from equations (3)--(9): an `H`-full core of size
+`|H| + D_W(H) - 1`, one fixed `beta`, periodic exact spectrum, and the small
+carrier `S0` spectrum identity.  These fields cannot be recovered from the
+current corollary-level providers after recursion.
 
 Exit criterion: the G1 structural endpoint is unconditional and all
 specialized structural providers are derived from it.
