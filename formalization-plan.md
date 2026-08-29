@@ -65,6 +65,8 @@ manuscript Theorem 2.2 in its full source range
     ├── Step-1 fixed-centre affine strict enlargement                   [CHECKED]
     ├── Step-6 primitive kernel-zero-core/range-certificate split       [CHECKED]
     ├── Theorem-1.1 overgroup-aware strong state/interface          [CHECKED]
+    ├── bottom-overgroup strong-state base case                     [CHECKED]
+    ├── quotient-input transport and cross-type Nat.card induction     [OPEN]
     ├── unconditional strong-state construction/induction             [OPEN]
     └── literal source-statement and paragraph audit               [OPEN]
 ```
@@ -129,7 +131,10 @@ outputs must be carried by the source Theorem 1.1 strong affine state, because
 the weaker corollary provider does not preserve the fixed centre, full core,
 periodicity, or small-carrier spectrum identity.  The nonprimitive
 normalization endpoint used by Corollary 1.2 is complete, including the
-zero-generator branch.
+zero-generator branch.  The bottom-overgroup base is now unconditional and
+constructs every equation-(3)--(9) field from one real occurrence.  The next
+inductive layer must range over quotient *types* and therefore uses
+`Nat.card`, not merely the older fixed-ambient subgroup engine.
 
 Exit criterion: the G1 existence endpoint has an unconditional inhabitant
 and specializes definitionally or by proved transport to the current
@@ -158,7 +163,9 @@ common source/weight cosets.  What remains is the source-level Theorem 1.1
 state from equations (3)--(9): an `H`-full core of size
 `|H| + D_W(H) - 1`, one fixed `beta`, periodic exact spectrum, and the small
 carrier `S0` spectrum identity.  These fields cannot be recovered from the
-current corollary-level providers after recursion.
+current corollary-level providers after recursion.  The bottom-overgroup
+instance of this state is checked without a provider; the remaining problem
+is the nontrivial cross-type quotient step and the full-core seed/extension.
 
 Exit criterion: the G1 structural endpoint is unconditional and all
 specialized structural providers are derived from it.

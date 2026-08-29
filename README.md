@@ -64,7 +64,9 @@
   零核，像预算实际调用 occurrence-labelled weighted Lemma 3.5；
 - 原文 Theorem 1.1 式 (3)--(9) 的 overgroup-aware 强状态已逐字段冻结，并证明
   core 内 exact `|H|` 谱确为 `|H|β+H`、式 (8) 推出真实 exact `nβ` witness；
-  该结构只定义待证目标，条件 StepInterface/Engine 不计作无条件构造；
+  该结构只定义待证目标，条件 StepInterface/Engine 不计作无条件构造；平凡 overgroup
+  基例已无条件构造：从真实 occurrence 取一项作为 core/small，并直接证明式 (3)--(9)
+  的全部陪集、基数、周期谱与 small-spectrum 等式；
 - 商群抽取、缺陷修正、平移保持、严格子群下降和同时归纳；
 - 三个 reflection regimes 的上界、标准下界以及最终 Gao 等式；
 - Corollary 6.1 的 homocyclic / elementary-abelian 数值式和 `C₃²` 显式见证。
@@ -80,7 +82,8 @@
 2. 把已完成的 primitive aperiodic kernel-zero-core / range-certificate 分叉接入原文
    Theorem 1.1 的 overgroup-aware 强归纳状态；full、底核、顶核和 proper-kernel 的
    真实局部输出均已闭合，但单个 corollary provider 不携带固定 `β`、`H`-full core、
-   周期谱与 small carrier，不能据此偷推最终 `n • β`；
+   周期谱与 small carrier，不能据此偷推最终 `n • β`；平凡群基例已经闭合，当前
+   承重接口是商群输入运输与按 `Nat.card` 的跨类型强归纳，而非固定环境群递归；
 3. 在 `gcd(W)=1` 下闭合 aperiodic structural alternative；共同陪集算术、Lemma 3.5
    完整证书、gcd--torsion 层、商群回升、Step 1 严格 affine 扩张和归纳框架已完成；
    剩余是形式化并证明原文式 (3)--(9) 的强递归状态，尤其 `H`-full core、固定
@@ -109,7 +112,7 @@ lake build GaoFormal.AxiomAudit
 当前一般权重开发分支的服务器集成构建（含 capped-incidence、gcd--torsion、
 任意权集归一化、occurrence 子序列运输、单点核递归、选择卷积、weighted
 Lemma 3.5、Step 1 affine enlargement 与 primitive Step 6 residual assembly）完成
-**8848 jobs**，
+**8850 jobs**，
 退出码为 0。它是工作分支集成回执，不冒充独立冷克隆验收。
 
 关键端点的 `#print axioms` 只报告 Lean/Mathlib 常规的 `propext`、
@@ -132,7 +135,8 @@ Lemma 3.5、Step 1 affine enlargement 与 primitive Step 6 residual assembly）�
   对任意非空整数权重集的全称结论；目前最后承重边界已明确为原文 Theorem 1.1
   式 (3)--(9) 的 overgroup-aware 强归纳返回值。Step 1 affine enlargement 与 Step 6
   kernel/range 局部装配已闭合，但弱 corollary provider 丢失固定中心、full core、
-  周期谱和 small carrier，不能直接替代该强状态。
+  周期谱和 small carrier，不能直接替代该强状态。平凡 overgroup 的强状态已从
+  occurrence 数据无条件构造；非平凡支仍须在商群这一新类型上调用严格群阶归纳。
 
 仓库还保留了两个重要的负证据：无限循环族否证无条件 raw/padded capacity-entry
 接口，`C₃` 例子否证错误的统一 gap 接口。最终证明没有恢复或改名使用这些错误接口。

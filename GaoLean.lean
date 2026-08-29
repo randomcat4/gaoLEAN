@@ -92,6 +92,7 @@ import GaoLean.PGGMOGeneralLemma35Core
 import GaoLean.PGGeneralWeightedLemma35
 import GaoLean.PGGeneralWeightedStep1Affine
 import GaoLean.PGGeneralWeightedStrongRecursionState
+import GaoLean.PGGeneralWeightedStrongRecursionBase
 import GaoLean.PGGeneralWeightedSpecializations
 import GaoLean.PGGeneralWeightedDavenport
 import GaoLean.PGGeneralWeightedDavenportMinimum

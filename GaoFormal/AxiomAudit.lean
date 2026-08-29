@@ -463,3 +463,6 @@ import GaoFormal
 #print axioms GaoLean.hasWeightedSumOfCard_zero_of_kernelRecursiveProvider
 #print axioms GaoLean.generalWeightedLemma35Certificate_of_differenceRangeBudget
 #print axioms GaoLean.primitiveAperiodicExistence_or_kernelZeroCore_or_rangeCertificate
+#print axioms GaoLean.isWeightedDavenportConstant_one_of_subsingleton
+#print axioms GaoLean.weightedExactSpectrum_eq_singleton_of_weightedValue_eq
+#print axioms GaoLean.generalWeightedStrongRecursionAt_bot
