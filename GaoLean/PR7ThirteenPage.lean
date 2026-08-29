@@ -16,10 +16,20 @@ prime characteristic and every exact ordinary Davenport value `D`, the exact
 Gao threshold is `2 * |A| + D`, with an occurrence-labelled block of literal
 cardinality `2 * |A|`.
 
-The displayed invariant-factor formula is now proved internally through
-Olson's theorem.  The equality with the small Davenport constant is also
-proved internally, by an occurrence-labelled path-boundary proof of the
-Godara--Joshi--Mazumdar theorem.  The remaining source boundary is GMO.
+The displayed invariant-factor formula is proved internally through Olson's
+theorem.  The equality with the small Davenport constant is also proved
+internally, by an occurrence-labelled path-boundary proof of the
+Godara--Joshi--Mazumdar theorem.  The ordinary `W={1}` and signed `W={+1,-1}`
+GMO specializations used by the main proof are discharged unconditionally in
+later modules, culminating in `ConcreteGDihedral.pr7ThirteenPageMain`.
+
+This frozen core is deliberately narrower than a line-by-line formalization
+of every auxiliary manuscript theorem.  In particular, the source form of
+Theorem 2.2 quantifies over an arbitrary nonempty integer weight set `W`, and
+its structural clause assumes `gcd(W)=1`.  That full general-weight statement
+is not represented by this definition or by the two special-purpose
+providers.  Thus the main Gao theorem is unconditional, while the manuscript
+as a whole remains only partially verified until that source range is added.
 -/
 
 namespace GaoLean
@@ -32,11 +42,14 @@ def PR7ThirteenPageMainStatement : Prop :=
 
 namespace ConcreteGDihedral
 
-/-- Checked conditional assembly of the exact 13-page paper statement.
+/-- Historical conditional assembly of the exact 13-page main statement.
 
-The premise is deliberately visible.  It includes all source-facing
-statements that have not yet been proved locally, so the result has status
-`LEAN_CONDITIONAL`, not `LEAN_FULLY_CHECKED`. -/
+The premise is deliberately visible.  This theorem remains useful as a
+layered API and records the former proof boundary.  It must not be read as the
+current final status: `PGGaoOrdinaryComplete` later supplies the remaining
+specialized providers and proves `ConcreteGDihedral.pr7ThirteenPageMain`
+without this premise.  Conversely, that unconditional main endpoint does not
+by itself formalize Theorem 2.2 for arbitrary integer weight sets. -/
 theorem pr7ThirteenPageMain_of_remainingInputs
     (hremaining : PGGaoStructuralRemainingInputs.{u}) :
     PR7ThirteenPageMainStatement.{u} := by

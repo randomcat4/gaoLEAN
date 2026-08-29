@@ -9,6 +9,9 @@
 - 正文：`paper/arxiv/main.tex` 与 `paper/arxiv/sections/*.tex`
 - 构建回执：13 页
 
+当前整篇裁决：`PARTIALLY_VERIFIED`。下列状态词只评价所在行，不能把某个主定理行的
+`FULLY_CHECKED` 提升为整篇逐命题完全覆盖。
+
 状态词：
 
 - `FULLY_CHECKED`：正文冻结结论由无条件 Lean 端点直接实现；
@@ -28,8 +31,8 @@
 | §2 sequence semantics | 按位置选择、重复值保持、可重排积一 | `Sequence`, `Ordering`, `OccurrenceOrdering` | `CHECKED` |
 | §2 group law | 广义二面体乘法、rotation/reflection | `GDihedral`, `ConcreteGDihedral` | `CHECKED` |
 | Lemma 2.1 | 平衡反射符号与任意旋转符号的排序实现 | `PGReflectionOrdering`; `PGReflectionPairs` | `CHECKED`；保持 occurrence 标签与精确重数 |
-| Theorem 2.2 existence clause | GMO prescribed-length existence | `ordinaryGMOPrescribedLengthProvider_of_canonicalDStar`; `oddPlusMinusGMOProviders_for_finalAssembly_of_doubleInduction` | `CHECKED`；普通支由 canonical `d*` target induction，signed 支由 General-DGM 双归纳给出 |
-| Theorem 2.2 structural clause | full spectrum / common-coset concentration | `ordinaryGMOStructuralProvider_of_oddPrimePGroup`; `ordinaryGMOStructuralProvider_addSubgroup_of_oddPrimePGroup`; `oddPlusMinusGMOProviders_for_finalAssembly_of_doubleInduction` | `CHECKED`；共同陪集 occurrence 语义与所有子群继承均显式保留 |
+| Theorem 2.2 existence clause | 任意非空 `W : Set ℤ` 的 GMO prescribed-length existence | `GeneralWeightedGMOExistenceProvider`; `weightedDavenportValue_spec`; `weightedGMOExistenceConclusion_of_stabilizerQuotientProvider`; `generalWeightedGMOSourcePackage_of_aperiodicPackages`; `weightedExactSpectrum_card_eq_univ_of_aperiodic_of_singletonsAtMost`; `generalWeightedGMOExistenceProvider_of_primitiveProviders` | `PARTIAL`；原文任意（包括无限）非空 `W` 的精确接口、DGM/Davenport/商群与归纳基础、非周期“单点层至多 D 则谱为全集”，以及任意权集到本原权集的完整存在性归一化均已机械核验；仍缺本原权集下单点层很多时的子群递归，故还没有无条件统一 inhabitant；`W={1}` 与 `W={±1}` 特化仍已无条件构造 |
+| Theorem 2.2 structural clause | `gcd(W)=1` 下的 full spectrum / common-coset concentration | `GeneralWeightedGMOStructuralProvider`; `WeightedGMOConcentration`; `sub_mem_addSubgroup_of_common_weightCoset`; `weightedGMOStructuralConclusion_of_stabilizerQuotientProvider`; `generalWeightedGMOSourcePackage_of_aperiodicPackages`; `weightedDifferenceQuotientEquivRange`; `weightedBaseWeightKernelHom_injective` | `PARTIAL`；逐字全范围接口、共同源/权值陪集、真子群商群回升、群阶归纳及 Step 3 的 gcd--torsion 算术已核验；原 Lemma 3.5 最终证书、Step 1 强包和 trivial-stabilizer 子群递归仍在闭合，不能把基础设施冒充完整定理 |
 | Proposition 2.3 | 标准下界与单位元 padding | `PGDavenportBridge`; `PGLowerBound`; `PGSynthesis` | `CHECKED`，由 ordinary Davenport witness 内部构造 |
 | Lemma 2.4 | identity padding | `PGBase.exists_zeroCore_of_smallDavenport`; `PGGJM`; 两个 bot controller 基例 | `CHECKED`；GJM 上界已由 ordinary Davenport 常数内部供给 |
 | Proposition 3.1 statement | `D_pm(B) <= (D(B)+1)/2` | `PGOlson.plusMinusDavenportAtMost_half_of_isPGroup` | `CHECKED`；对任意有限阿贝尔奇 `p` 群与其精确 ordinary Davenport 常数直接导出半界 |
@@ -60,15 +63,22 @@
 ## 当前严格裁决
 
 13 页稿的 occurrence 语义、广义二面体排序、三个反射区间、商群抽取、缺陷修正、
-平移保持、严格同时下降、ordinary/signed GMO 与最终装配现均有实质 Lean 覆盖。
-公开最终端点是 `GaoLean.ConcreteGDihedral.pr7ThirteenPageMain`；它直接证明冻结的
-`PR7ThirteenPageMainStatement`，没有 remaining-input、provider 或递归结论参数。
+平移保持、严格同时下降、主证明所用 ordinary/signed GMO 特化与最终装配均有实质
+Lean 覆盖。公开最终端点是 `GaoLean.ConcreteGDihedral.pr7ThirteenPageMain`；它直接
+证明冻结的 `PR7ThirteenPageMainStatement`，没有 remaining-input、provider 或递归
+结论参数。因此**主 Gao 结论本身已无条件核验**。
 
 此前两轮独立审计发现并保留的自然数截断、人工 padding、标签不交、错误 raw
-capacity/gap 接口等证据没有删除；最终闭合走的是 canonical `d*` target induction、
-canonical subgroup extension 与已证明的 signed General-DGM provider 路线，不依赖
-那些被证否的接口。当前准确裁决为该 13 页基准 `LEAN_FULLY_CHECKED`。
+capacity/gap 接口等证据没有删除；最终主结论闭合走的是 canonical `d*` target
+induction、canonical subgroup extension 与已证明的 signed General-DGM provider
+路线，不依赖那些被证否的接口。
+
+但是，正文 Theorem 2.2 的量词是任意非空 `W : Set ℤ`，结构部分还要求
+`gcd(W)=1`。现有端点只覆盖主证明实际需要的 `W={1}` 与 `W={±1}`，不能冒充这一
+一般权重定理的完整形式化。故当前整篇准确裁决为 `PARTIALLY_VERIFIED`，而不是
+`LEAN_FULLY_CHECKED`。
 `pr7ThirteenPageMain` 是核心冻结阈值端点；正文的完整显示式由它与 Olson、GJM、
 无条件 Corollary 6.1、`C₃²` 独立端点共同覆盖，并不声称单一端点逐字包含全部
-显示公式。两名全新独立审计员对 `61906ee` 均给出 0 blocking / 0 major；补丁
-`a1b055a` 的增量复核为 0 blocking / 0 major / 0 minor，主实例复查通过。
+显示公式。早期两名独立审计员对已实现主线没有给出 blocking/major 问题；后续
+独立冷审计进一步检查正文全范围后，以一般权重 Theorem 2.2 未覆盖为由给出
+`PARTIALLY_VERIFIED`。后者是当前整篇裁决。
