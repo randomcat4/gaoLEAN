@@ -1,0 +1,93 @@
+\section{Introduction}\label{sec:introduction}
+
+Let \(G\) be a finite group. Its \emph{Gao constant} \(\E(G)\) is the
+least integer \(L\) such that every sequence of length at least \(L\)
+over \(G\) contains a subsequence of exactly \(|G|\) terms that can be
+ordered to have product one. The small Davenport constant
+\(\dsmall(G)\) is the largest length of a sequence over \(G\) having no
+nonempty product-one subsequence. The standard padding construction
+gives
+\[
+  \E(G)\ge |G|+\dsmall(G).
+\]
+For finite abelian groups, Gao proved equality
+\cite{Gao1996}. Zhuang and Gao conjectured that the same equality holds
+for every finite group \cite{ZhuangGao2005}. It is known for ordinary
+dihedral groups; see \cite{ZhuangGao2005,Bass2007,GaoLu2008}. Exact
+calculations for other nearby nonabelian families include
+\(D_{2n}\times C_2\) \cite{BrocheroLemosMoriyaRibas2023}.
+
+Let \(p\) be an odd prime, let
+\[
+  A=\bigoplus_{i=1}^{r} C_{p^{\lambda_i}},
+  \qquad 1\le \lambda_1\le\cdots\le\lambda_r,
+\]
+and write
+\[
+  \Dih(A)=A\rtimes_{-1}C_2,
+\]
+where the nonidentity element of \(C_2\) acts on \(A\) by inversion.
+Our main result is the following.
+
+\begin{theorem}\label{thm:main}
+Let \(Q=|A|\). Then
+\[
+  \E(\Dih(A))=2Q+\D(A)
+  =2Q+1+\sum_{i=1}^{r}\bigl(p^{\lambda_i}-1\bigr).
+\]
+Equivalently,
+\[
+  \E(\Dih(A))=|\Dih(A)|+\dsmall(\Dih(A)).
+\]
+\end{theorem}
+
+The equivalence uses the identity
+\(\dsmall(\Dih(A))=\D(A)\) of Godara, Joshi, and Mazumdar
+\cite{GodaraJoshiMazumdar2026}. Their work also gives the upper bound
+\(\E(\Dih(A))\le 3|A|\). When \(A\) is cyclic, this upper bound meets
+the standard lower bound and recovers the known dihedral formula. For a
+noncyclic abelian \(p\)-group one has \(\D(A)<|A|\), so that bound does
+not determine the exact value. More recently, Zhao and Wang proved a
+uniform \(3|G|/2\) bound for noncyclic groups whose order is not
+divisible by four, together with an equality characterization
+\cite{ZhaoWang2027}. Applied here, their result gives a strict upper
+bound below \(3|A|\) when \(A\) is noncyclic, but it still does not give
+the value in \Cref{thm:main}.
+
+The theorem extends the cyclic-kernel formula to all invariant-factor
+decompositions of finite abelian \(p\)-groups with \(p\) odd.
+
+\begin{example}\label{ex:C3square}
+Let \(A=C_3^2\), with basis \(e_1,e_2\). Then \(|A|=9\) and
+\(\D(A)=5\), so \Cref{thm:main} gives
+\[
+  \E(\Dih(C_3^2))=23.
+\]
+The lower bound can be seen explicitly. Take two copies of the rotation
+\((e_1,0)\), two copies of \((e_2,0)\), and one reflection. This
+five-term sequence is product-one-free: a product-one subsequence has an
+even number of reflections, while the four rotations form a zero-sum-free
+sequence in \(C_3^2\). Appending seventeen identity rotations gives a
+sequence of length \(22\) with no product-one subsequence of length
+\(18\).
+\end{example}
+
+We outline the upper bound. Let \(S\) have length
+\(2|A|+\D(A)\), and let \(a\) be its number of reflections. If
+\(a\le 1\), there are enough rotations to apply an unweighted
+prescribed-length zero-sum theorem. If \(a\ge \D(A)+1\), pairing terms
+within the two cosets reduces the problem to a plus-minus weighted
+zero-sum problem in \(A\). In the intermediate range, the structural
+alternative in a theorem of Grynkiewicz, Marchan, and Ordaz
+\cite{GrynkiewiczMarchanOrdaz2012} either produces the desired
+subsequence or shows that many rotations lie in a proper subgroup
+\(K<A\). The latter situation is resolved by simultaneous induction on
+\(|K|\). The auxiliary induction statement is needed because one branch
+translates all rotation vectors; only an all-rotation conclusion can be
+pulled back through that translation without changing the product-one
+condition.
+
+The proof uses Olson's formula for the Davenport constant of an abelian
+\(p\)-group and a plus-minus argument over a field of odd
+characteristic. We do not treat mixed-prime kernels or \(2\)-groups in
+this paper.

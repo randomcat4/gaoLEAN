@@ -1,0 +1,62 @@
+\section{A plus-minus Davenport bound}\label{sec:plus-minus}
+
+The plus-minus Davenport constant has been studied systematically; see,
+for example, \cite{MarchanOrdazSchmid2014}. We need an estimate expressed
+in terms of the ordinary Davenport constant. The estimate below is
+known, but we include a short group-algebra proof because this precise
+form is used in each signed prescribed-length argument.
+
+\begin{proposition}\label{prop:plus-minus-bound}
+Let \(B\) be a nontrivial finite abelian \(p\)-group, where \(p\) is
+odd. Then
+\[
+  \Dpm(B)\le \frac{\D(B)+1}{2}.
+\]
+\end{proposition}
+
+\begin{proof}
+Write
+\[
+  B=\bigoplus_{i=1}^s C_{p^{\mu_i}},
+  \qquad r_i=p^{\mu_i},
+  \qquad D_B=\D(B)=1+\sum_{i=1}^s(r_i-1).
+\]
+Work in the group algebra \(R=\mathbb F_p[B]\), write \([x]\) for the
+basis element indexed by \(x\in B\), and let \(I\) be the augmentation
+ideal. If \(f_i\) is an invariant-factor generator and
+\(y_i=[f_i]-[0]\), then
+\[
+  y_i^{r_i}=([f_i]-[0])^{r_i}=[r_if_i]-[0]=0.
+\]
+The resulting homomorphism
+\[
+  \mathbb F_p[y_1,\ldots,y_s]/(y_1^{r_1},\ldots,y_s^{r_s})
+  \longrightarrow R
+\]
+is surjective, and both sides have dimension \(|B|\). It is therefore
+an isomorphism. Every monomial of total degree at least \(D_B\)
+vanishes, so
+\begin{equation}\label{eq:augmentation-nilpotence}
+  I^{D_B}=0.
+\end{equation}
+
+The number \(D_B\) is odd. Put \(m=(D_B+1)/2\), and take arbitrary
+terms \(x_1,\ldots,x_m\in B\). For every \(j\),
+\[
+  [x_j]+[-x_j]-2[0]
+  =[-x_j]([x_j]-[0])^2\in I^2.
+\]
+Hence the product of these \(m\) elements lies in
+\(I^{2m}=I^{D_B+1}=0\). The coefficient of \([0]\) in its expansion is
+\[
+  \sum_{\substack{\varepsilon\in\{-1,0,1\}^m\\
+                   \sum_j\varepsilon_jx_j=0}}
+       (-2)^{|\{j:\varepsilon_j=0\}|}.
+\]
+If the sequence \(x_1\cdot\ldots\cdot x_m\) had no nonempty
+plus-minus zero-sum subsequence, the only contributing vector would be
+\(\varepsilon=0\). The displayed coefficient would then be
+\((-2)^m\ne0\) in \(\mathbb F_p\), contradicting the vanishing of the
+product. Thus every sequence of length \(m\) has a nonempty plus-minus
+zero-sum subsequence.
+\end{proof}

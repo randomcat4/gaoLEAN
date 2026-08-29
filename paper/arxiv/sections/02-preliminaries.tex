@@ -1,0 +1,182 @@
+\section{Preliminaries}\label{sec:preliminaries}
+
+A sequence over a set \(X\) is an element of the free abelian monoid
+\(\F(X)\). We write it multiplicatively, even when \(X\) is an
+additively written group. Thus
+\[
+  S=x_1\cdot\ldots\cdot x_\ell,
+  \qquad |S|=\ell.
+\]
+Subsequences are selected by positions, so equal values occurring in
+different positions remain available separately. We write \(T\mid S\)
+when \(T\) is a subsequence and \(ST^{-1}\) for the complementary
+sequence. A sequence over a group is \emph{product one} if its terms can
+be ordered so that their product is the identity.
+
+For an abelian group \(B\), the Davenport constant \(\D(B)\) is the
+least integer \(L\) such that every sequence of length \(L\) over
+\(B\) has a nonempty zero-sum subsequence. Thus
+\(\D(B)=\dsmall(B)+1\). If \(W\subseteq\mathbb Z\) is nonempty, the
+weighted Davenport constant \(\D_W(B)\) is defined analogously, with a
+coefficient from \(W\) assigned to each selected term. We write
+\[
+  \Dpm(B)=\D_{\{-1,1\}}(B).
+\]
+
+Throughout the paper, set
+\[
+  q_i=p^{\lambda_i},\qquad
+  Q=|A|=\prod_{i=1}^r q_i,
+  \qquad
+  D_A=\D(A)=1+\sum_{i=1}^r(q_i-1).
+\]
+The formula for \(D_A\) is Olson's theorem
+\cite{Olson1969}. In particular,
+\begin{equation}\label{eq:basic-A-facts}
+  D_A\le Q,
+  \qquad \exp(A)\mid Q,
+  \qquad D_A\ \text{and}\ Q\ \text{are odd}.
+\end{equation}
+The first inequality follows by expanding
+\(Q=\prod_i(1+(q_i-1))\).
+
+We represent elements of \(G=\Dih(A)\) as pairs
+\((x,\varepsilon)\in A\times C_2\), with multiplication
+\begin{equation}\label{eq:group-law}
+  (x,\varepsilon)(y,\delta)
+  =\bigl(x+(-1)^\varepsilon y,\,\varepsilon+\delta\bigr).
+\end{equation}
+Elements \((x,0)\) are called \emph{rotations}, and elements
+\((x,1)\) are called \emph{reflections}.
+
+\subsection{Realizing prescribed signs}
+
+The next elementary lemma is the bridge between weighted sums in \(A\)
+and product-one subsequences in \(G\).
+
+\begin{lemma}[Realization of prescribed signs]\label{lem:sign-realization}
+Suppose a selected sequence contains \(2k>0\) reflections and any
+number of rotations. Assign signs from \(\{+1,-1\}\) to the terms so
+that exactly \(k\) reflections receive each sign; the signs on the
+rotations are arbitrary. Then the terms can be ordered so that their
+contributions to the \(A\)-coordinate in \eqref{eq:group-law} have the
+assigned signs. Consequently, if the assigned signed vector sum is
+zero, the selected sequence is product one.
+
+If a selected sequence contains no reflections, it is product one if
+and only if the sum of its rotation vectors is zero.
+\end{lemma}
+
+\begin{proof}
+Place the positively and negatively signed reflections alternately,
+starting with a positive one. In any ordered product, a term contributes
+its vector with sign \((-1)^t\), where \(t\) is the number of preceding
+reflections. Hence the chosen reflection ordering realizes the prescribed
+alternating signs.
+
+The \(2k\) reflections determine \(2k+1\) gaps: one before the first
+reflection, one after the last, and one between each consecutive pair.
+A rotation inserted in a gap preceded by an even number of reflections
+has sign \(+1\); in a gap preceded by an odd number it has sign \(-1\).
+Since \(k\ge1\), gaps of both parities occur, and any number of rotations
+can be inserted in either type of gap. This realizes all prescribed
+rotation signs. The total number of reflections is even, so the
+\(C_2\)-coordinate is zero; the \(A\)-coordinate is the prescribed
+signed sum.
+\end{proof}
+
+\subsection{Prescribed-length weighted sums}
+
+For a sequence \(T\) over a finite abelian group \(B\), a nonempty
+weight set \(W\subseteq\mathbb Z\), and an integer \(n\le |T|\), let
+\[
+  \Sigma_n^W(T)
+  =\left\{
+      \sum_{j=1}^n w_jt_j:
+      t_1,\ldots,t_n\text{ occur in distinct positions of }T,
+      \ w_j\in W
+    \right\}.
+\]
+For an integer \(n\), write \(nB=\{nx:x\in B\}\).
+We use the following two corollaries of Grynkiewicz, Marchan, and Ordaz
+\cite[Corollaries 1.2 and 1.3]{GrynkiewiczMarchanOrdaz2012}.
+
+\begin{theorem}[Grynkiewicz--Marchan--Ordaz]\label{thm:GMO}
+Let \(B\) be a finite abelian group, let \(W\subseteq\mathbb Z\) be
+nonempty, let \(T\) be a sequence over \(B\), and let \(n\ge |B|\).
+If
+\[
+  |T|\ge n+\D_W(B)-1,
+\]
+then
+\begin{equation}\label{eq:GMO-existence}
+  \Sigma_n^W(T)\cap nB\ne\varnothing.
+\end{equation}
+If, in addition, \(\gcd(W)=1\), then either
+\begin{equation}\label{eq:GMO-full}
+  \Sigma_n^W(T)=B,
+\end{equation}
+or there exist a proper subgroup \(H<B\), elements
+\(\alpha,\beta\in B\), and a subsequence \(T'\mid T\) such that
+\begin{equation}\label{eq:GMO-concentration}
+  |T'|\ge |T|-|B/H|+2,
+  \qquad
+  \supp(T')\subseteq \alpha+H,
+\end{equation}
+and
+\begin{equation}\label{eq:GMO-weight-coset}
+  W x\subseteq\beta+H
+  \quad\text{for every }x\in\supp(T').
+\end{equation}
+\end{theorem}
+
+Two specializations will be used repeatedly. For \(W=\{1\}\), one has
+\(\D_W(B)=\D(B)\). For \(W=\{-1,1\}\), condition
+\eqref{eq:GMO-weight-coset} says that \(x\) and \(-x\) lie in the same
+\(H\)-coset for every term of \(T'\). Thus \(2x\in H\); if \(B/H\)
+has odd order, this implies \(x\in H\).
+
+The other external input is the following consequence of
+\cite[Theorem 1.1]{GodaraJoshiMazumdar2026}:
+\begin{equation}\label{eq:small-Davenport-dihedral}
+  \dsmall(\Dih(B))=\D(B)
+  \qquad\text{for every finite abelian group }B.
+\end{equation}
+
+\subsection{The lower bound and identity padding}
+
+\begin{proposition}\label{prop:lower-bound}
+For \(G=\Dih(A)\),
+\[
+  \E(G)\ge 2Q+D_A.
+\]
+\end{proposition}
+
+\begin{proof}
+By \eqref{eq:small-Davenport-dihedral}, there is a product-one-free
+sequence \(U\) over \(G\) of length \(D_A\). Append \(2Q-1\) copies
+of the identity. Every subsequence of length \(2Q\) uses a nonempty
+part of \(U\). If such a subsequence were product one, deleting the
+identity terms from a product-one ordering would give a nonempty
+product-one subsequence of \(U\), a contradiction.
+\end{proof}
+
+\begin{lemma}[Identity padding]\label{lem:identity-padding}
+Let \(Y\) be a sequence over \(G\) of length \(2Q+D_A\). If at least
+\(D_A\) terms of \(Y\) are the identity rotation, then \(Y\) contains
+a product-one subsequence of length \(2Q\).
+\end{lemma}
+
+\begin{proof}
+Let \(m_0\) be the number of identity rotations. From the sequence of
+all nonidentity terms, successively remove nonempty product-one
+subsequences until the remainder \(R\) is product-one-free. Let \(P\)
+be the union of the removed subsequences. Concatenating one product-one
+ordering for each removed block makes \(P\) product one. By
+\eqref{eq:small-Davenport-dihedral}, \(|R|\le D_A\), and hence
+\[
+  |P|=(2Q+D_A-m_0)-|R|\ge 2Q-m_0.
+\]
+Since \(m_0\ge D_A\), also \(|P|\le 2Q\). Therefore at most \(m_0\)
+unused identity terms are needed to extend \(P\) to length \(2Q\).
+\end{proof}

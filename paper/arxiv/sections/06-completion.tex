@@ -1,0 +1,29 @@
+\section{Completion of the proof}\label{sec:completion}
+
+\begin{proof}[Proof of \Cref{thm:main}]
+The lower bound is \Cref{prop:lower-bound}. For the upper bound, let
+\(S\) be a sequence of length \(2Q+D_A\), and let \(a\) be its number
+of reflections. If \(a\le1\), apply \Cref{prop:few-reflections}. If
+\(a\ge D_A+1\), apply \Cref{prop:many-reflections}. In the remaining
+range \(2\le a\le D_A\), \Cref{prop:middle-reduction} either gives the
+required subsequence directly or yields a nonzero proper subgroup
+\(K<A\) satisfying the hypothesis of \(\mathcal P_S(K)\).
+\Cref{thm:subgroup-descent} then gives a product-one subsequence of
+length \(2Q=|G|\). Hence \(\E(G)\le2Q+D_A\), and equality follows.
+\end{proof}
+
+\begin{corollary}\label{cor:homocyclic}
+If \(A=C_{p^k}^r\), where \(p\) is odd, then
+\[
+  \E(\Dih(A))=2p^{kr}+r(p^k-1)+1.
+\]
+In particular,
+\[
+  \E(\Dih(C_p^r))=2p^r+r(p-1)+1.
+\]
+\end{corollary}
+
+\begin{proof}
+Substitute \(|A|=p^{kr}\) and
+\(\D(C_{p^k}^r)=1+r(p^k-1)\) in \Cref{thm:main}.
+\end{proof}

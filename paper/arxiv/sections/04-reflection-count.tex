@@ -1,0 +1,135 @@
+\section{Reduction by the number of reflections}\label{sec:reflection-count}
+
+Let \(S\) be an arbitrary sequence over \(G=\Dih(A)\) of length
+\begin{equation}\label{eq:ambient-length}
+  |S|=2Q+D_A.
+\end{equation}
+Let \(a\) be the number of reflections in \(S\), and put
+\[
+  b=2Q+D_A-a
+\]
+for the number of rotations. For a subgroup \(K\le A\) and a sequence
+\(Y\) over \(G\), let \(m_K(Y)\) denote the number of rotations
+\((x,0)\) of \(Y\) with \(x\in K\).
+
+\subsection{At most one reflection}
+
+\begin{proposition}\label{prop:few-reflections}
+If \(a\le1\), then \(S\) contains a product-one subsequence of length
+\(2Q\) consisting entirely of rotations.
+\end{proposition}
+
+\begin{proof}
+There are at least
+\[
+  b\ge 2Q+D_A-1=2Q+\D(A)-1
+\]
+rotations. Apply \Cref{thm:GMO}, in its existence form
+\eqref{eq:GMO-existence}, to the rotation sequence over \(A\), with
+weight set \(\{1\}\) and target \(n=2Q\). The target satisfies
+\(2Q\ge |A|\), and the displayed inequality is the required length
+hypothesis. Since \(\exp(A)\mid Q\), one has \(2QA=\{0\}\). Thus
+there are exactly \(2Q\) rotations with ordinary sum zero.
+\end{proof}
+
+\subsection{Many reflections}
+
+\begin{proposition}\label{prop:many-reflections}
+If \(a\ge D_A+1\), then \(S\) contains a product-one subsequence of
+length \(2Q\).
+\end{proposition}
+
+\begin{proof}
+Pair reflections with reflections and rotations with rotations. Since
+\(2Q+D_A\) is odd, exactly one term is left unpaired, and the number of
+pairs is
+\[
+  \left\lfloor\frac a2\right\rfloor
+  +\left\lfloor\frac b2\right\rfloor
+  =Q+\frac{D_A-1}{2}.
+\]
+Assign to a reflection pair \((x,1)\cdot(y,1)\) the label \(x-y\), and
+to a rotation pair \((u,0)\cdot(v,0)\) the label \(u+v\). By
+\Cref{prop:plus-minus-bound}, the sequence of pair labels has length at
+least
+\[
+  Q+\Dpm(A)-1.
+\]
+Apply \eqref{eq:GMO-existence} in \(A\), with weight set
+\(\{-1,1\}\) and target \(Q=|A|\). Since \(QA=\{0\}\), we obtain
+exactly \(Q\) pairs and a sign for each selected pair such that the
+signed sum of their labels is zero.
+
+At most \(\lfloor b/2\rfloor\le Q-1\) of all pairs are rotation pairs,
+because \(a\ge D_A+1\). Hence at least one selected pair is a
+reflection pair. For a reflection pair with selected weight
+\(\varepsilon\), assign signs \(\varepsilon\) and \(-\varepsilon\)
+to its two reflections. For a rotation pair, assign the selected weight
+to both rotations. The selected reflection signs are balanced, and the
+total signed vector sum is zero. By \Cref{lem:sign-realization}, the
+\(2Q\) selected terms have a product-one ordering.
+\end{proof}
+
+\subsection{The intermediate range}
+
+Assume now that
+\begin{equation}\label{eq:middle-range}
+  2\le a\le D_A.
+\end{equation}
+Let \(e\) be the largest even integer not exceeding \(a\), and put
+\begin{equation}\label{eq:middle-target}
+  \ell=2Q-e.
+\end{equation}
+Then \(e>0\), \(\ell\ge Q\), and \(\ell\le b\). Moreover,
+\begin{equation}\label{eq:middle-surplus}
+  b-\ell=
+  \begin{cases}
+    D_A,& a\text{ even},\\
+    D_A-1,& a\text{ odd},
+  \end{cases}
+  \qquad
+  b-\ell\ge \Dpm(A)-1.
+\end{equation}
+Indeed, \(e\le D_A\le Q\), and the final inequality follows from
+\Cref{prop:plus-minus-bound}.
+
+\begin{proposition}[Intermediate-range reduction]
+\label{prop:middle-reduction}
+Under \eqref{eq:middle-range}, either \(S\) contains a product-one
+subsequence of length \(2Q\), or there is a nonzero proper subgroup
+\(K<A\) such that
+\begin{equation}\label{eq:concentration-K}
+  m_K(S)\ge b-[A:K]+2.
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Apply the structural part of \Cref{thm:GMO} to the sequence of all
+\(b\) rotation vectors, with ambient group \(A\), weight set
+\(\{-1,1\}\), and target \(\ell\). The target condition
+\(\ell\ge|A|\) and the length surplus are exactly
+\eqref{eq:middle-surplus}.
+
+If \(\Sigma_\ell^{\{-1,1\}}(S_{\rm rot})=A\), select any \(e\)
+reflections and assign half of them each sign. Let their signed vector
+sum be \(t\in A\). Fullness supplies \(\ell\) rotations with a signed
+sum of \(-t\). The two selections are disjoint, and their total length
+is \(e+\ell=2Q\). The sign assignment on the reflections is balanced,
+so \Cref{lem:sign-realization} gives a product-one ordering.
+
+Otherwise, \Cref{thm:GMO} gives a proper subgroup \(K<A\) and a
+rotation subsequence of length at least \(b-[A:K]+2\) satisfying
+\eqref{eq:GMO-weight-coset}. For every one of its values \(x\), the
+elements \(x\) and \(-x\) lie in a common \(K\)-coset. Hence
+\(2x\in K\). Since \(A/K\) has odd order, multiplication by two is
+injective on \(A/K\), and therefore \(x\in K\). This proves
+\eqref{eq:concentration-K}.
+
+It remains to exclude \(K=0\) from the second alternative. In that
+case at least
+\[
+  b-Q+2=Q+D_A-a+2\ge D_A
+\]
+rotations are the identity, so \Cref{lem:identity-padding} gives the
+required subsequence directly.
+\end{proof}

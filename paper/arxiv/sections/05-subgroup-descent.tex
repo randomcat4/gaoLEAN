@@ -1,0 +1,379 @@
+\section{Subgroup descent in the intermediate range}
+\label{sec:subgroup-descent}
+
+Fix, for this section, a sequence \(S\) satisfying
+\eqref{eq:ambient-length} and \eqref{eq:middle-range}; retain its
+reflection and rotation counts \(a,b\). For a sequence \(Y\) over
+\(G\) and a subgroup \(K\le A\), let \(T_K(Y)\) be the sequence over
+\(\Dih(A/K)\) obtained by taking all reflections of \(Y\), together
+with all rotations whose vectors lie outside \(K\), and projecting their
+vectors modulo \(K\). Rotations with vectors in \(K\) are omitted.
+Selections in \(T_K(Y)\) always refer to the corresponding positions of
+\(Y\).
+
+We prove two statements simultaneously. For every proper subgroup
+\(K<A\), let \(\mathcal P_S(K)\) denote the assertion
+\[
+  m_K(S)\ge b-[A:K]+2
+  \quad\Longrightarrow\quad
+  S\text{ has a product-one subsequence of length }2Q.
+\]
+Let \(\mathcal Q(K)\) denote the following universal assertion: every
+sequence \(Y\) over \(G\) of length \(2Q+D_A\), with the same counts
+\(a,b\), has an all-rotation product-one subsequence of length \(2Q\)
+provided that
+\begin{enumerate}
+\item \(m_K(Y)\ge b-[A:K]+2\), and
+\item \(T_K(Y)\) has no product-one subsequence containing a reflection.
+\end{enumerate}
+The all-rotation conclusion is essential because the proof of
+\(\mathcal Q(K)\) translates rotation vectors before descending to a
+smaller subgroup.
+
+\begin{theorem}[Subgroup descent]\label{thm:subgroup-descent}
+For every proper subgroup \(K<A\), both \(\mathcal P_S(K)\) and
+\(\mathcal Q(K)\) hold.
+\end{theorem}
+
+\subsection{Three subgroup estimates}
+
+\begin{lemma}[Davenport inequality]\label{lem:Davenport-inequality}
+For every subgroup \(K\le A\),
+\begin{equation}\label{eq:Davenport-inequality}
+  D_A\ge \D(K)+\D(A/K)-1.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Take a zero-sum-free sequence in \(K\) of length \(\D(K)-1\) and a
+zero-sum-free sequence in \(A/K\) of length \(\D(A/K)-1\), and lift
+the latter arbitrarily to \(A\). A zero-sum subsequence of the
+concatenation would project to a zero-sum subsequence of the quotient
+sequence. It therefore uses no lifted quotient term, after which it
+would be a zero-sum subsequence of the sequence in \(K\). Thus the
+concatenation is zero-sum-free, giving \eqref{eq:Davenport-inequality}.
+\end{proof}
+
+\begin{lemma}[Target-length estimate]\label{lem:target-length}
+Let \(0<K<A\), put \(I=[A:K]\) and \(h=|K|\), so that \(Q=Ih\).
+Then
+\begin{equation}\label{eq:target-length}
+  2Q-D_A-I+2\ge Q-I+2\ge h.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+The first inequality is \(D_A\le Q\). For the second,
+\[
+  Q-I+2-h=Ih-I-h+2=(I-1)(h-1)+1>0.
+\]
+\end{proof}
+
+\begin{lemma}[Transitivity of concentration]\label{lem:concentration-transitivity}
+Let \(H<K<A\), put \(I=[A:K]\) and \(J=[K:H]\), and let \(Y\) be a
+sequence with
+\[
+  m_K(Y)\ge b-I+2.
+\]
+If at least \(m_K(Y)-J+2\) of the rotations counted by \(m_K(Y)\)
+actually lie in \(H\), then
+\[
+  m_H(Y)\ge b-[A:H]+2.
+\]
+\end{lemma}
+
+\begin{proof}
+Since \([A:H]=IJ\),
+\[
+  m_H(Y)\ge b-I-J+4\ge b-IJ+2,
+\]
+because \(IJ-I-J+2=(I-1)(J-1)+1>0\).
+\end{proof}
+
+\begin{lemma}[Correction of a quotient defect]\label{lem:defect-correction}
+Let \(K\le A\). Suppose a selected sequence \(U\) has a positive even
+number of reflections and admits an ordering whose product has
+\(A\)-coordinate \(z\in K\). Let \(C_0\) be a disjoint rotation
+sequence, with prescribed signs, whose signed vector sum is \(-z\).
+Then \(UC_0\) is product one.
+\end{lemma}
+
+\begin{proof}
+Read from the fixed ordering of \(U\) the sign of each vector. The
+reflection signs are balanced, because they alternate and their number
+is positive and even. Together with the prescribed signs on \(C_0\),
+the total signed vector sum is zero. Apply
+\Cref{lem:sign-realization} to the entire selected sequence.
+\end{proof}
+
+\subsection{A reflection-containing quotient block}
+\label{subsec:reflection-quotient}
+
+Let \(0<K<A\), suppose the hypothesis of \(\mathcal P_S(K)\) holds,
+and let \(C\) be the sequence of the \(M=m_K(S)\) rotations of \(S\)
+whose vectors lie in \(K\). Let \(B\) be the sequence of the remaining
+\(c=b-M\) rotations, and put \(T=T_K(S)\).
+
+\begin{proposition}\label{prop:reflection-quotient}
+If \(T\) has a product-one subsequence containing a reflection, then
+either \(S\) has a product-one subsequence of length \(2Q\), or there
+is a strict subgroup \(H<K\) such that
+\[
+  m_H(S)\ge b-[A:H]+2.
+\]
+\end{proposition}
+
+\begin{proof}
+Start with a reflection-containing product-one subsequence of \(T\).
+Continue removing nonempty product-one subsequences from the current
+remainder until the final remainder \(R\) is product-one-free. Let
+\(U\) be the union of all removed blocks. Concatenating one product-one
+ordering for each block makes \(U\) product one in \(\Dih(A/K)\), and
+\[
+  |U|=a+c-|R|.
+\]
+The sequence \(U\) contains a positive even number of reflections. By
+\eqref{eq:small-Davenport-dihedral}, applied to \(A/K\),
+\[
+  |R|\le \D(A/K).
+\]
+Set
+\[
+  \tau=D_A-|R|.
+\]
+By \Cref{lem:Davenport-inequality} and
+\Cref{prop:plus-minus-bound},
+\begin{equation}\label{eq:reflection-surplus}
+  \tau\ge \D(K)-1\ge \Dpm(K)-1.
+\end{equation}
+
+Lift the fixed quotient ordering of \(U\) to the corresponding terms of
+\(S\). Its product has \(C_2\)-coordinate zero and is trivial modulo
+\(K\), so its \(A\)-coordinate is a defect \(z\in K\). Put
+\[
+  m=M-\tau=M-D_A+|R|.
+\]
+The concentration hypothesis and \Cref{lem:target-length} give
+\begin{align*}
+  m&\ge M-D_A\\
+   &\ge b-[A:K]+2-D_A\\
+   &=2Q-a-[A:K]+2\\
+   &\ge 2Q-D_A-[A:K]+2\\
+   &\ge |K|.
+\end{align*}
+Equation \eqref{eq:reflection-surplus} gives
+\(M\ge m+\Dpm(K)-1\). Thus the structural part of
+\Cref{thm:GMO} applies to \(C\) in the ambient group \(K\), with
+weight set \(\{-1,1\}\) and target \(m\).
+
+If \(\Sigma_m^{\{-1,1\}}(C)=K\), choose \(m\) rotations of \(C\),
+with signs, whose signed sum is \(-z\). Their positions are disjoint
+from those of \(U\), because \(T\) contains no rotation from \(K\).
+By \Cref{lem:defect-correction}, their union with the lift of \(U\) is
+product one. Its length is
+\begin{align*}
+  |U|+m
+  &=a+c-|R|+M-D_A+|R|\\
+  &=a+b-D_A=2Q.
+\end{align*}
+
+If the spectrum is not all of \(K\), the structural alternative gives
+a strict subgroup \(H<K\) and at least \(M-[K:H]+2\) terms of \(C\)
+satisfying \eqref{eq:GMO-weight-coset}. For each such vector \(x\), the
+elements \(x\) and \(-x\) lie in a common \(H\)-coset, so \(2x\in H\).
+The quotient \(K/H\) has odd order, and hence \(x\in H\). Now
+\Cref{lem:concentration-transitivity} gives
+\(m_H(S)\ge b-[A:H]+2\).
+\end{proof}
+
+\subsection{The rotation-only quotient case}
+\label{subsec:rotation-quotient}
+
+For \(\alpha\in A\) and a sequence \(Y\) over \(G\), define
+\(\tau_\alpha(Y)\) by replacing every rotation \((v,0)\) with
+\((v-\alpha,0)\), leaving every reflection unchanged. This is a
+transformation of the values attached to the positions; it is not a
+group homomorphism.
+
+\begin{lemma}[Persistence of the quotient obstruction]
+\label{lem:quotient-obstruction}
+Let \(H<K\le A\) and \(\alpha\in K\). If \(T_K(Y)\) has no
+product-one subsequence containing a reflection, then
+\(T_H(\tau_\alpha(Y))\) has no such subsequence.
+\end{lemma}
+
+\begin{proof}
+Suppose that a reflection-containing product-one subsequence existed in
+\(T_H(\tau_\alpha(Y))\), and fix a product-one ordering. Project this
+ordered block further modulo \(K\). A selected rotation whose original
+vector \(v\) lies in \(K\) has translated vector \(v-\alpha\in K\), so
+it becomes the identity modulo \(K\); delete all such identity rotations
+from the ordering. A selected rotation whose original vector lies
+outside \(K\) has the same image modulo \(K\) before and after the
+translation. Reflections are unchanged. The remaining ordered block is
+a reflection-containing product-one subsequence of \(T_K(Y)\), a
+contradiction.
+\end{proof}
+
+\begin{proposition}\label{prop:rotation-quotient}
+Let \(0<K<A\). Suppose that \(Y\) has length \(2Q+D_A\), has the same
+counts \(a,b\) as \(S\), satisfies
+\[
+  m_K(Y)\ge b-[A:K]+2,
+\]
+and \(T_K(Y)\) has no product-one subsequence containing a reflection.
+Then either
+\begin{enumerate}
+\item \(Y\) has an all-rotation product-one subsequence of length
+      \(2Q\), or
+\item there are \(H<K\) and \(\alpha\in K\) such that
+      \(\tau_\alpha(Y)\) satisfies the hypotheses of \(\mathcal Q(H)\).
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+Let \(C\) be the sequence of the \(M=m_K(Y)\) rotations in \(K\), and
+let \(B\) be the sequence of the remaining \(c=b-M\) rotations. In the
+quotient \(A/K\), successively remove nonempty zero-sum subsequences
+from the image of \(B\) until a zero-sum-free remainder \(B_0\)
+remains. Let \(B'=BB_0^{-1}\), using the corresponding original
+positions, and put \(r_0=|B_0|\). The vector sum of \(B'\) is an
+element
+\begin{equation}\label{eq:rotation-defect}
+  z=\sigma(B')\in K.
+\end{equation}
+
+The quotient sequence formed by all \(a\) reflections and the terms of
+\(B_0\) is product-one-free. Indeed, a rotation-only product-one
+subsequence would give a nonempty zero-sum subsequence of \(B_0\), and
+a product-one subsequence containing a reflection is excluded by the
+hypothesis on \(T_K(Y)\). Hence, by
+\eqref{eq:small-Davenport-dihedral},
+\begin{equation}\label{eq:rotation-remainder}
+  a+r_0\le \D(A/K).
+\end{equation}
+Set
+\[
+  d_0=D_A-a-r_0.
+\]
+Using \Cref{lem:Davenport-inequality} and
+\eqref{eq:rotation-remainder},
+\begin{equation}\label{eq:rotation-surplus}
+  d_0\ge D_A-\D(A/K)\ge \D(K)-1.
+\end{equation}
+
+Put \(m=M-d_0\). The concentration hypothesis gives
+\begin{align*}
+  m&\ge b-[A:K]+2-(D_A-a-r_0)\\
+   &=2Q-[A:K]+r_0+2\\
+   &\ge 2Q-[A:K]+2\ge |K|,
+\end{align*}
+where the last inequality follows from
+\Cref{lem:target-length}. Equation \eqref{eq:rotation-surplus} gives
+\(M\ge m+\D(K)-1\). Apply the structural part of
+\Cref{thm:GMO} to \(C\) in \(K\), with weight set \(\{1\}\) and
+target \(m\).
+
+Suppose first that \(\Sigma_m^{\{1\}}(C)=K\). Positional
+complementation inside \(C\) gives
+\[
+  \Sigma_{d_0}^{\{1\}}(C)
+  =\sigma(C)-\Sigma_m^{\{1\}}(C)=K.
+\]
+Choose a \(d_0\)-term subsequence \(D_0\mid C\) with
+\(\sigma(D_0)=\sigma(C)+z\). The rotation sequences
+\(CD_0^{-1}\) and \(B'\) have disjoint positions and total vector sum
+\[
+  \sigma(C)-\sigma(D_0)+\sigma(B')=-z+z=0.
+\]
+Their total length is
+\begin{align*}
+  |CD_0^{-1}|+|B'|
+  &=M-d_0+c-r_0\\
+  &=b-(D_A-a-r_0)-r_0=2Q.
+\end{align*}
+This proves the first alternative.
+
+If the spectrum is not all of \(K\), the structural alternative gives
+a strict subgroup \(H<K\), an element \(\alpha\in K\), and at least
+\(M-[K:H]+2\) terms of \(C\) whose vectors lie in \(\alpha+H\).
+After applying \(\tau_\alpha\), these rotations lie in \(H\), and
+\Cref{lem:concentration-transitivity} gives
+\[
+  m_H(\tau_\alpha(Y))\ge b-[A:H]+2.
+\]
+The translation preserves the length and the counts \(a,b\), while
+\Cref{lem:quotient-obstruction} preserves the absence of a
+reflection-containing quotient block. Thus \(\tau_\alpha(Y)\) satisfies
+the hypotheses of \(\mathcal Q(H)\).
+\end{proof}
+
+\begin{lemma}[Pullback through a rotation translation]
+\label{lem:translation-pullback}
+If the positions of an all-rotation subsequence of length \(2Q\) form a
+product-one sequence in \(\tau_\alpha(Y)\), then the same positions form
+a product-one sequence in \(Y\).
+\end{lemma}
+
+\begin{proof}
+Pulling the selected rotations back adds \(\alpha\) to each vector, so
+the total vector sum changes by \(2Q\alpha=0\), using
+\(\exp(A)\mid Q\). There are no reflections, so no alternating signs
+occur.
+\end{proof}
+
+\subsection{Simultaneous induction}
+
+\begin{proof}[Proof of \Cref{thm:subgroup-descent}]
+We use strong induction on the order of the subgroup.
+
+For \(K=0\), the hypothesis of \(\mathcal P_S(0)\) says that the
+number \(m_0\) of identity rotations satisfies
+\[
+  m_0\ge b-Q+2=Q+D_A-a+2\ge D_A.
+\]
+Thus \(\mathcal P_S(0)\) follows from
+\Cref{lem:identity-padding}.
+
+To prove \(\mathcal Q(0)\), let \(Y\) satisfy its hypotheses, and let
+\(m_0\) again be the number of identity rotations. The sequence
+\(T_0(Y)\) consists of all reflections and all nonidentity rotations.
+Successively remove nonempty product-one subsequences from \(T_0(Y)\)
+until a product-one-free remainder remains, and let \(P\) be the union
+of the removed blocks. The quotient obstruction in the definition of
+\(\mathcal Q(0)\) forces every removed block to consist only of
+rotations. Hence \(P\) is an all-rotation product-one sequence. The
+terminal remainder has length at most \(D_A\), so
+\[
+  |P|\ge (2Q+D_A-m_0)-D_A=2Q-m_0.
+\]
+Moreover, the concentration hypothesis gives
+\(m_0\ge b-Q+2\), and therefore
+\[
+  |P|\le b-m_0\le Q-2<2Q.
+\]
+There are enough unused identity rotations to extend \(P\) to an
+all-rotation product-one subsequence of length \(2Q\). This proves
+\(\mathcal Q(0)\).
+
+Now let \(0<K<A\), and assume both statements are known for every
+strict subgroup of \(K\). To prove \(\mathcal P_S(K)\), consider
+\(T_K(S)\). If it has a product-one subsequence containing a reflection,
+\Cref{prop:reflection-quotient} either gives the required subsequence
+immediately or gives a strict subgroup \(H<K\) satisfying the hypothesis
+of \(\mathcal P_S(H)\). The induction hypothesis applies in the latter
+case. If \(T_K(S)\) has no such subsequence,
+\Cref{prop:rotation-quotient} either gives an all-rotation subsequence of
+length \(2Q\) directly or gives \(H<K\) and \(\alpha\in K\) such that
+\(\tau_\alpha(S)\) satisfies the hypotheses of \(\mathcal Q(H)\). The
+induction hypothesis gives the required all-rotation subsequence after
+translation, and \Cref{lem:translation-pullback} transfers it back to
+\(S\).
+
+Finally, let \(Y\) satisfy the hypotheses of \(\mathcal Q(K)\). Its
+quotient obstruction already rules out the reflection-containing case.
+Apply \Cref{prop:rotation-quotient}. The first alternative is the desired
+conclusion. In the second, the translated sequence satisfies
+\(\mathcal Q(H)\) for a strict subgroup \(H<K\); apply the induction
+hypothesis and then \Cref{lem:translation-pullback}.
+\end{proof}

@@ -1,0 +1,98 @@
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{aliascnt}
+\usepackage[margin=1in]{geometry}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[colorlinks=true,allcolors=blue]{hyperref}
+
+\allowdisplaybreaks
+\emergencystretch=2em
+
+\newtheorem{theorem}{Theorem}[section]
+\newaliascnt{lemma}{theorem}
+\newtheorem{lemma}[lemma]{Lemma}
+\aliascntresetthe{lemma}
+\newaliascnt{proposition}{theorem}
+\newtheorem{proposition}[proposition]{Proposition}
+\aliascntresetthe{proposition}
+\newaliascnt{corollary}{theorem}
+\newtheorem{corollary}[corollary]{Corollary}
+\aliascntresetthe{corollary}
+\theoremstyle{definition}
+\newaliascnt{definition}{theorem}
+\newtheorem{definition}[definition]{Definition}
+\aliascntresetthe{definition}
+\newaliascnt{example}{theorem}
+\newtheorem{example}[example]{Example}
+\aliascntresetthe{example}
+\newaliascnt{remark}{theorem}
+\newtheorem{remark}[remark]{Remark}
+\aliascntresetthe{remark}
+\usepackage[nameinlink,noabbrev]{cleveref}
+
+\newcommand{\E}{\mathsf E}
+\newcommand{\dsmall}{\mathsf d}
+\newcommand{\D}{\mathsf D}
+\newcommand{\Dpm}{\mathsf D_{\pm}}
+\newcommand{\Dih}{\operatorname{Dih}}
+\newcommand{\F}{\mathcal F}
+\newcommand{\supp}{\operatorname{supp}}
+\newcommand{\ord}{\operatorname{ord}}
+\newcommand{\id}{1_G}
+
+\title{The Gao Constant of Generalized Dihedral Groups\\
+with an Abelian \(p\)-Group Kernel, \(p\) Odd}
+\author{}
+\date{}
+
+\hypersetup{
+  pdftitle={The Gao Constant of Generalized Dihedral Groups with an Abelian p-Group Kernel, p Odd},
+  pdfsubject={A candidate exact formula for the Gao constant of generalized dihedral groups},
+  pdfkeywords={Gao constant, product-one sequence, generalized dihedral group, Davenport constant, weighted zero-sum sequence}
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Let \(A\) be a nontrivial finite abelian \(p\)-group for an odd prime
+\(p\), and let \(\Dih(A)=A\rtimes_{-1}C_2\) be the generalized
+dihedral group in which the nonidentity element of \(C_2\) acts by
+inversion. We determine its Gao constant:
+\[
+  \E(\Dih(A))=2|A|+\D(A)
+  =|\Dih(A)|+\dsmall(\Dih(A)).
+\]
+Thus, if \(A=\bigoplus_{i=1}^r C_{p^{\lambda_i}}\), then
+\[
+  \E(\Dih(A))
+  =2|A|+1+\sum_{i=1}^r\bigl(p^{\lambda_i}-1\bigr).
+\]
+The lower bound follows from the known small Davenport constant of
+\(\Dih(A)\). For the upper bound, we divide according to the number of
+reflections in the sequence. The two extreme ranges are handled by
+prescribed-length weighted zero-sum results and a plus-minus Davenport
+bound. In the remaining range, a weighted structural theorem either
+gives the required subsequence directly or forces many rotations into a
+proper subgroup. A simultaneous induction on the subgroup order
+completes the proof.
+\end{abstract}
+
+\noindent\textbf{2020 Mathematics Subject Classification.} 11B75; 20K01.\par
+\noindent\textbf{Keywords.} Gao constant; product-one sequence; generalized dihedral group; Davenport constant; weighted zero-sum sequence.
+
+\input{sections/01-introduction}
+\input{sections/02-preliminaries}
+\input{sections/03-plus-minus}
+\input{sections/04-reflection-count}
+\input{sections/05-subgroup-descent}
+\input{sections/06-completion}
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}
