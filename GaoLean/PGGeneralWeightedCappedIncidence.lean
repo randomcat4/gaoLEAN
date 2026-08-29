@@ -321,6 +321,22 @@ theorem weightedGMOExistenceConclusion_card_of_bottomStabilizer_of_singletonsAtM
   rw [← mem_weightedExactSpectrum_iff, hfull]
   simp
 
+/-- Exact source Step 6 split at the critical cardinal target.  The DGM
+branch closes unless at least `D + 1` weighted occurrence layers are
+singletons; no structural conclusion is assumed in the remaining branch. -/
+theorem weightedExactSpectrum_card_eq_univ_or_manySingleton_of_bottomStabilizer
+    {W : Set ℤ} (hW : W.Nonempty) (xs : List A) (D : ℕ)
+    (hD : IsWeightedDavenportConstant W A D)
+    (hlen : Nat.card A + D - 1 ≤ xs.length)
+    (hstab : weightedSpectrumStabilizer W xs (Nat.card A) = ⊥) :
+    weightedExactSpectrum W xs (Nat.card A) = Finset.univ ∨
+      D + 1 ≤ weightedSingletonOccurrenceCount W xs := by
+  by_cases hsingle : weightedSingletonOccurrenceCount W xs ≤ D
+  · exact Or.inl
+      (weightedExactSpectrum_card_eq_univ_of_bottomStabilizer_of_singletonsAtMost
+        hW xs D hD hlen hstab hsingle)
+  · exact Or.inr (by omega)
+
 end GaoLean
 
 #print axioms GaoLean.length_add_nonsingletonLayerCount_le_sum_card
@@ -334,3 +350,4 @@ end GaoLean
 #print axioms GaoLean.weightedExactSpectrum_card_eq_univ_of_aperiodic_of_singletonsAtMost
 #print axioms GaoLean.weightedExactSpectrum_card_eq_univ_of_bottomStabilizer_of_singletonsAtMost
 #print axioms GaoLean.weightedGMOExistenceConclusion_card_of_bottomStabilizer_of_singletonsAtMost
+#print axioms GaoLean.weightedExactSpectrum_card_eq_univ_or_manySingleton_of_bottomStabilizer

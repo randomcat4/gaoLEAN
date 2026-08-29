@@ -56,6 +56,9 @@ manuscript Theorem 2.2 in its full source range
     ├── full labelled GMO Lemma 3.5 certificate                       [CHECKED]
     ├── singleton-occurrence kernel subsequence                        [CHECKED]
     ├── exact Step-6 subgroup/quotient length budgets                  [CHECKED]
+    ├── singleton-kernel witness lift and selection convolution        [CHECKED]
+    ├── Step-6 kernel/range occurrence-count dichotomy                 [CHECKED]
+    ├── weighted-occurrence specialization of Lemma 3.5                [CHECKED]
     ├── prescribed-length singleton-layer recursive branch          [OPEN]
     ├── structural aperiodic/Lemma-3.5 branch under gcd(W)=1       [OPEN]
     └── literal source-statement and paragraph audit               [OPEN]
@@ -109,9 +112,12 @@ properness.
 Completed infrastructure: exact weighted Davenport constants, homomorphic
 push/pull, subgroup--quotient convolution, stabilizer-quotient target lifting,
 the cardinal strong-induction driver, and the DGM capped-incidence
-full-spectrum branch.  Remaining boundary: the singleton-layer subgroup
-recursion for primitive weights.  The nonprimitive normalization endpoint
-used by Corollary 1.2 is complete, including the zero-generator branch.
+full-spectrum branch.  The singleton-kernel subsequence, recursive-witness
+lift, kernel/range count dichotomy, and occurrence-faithful selection
+convolution are also complete.  Remaining boundary: assemble these checked
+components into the primitive-weight unconditional existence provider.  The
+nonprimitive normalization endpoint used by Corollary 1.2 is complete,
+including the zero-generator branch.
 
 Exit criterion: the G1 existence endpoint has an unconditional inhabitant
 and specializes definitionally or by proved transport to the current
@@ -131,8 +137,10 @@ the exact quotient concentration lift, and the nontrivial-stabilizer recursive
 branch.  The canonical gcd--torsion modulus, `G[d]`, `dG`, singleton-locus
 equivalence, quotient singleton layers, and `G/G[d] ≃ dG` are also checked.
 The complete labelled Lemma 3.5 certificate is now checked, including the
-greedy full branch and strict-stabilizer recursive branch.  Step 1's strong
-affine package and the remaining aperiodic subgroup recursion are the core left.
+greedy full branch and strict-stabilizer recursive branch, and is specialized
+to literal weighted occurrence cells without deduplicating repeated values.
+Step 1's strong affine package and final assembly of the checked aperiodic
+kernel/range branches are the core left.
 
 Exit criterion: the G1 structural endpoint is unconditional and all
 specialized structural providers are derived from it.

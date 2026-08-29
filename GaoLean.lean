@@ -82,9 +82,11 @@ import GaoLean.SequenceEntryCounterexample
 import GaoLean.A6RawCounterexample
 import GaoLean.PGGeneralWeightedDefinitions
 import GaoLean.PGGeneralWeightedSubsequence
+import GaoLean.PGGeneralWeightedSelectionConvolution
 import GaoLean.PGGeneralWeightedDGMBridge
 import GaoLean.PGGeneralWeightedCappedIncidence
 import GaoLean.PGGMOGeneralLemma35Core
+import GaoLean.PGGeneralWeightedLemma35
 import GaoLean.PGGeneralWeightedSpecializations
 import GaoLean.PGGeneralWeightedDavenport
 import GaoLean.PGGeneralWeightedDavenportMinimum
@@ -94,6 +96,8 @@ import GaoLean.PGGeneralWeightedQuotient
 import GaoLean.PGGeneralWeightedArithmetic
 import GaoLean.PGGeneralWeightedGcdTorsion
 import GaoLean.PGGeneralWeightedSingletonOccurrences
+import GaoLean.PGGeneralWeightedSingletonRecursion
+import GaoLean.PGGeneralWeightedStep6SingletonBranch
 import GaoLean.PGGeneralWeightedConcentrationQuotient
 import GaoLean.PGGeneralWeightedExistenceQuotient
 import GaoLean.PGGeneralWeightedProviderQuotient
