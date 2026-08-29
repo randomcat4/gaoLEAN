@@ -64,8 +64,8 @@ manuscript Theorem 2.2 in its full source range
     ├── weighted-occurrence specialization of Lemma 3.5                [CHECKED]
     ├── Step-1 fixed-centre affine strict enlargement                   [CHECKED]
     ├── Step-6 primitive kernel-zero-core/range-certificate split       [CHECKED]
-    ├── Theorem-1.1 overgroup-aware strong recursion state           [OPEN]
-    ├── strong-state induction and corollary extraction              [OPEN]
+    ├── Theorem-1.1 overgroup-aware strong state/interface          [CHECKED]
+    ├── unconditional strong-state construction/induction             [OPEN]
     └── literal source-statement and paragraph audit               [OPEN]
 ```
 

@@ -373,6 +373,10 @@ import GaoFormal
 #print axioms GaoLean.generalWeightedLemma35Certificate_exists
 #print axioms GaoLean.generalWeightedStep1EnlargementCertificate_exists
 #print axioms GaoLean.generalWeightedStep1_fullAffineCore_or_concentration
+#print axioms GaoLean.GeneralWeightedStrongRecursionState.core_exactSpectrumWithin_eq
+#print axioms GaoLean.GeneralWeightedStrongRecursionState.nsmul_beta_mem_weightedExactSpectrum
+#print axioms GaoLean.GeneralWeightedStrongRecursionState.weightedGMOExistenceConclusion
+#print axioms GaoLean.generalWeightedStrongRecursionAt_of_engine
 #print axioms GaoLean.weightedValueBlock_singleton_one
 #print axioms GaoLean.weightedValueBlock_plusMinus
 #print axioms GaoLean.weightedOccurrenceSetpartition_singleton_one

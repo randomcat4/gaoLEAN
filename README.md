@@ -62,6 +62,9 @@
 - Step 6 的 primitive aperiodic 诚实装配：full-spectrum、底差分核和顶差分核已闭合；
   proper nontrivial kernel 下，核预算实际调用严格子群 provider 并回升 exact `|K|`
   零核，像预算实际调用 occurrence-labelled weighted Lemma 3.5；
+- 原文 Theorem 1.1 式 (3)--(9) 的 overgroup-aware 强状态已逐字段冻结，并证明
+  core 内 exact `|H|` 谱确为 `|H|β+H`、式 (8) 推出真实 exact `nβ` witness；
+  该结构只定义待证目标，条件 StepInterface/Engine 不计作无条件构造；
 - 商群抽取、缺陷修正、平移保持、严格子群下降和同时归纳；
 - 三个 reflection regimes 的上界、标准下界以及最终 Gao 等式；
 - Corollary 6.1 的 homocyclic / elementary-abelian 数值式和 `C₃²` 显式见证。
