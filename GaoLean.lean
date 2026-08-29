@@ -87,6 +87,7 @@ import GaoLean.PGGeneralWeightedReserveAssembly
 import GaoLean.PGGeneralWeightedDGMBridge
 import GaoLean.PGGeneralWeightedCappedIncidence
 import GaoLean.PGGeneralWeightedAperiodicSplit
+import GaoLean.PGGeneralWeightedSingletonConcentration
 import GaoLean.PGGMOGeneralLemma35Core
 import GaoLean.PGGeneralWeightedLemma35
 import GaoLean.PGGeneralWeightedSpecializations

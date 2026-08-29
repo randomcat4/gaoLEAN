@@ -39,6 +39,8 @@
   “至少 `|A|-1` 个非单点层”强迫精确谱为全集；
 - 对任意正文目标 `n≥|A|` 的底稳定子精确分叉：谱为全集，或 singleton
   occurrences 已达到 `|xs|-|A|+2`；
+- 当规范差分核为平凡子群时，上述 singleton 分支已直接转成真实
+  `WeightedGMOConcentration`（含平凡环境群自动 full-spectrum 的边界）；
 - 权差与群指数生成的规范模数 `d`、`d`-torsion 核、`dA` 像、
   单点层判据、商层单点化及 `A/A[d] ≃ dA`；
 - 单点层的真实 occurrence 选择、精确计数、`G[d]` 子类型序列与回源嵌入；
@@ -95,7 +97,7 @@ lake build GaoFormal.AxiomAudit
 
 当前一般权重开发分支的服务器集成构建（含 capped-incidence、gcd--torsion、
 任意权集归一化、occurrence 子序列运输、单点核递归、选择卷积与 weighted
-Lemma 3.5）完成 **8845 jobs**，
+Lemma 3.5）完成 **8846 jobs**，
 退出码为 0。它是工作分支集成回执，不冒充独立冷克隆验收。
 
 关键端点的 `#print axioms` 只报告 Lean/Mathlib 常规的 `propext`、

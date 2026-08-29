@@ -59,6 +59,7 @@ manuscript Theorem 2.2 in its full source range
     ├── singleton-kernel witness lift and selection convolution        [CHECKED]
     ├── Step-6 kernel/range occurrence-count dichotomy                 [CHECKED]
     ├── arbitrary-n aperiodic full/singleton-concentration split       [CHECKED]
+    ├── bottom difference-kernel singleton concentration               [CHECKED]
     ├── retained/core occurrence-reserve extraction                    [CHECKED]
     ├── weighted-occurrence specialization of Lemma 3.5                [CHECKED]
     ├── prescribed-length singleton-layer recursive branch          [OPEN]
