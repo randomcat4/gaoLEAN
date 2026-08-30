@@ -332,6 +332,42 @@ theorem liftedCore_full_of_carrier
   · exact Finset.mem_union_left filler (holdBlockPre hiOldBlock)
   · exact Finset.mem_union_right _ hiFiller
 
+/-- A complete lifted core, packaged independently of the auxiliary filler.
+The theorem first constructs an exact critical-size carrier in the lifted
+affine container and then equips it with the operational full-spectrum
+witnesses from `liftedCore_full_of_carrier`. -/
+theorem exists_liftedFullCore_of_enlargement
+    (hW : W.Nonempty) (hprimitive : IsPrimitiveWeightSet W)
+    (S : GeneralWeightedStrongRecursionState W G gamma delta xs n D)
+    (C : GeneralWeightedStep1EnlargementCertificate
+      W xs S.H S.alpha S.beta)
+    (DJ : ℕ) (hDJ : IsWeightedDavenportConstant W C.J DJ)
+    (hDJle : DJ ≤ S.DQ)
+    (DK : ℕ)
+    (hDK : IsWeightedDavenportConstant W
+      (liftedAddSubgroup S.H C.J) DK)
+    (hcontainerLower :
+      Nat.card (liftedAddSubgroup S.H C.J) + DK - 1 ≤
+        (weightedStep1AffineContainer
+          (liftedAddSubgroup S.H C.J) W xs S.beta).card) :
+    ∃ parentCore : Selection xs,
+      parentCore ⊆ weightedStep1AffineContainer
+        (liftedAddSubgroup S.H C.J) W xs S.beta ∧
+      parentCore.card =
+        Nat.card (liftedAddSubgroup S.H C.J) + DK - 1 ∧
+      ∀ k : liftedAddSubgroup S.H C.J,
+        ∃ z : HasWeightedSumOfCard W xs
+            (Nat.card (liftedAddSubgroup S.H C.J))
+            (Nat.card (liftedAddSubgroup S.H C.J) • S.beta + (k : G₀)),
+          z.selected ⊆ parentCore := by
+  obtain ⟨filler, parentCore, hFdis, hFcard, hpreFsub,
+      hparentContainer, hparentCard⟩ :=
+    S.exists_liftedCoreCarrier C DJ hDJ hDJle DK hDK hcontainerLower
+      hprimitive
+  refine ⟨parentCore, hparentContainer, hparentCard, ?_⟩
+  exact S.liftedCore_full_of_carrier hW hprimitive C DJ hDJ hDJle
+    filler parentCore hFdis hFcard hpreFsub hparentContainer
+
 end GeneralWeightedStrongRecursionState
 
 end GaoLean
@@ -342,3 +378,4 @@ end GaoLean
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.exists_fixedCard_quotientBlock_of_enlargement
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.exists_liftedCoreCarrier
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.liftedCore_full_of_carrier
+#print axioms GaoLean.GeneralWeightedStrongRecursionState.exists_liftedFullCore_of_enlargement
