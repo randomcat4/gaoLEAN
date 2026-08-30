@@ -4,7 +4,7 @@ import GaoLean.PGGeneralWeightedSingletonRecursion
 import GaoLean.PGGeneralWeightedSelectionConvolution
 import GaoLean.PGGeneralWeightedReserveAssembly
 import GaoLean.PGGeneralWeightedLemma35
-import GaoLean.PGGeneralWeightedStrongRecursionState
+import GaoLean.PGGeneralWeightedCrossTypeInduction
 import GaoLean.PGGaoOrdinaryComplete
 
 /-!
@@ -620,6 +620,37 @@ theorem primitiveAperiodicExistence_or_kernelZeroCore_or_rangeCertificate_of_str
       exact generalWeightedLemma35Certificate_of_differenceRangeBudget
         hW hw₀ xs hKtop hrange
 
+/-- The proper-kernel local products obtained directly from the cross-type
+strict-cardinality recursion hypothesis at the ambient top subgroup.
+
+This theorem removes the last adapter premise from the preceding fixed-weight
+version: strictness of each proper kernel supplies the strong state on its own
+top subgroup through `applySubgroupTop`.  The parent equation-(3)--(9) state is
+still not claimed here. -/
+theorem primitiveAperiodicExistence_or_kernelZeroCore_or_rangeCertificate_of_crossTypeIH
+    {W : Set ℤ} (hW : W.Nonempty) (hprimitive : IsPrimitiveWeightSet W)
+    (D : ℕ) (hD : IsWeightedDavenportConstant W A D)
+    (xs : List A) (n : ℕ)
+    (hn : Nat.card A ≤ n)
+    (hlen : n + D - 1 ≤ xs.length)
+    (hstab : weightedSpectrumStabilizer W xs n = ⊥)
+    (ih : GeneralWeightedCrossTypeSmallerCardRecursionHypothesis
+      (⊤ : AddSubgroup A)) :
+    WeightedGMOExistenceConclusion W xs n ∨
+      ∃ w₀ ∈ W,
+        weightedDifferenceKernel W w₀ A ≠ ⊥ ∧
+        weightedDifferenceKernel W w₀ A ≠ ⊤ ∧
+          (Nonempty (HasWeightedSumOfCard W xs
+              (Nat.card (weightedDifferenceKernel W w₀ A)) 0) ∨
+            Nonempty (GeneralWeightedLemma35Certificate W xs
+              (weightedNonsingletonOccurrences W xs)
+              (weightedDifferenceRange W w₀ A))) := by
+  apply
+    primitiveAperiodicExistence_or_kernelZeroCore_or_rangeCertificate_of_strongRecursion
+      hW hprimitive D hD xs n hn hlen hstab
+  intro K hKbot hKtop
+  exact ih.applySubgroupTop K (lt_top_iff_ne_top.mpr hKtop)
+
 end GaoLean
 
 #print axioms GaoLean.IsWeightedZeroSelection.union
@@ -633,3 +664,4 @@ end GaoLean
 #print axioms GaoLean.generalWeightedLemma35Certificate_of_differenceRangeBudget
 #print axioms GaoLean.primitiveAperiodicExistence_or_kernelZeroCore_or_rangeCertificate
 #print axioms GaoLean.primitiveAperiodicExistence_or_kernelZeroCore_or_rangeCertificate_of_strongRecursion
+#print axioms GaoLean.primitiveAperiodicExistence_or_kernelZeroCore_or_rangeCertificate_of_crossTypeIH

@@ -48,6 +48,20 @@ theorem toFixedAmbientStrictSubgroup
   intro K hKG
   exact ih G₀ K (natCard_lt_of_addSubgroup_lt hKG)
 
+/-- A strict subgroup `K < G` may itself be used as the new ambient type.
+The recursive target is its top subgroup, whose cardinality is exactly
+`Nat.card K`; hence the cross-type hypothesis applies without changing the
+mathematical rank. -/
+theorem applySubgroupTop
+    {G₀ : Type u} [AddCommGroup G₀] [Fintype G₀]
+    {G : AddSubgroup G₀}
+    (ih : GeneralWeightedCrossTypeSmallerCardRecursionHypothesis G)
+    (K : AddSubgroup G₀) [Fintype K] (hKG : K < G) :
+    GeneralWeightedStrongRecursionAt (⊤ : AddSubgroup K) := by
+  apply ih K (⊤ : AddSubgroup K)
+  rw [AddSubgroup.card_top]
+  exact natCard_lt_of_addSubgroup_lt hKG
+
 /-- Generic quotient-type entrance for the cross-type induction hypothesis.
 
 The caller must prove the honest rank decrease for the particular recursive
@@ -139,6 +153,7 @@ theorem generalWeightedStrongRecursionAt_of_crossTypeEngine
 end GaoLean
 
 #print axioms GaoLean.GeneralWeightedCrossTypeSmallerCardRecursionHypothesis.toFixedAmbientStrictSubgroup
+#print axioms GaoLean.GeneralWeightedCrossTypeSmallerCardRecursionHypothesis.applySubgroupTop
 #print axioms GaoLean.GeneralWeightedCrossTypeSmallerCardRecursionHypothesis.applyQuotient
 #print axioms GaoLean.GeneralWeightedCrossTypeSmallerCardRecursionHypothesis.applyGeneralWeightedQuotient
 #print axioms GaoLean.generalWeightedStrongRecursionAtCard_of_crossTypeEngine
