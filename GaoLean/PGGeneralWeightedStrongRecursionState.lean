@@ -176,6 +176,30 @@ theorem core_card_le_retained_card
     S.core.card ≤ S.retained.card :=
   Finset.card_le_card S.core_subset_retained
 
+/-- The source and weighted coset fields determine the affine relation between
+the two stored centres.  A core label exists because both the subgroup order
+and its exact weighted Davenport constant are positive. -/
+theorem alpha_weightCoset
+    (S : GeneralWeightedStrongRecursionState W G gamma delta xs n D) :
+    ∀ w ∈ W, w • S.alpha - S.beta ∈ S.H := by
+  have hcorePos : 0 < S.core.card := by
+    rw [S.core_card]
+    have hHcardPos : 1 ≤ Nat.card S.H := Nat.card_pos
+    have hDHpos := weightedDavenportConstant_pos W S.DH S.DH_exact
+    omega
+  obtain ⟨i, hiCore⟩ := Finset.card_pos.mp hcorePos
+  have hiRetained : i ∈ S.retained := S.core_subset_retained hiCore
+  intro w hw
+  have hweighted := S.retained_weightCoset i hiRetained w hw
+  have hsource := S.retained_sourceCoset i hiRetained
+  have hsourceWeighted := S.H.zsmul_mem hsource w
+  rw [show w • S.alpha - S.beta =
+      (w • occurrenceValue xs i - S.beta) -
+        w • (occurrenceValue xs i - S.alpha) by
+      rw [smul_sub]
+      abel]
+  exact S.H.sub_mem hweighted hsourceWeighted
+
 /-- The small-carrier identity already stored in a strong recursive state
 forces enough unused retained labels to supply a full `D_Q - 1` zero reserve.
 This is a local `H`-coset capacity statement; unlike the lifted total-carrier
@@ -388,6 +412,7 @@ theorem generalWeightedStrongRecursionAt_of_engine
 end GaoLean
 
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.retained_card_add_r
+#print axioms GaoLean.GeneralWeightedStrongRecursionState.alpha_weightCoset
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.core_card_add_DQ_pred_le_retained_card
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.core_card_add_Davenport_pred_le_retained_card
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.extractDavenportReserve
