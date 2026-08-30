@@ -1151,3 +1151,24 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
   the common source/weight centres; ordinary uncentred padding cannot simply
   be renamed.  Parent full-core expansion, periodicity, and the small-carrier
   identity remain open.
+
+## 2026-08-30: weighted maximal blocks and centred fixed-card completion
+
+- Added `exists_weightedZeroSum_subset_remainder_lt_davenport` and
+  `exists_weightedZeroSum_padded_selection`.  They maximize over literal
+  labelled weighted zero-sum selections and use a disjoint zero-valued
+  reserve to return an exact-cardinality selection with explicit weights.
+- Added `quotient_weighted_sub_center_eq_zsmul_quotient_sub_center` and its
+  lifted-subgroup membership form.  The common-centre hypothesis is retained
+  explicitly; modulo `H`, `w x - beta` becomes `w (x - alpha)`.
+- Added `exists_weightedCenteredFixedCardCompletion`.  It applies the actual
+  weighted padding theorem to unused pool labels plus a disjoint reserve,
+  convolves the result with the input witness, and returns a real exact
+  `pool.card` selection.  Its ambient correction has the same image modulo
+  `H` as the original target.
+- Server targeted elaboration passed for these declarations.  Their axiom
+  reports contain only `propext`, `Classical.choice`, and `Quot.sound`.
+- This is still not the parent `core_full`: the quotient affine-sumset member
+  must next be lifted to the ambient variable witness consumed by the centred
+  completion.  Full-core expansion, periodicity, and the small-carrier
+  identity remain open.

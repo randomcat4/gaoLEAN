@@ -157,10 +157,13 @@ zero-generator branch.  The bottom-overgroup base is now unconditional and
   preserving its stored cardinality and every exact full-core witness.
   Finally, a weighted Davenport bound can now extract a nonempty labelled
   weighted zero-sum block from any sufficiently large finite pool.  This
-  alone is not centred padding: the next lemma must explicitly use the
+  alone is not centred padding.  The centred fixed-cardinality completion is
+  now checked and explicitly uses the
   Step 1 relation `w • alpha - beta ∈ H`, which turns quotient-centred terms
   into weighted source differences `w • (x - alpha)`.  Only then may a
   maximal-block argument bound the missing cardinality by `D_W(J)-1`.
+  The remaining local bridge must extract the ambient variable-cardinality
+  witness from the quotient affine sumset and feed it to this completion.
   Afterwards the proof must expand kernel full blocks and
   transport/assemble the parent equation-(3)--(9) state; it may not replace
   that work by a conclusion-level provider.
@@ -199,9 +202,10 @@ carrier `S0` spectrum identity.  These fields cannot be recovered from the
 current corollary-level providers after recursion.  The bottom-overgroup
   instance of this state is checked without a provider.  The quotient
   equation-(3) input and the cross-type cardinal scheduler are checked; the
-  remaining problem is the exact-cardinality quotient reserve padding,
-  nontrivial quotient state/output transport, and the full-core
-  seed/extension that implements the local step.
+  centred fixed-cardinality reserve padding is now checked as a standalone
+  data-producing theorem.  The remaining problem is its direct quotient
+  affine-witness input bridge, nontrivial quotient state/output transport,
+  and the full-core seed/extension that implements the local step.
 
 Exit criterion: the G1 structural endpoint is unconditional and all
 specialized structural providers are derived from it.

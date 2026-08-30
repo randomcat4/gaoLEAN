@@ -147,6 +147,148 @@ theorem exists_nonempty_weightedZeroSum_finset_subset
     exact z.weights_mem i hi
   · simpa [J, Finset.sum_map, hweights, hvalue] using z.weighted_sum
 
+/-- A maximum-cardinality weighted zero-sum block leaves fewer than `D`
+labels.  The weights are attached to the literal source labels, so this
+statement can be used before any quotient values with equal images are
+identified. -/
+theorem exists_weightedZeroSum_subset_remainder_lt_davenport
+    (W : Set ℤ) (R : Finset X) (f : X → B) (D : ℕ)
+    (hD : WeightedDavenportAtMost W B D) :
+    ∃ I : Finset X,
+      I ⊆ R ∧
+      (∃ weights : X → ℤ,
+        (∀ x ∈ I, weights x ∈ W) ∧
+        (∑ x ∈ I, weights x • f x) = 0) ∧
+      R.card - I.card < D := by
+  classical
+  let good : Finset (Finset X) := Finset.univ.filter fun I =>
+    I ⊆ R ∧
+      ∃ weights : X → ℤ,
+        (∀ x ∈ I, weights x ∈ W) ∧
+        (∑ x ∈ I, weights x • f x) = 0
+  have hempty : (∅ : Finset X) ∈ good := by
+    simp [good]
+  obtain ⟨I, hIgood, hImax⟩ := Finset.exists_max_image good
+    (fun J => J.card) ⟨∅, hempty⟩
+  obtain ⟨hIsub, weightsI, hIweights, hIsum⟩ :=
+    (Finset.mem_filter.mp hIgood).2
+  refine ⟨I, hIsub, ⟨weightsI, hIweights, hIsum⟩, ?_⟩
+  by_contra hnot
+  have hrem : D ≤ (R \ I).card := by
+    rw [Finset.card_sdiff, Finset.inter_eq_left.mpr hIsub]
+    omega
+  obtain ⟨J, hJne, hJsub, weightsJ, hJweights, hJsum⟩ :=
+    exists_nonempty_weightedZeroSum_finset_subset W (R \ I) f D hD hrem
+  have hJsubR : J ⊆ R := fun x hx => (Finset.mem_sdiff.mp (hJsub hx)).1
+  have hdis : Disjoint I J := by
+    rw [Finset.disjoint_left]
+    intro x hxI hxJ
+    exact (Finset.mem_sdiff.mp (hJsub hxJ)).2 hxI
+  let weightsUnion : X → ℤ := fun x =>
+    if x ∈ I then weightsI x else weightsJ x
+  have hUnionWeights : ∀ x ∈ I ∪ J, weightsUnion x ∈ W := by
+    intro x hx
+    by_cases hxI : x ∈ I
+    · simpa [weightsUnion, hxI] using hIweights x hxI
+    · have hxJ : x ∈ J := (Finset.mem_union.mp hx).resolve_left hxI
+      simpa [weightsUnion, hxI] using hJweights x hxJ
+  have hUnionSum : (∑ x ∈ I ∪ J, weightsUnion x • f x) = 0 := by
+    rw [Finset.sum_union hdis]
+    have hleft : (∑ x ∈ I, weightsUnion x • f x) = 0 := by
+      calc
+        (∑ x ∈ I, weightsUnion x • f x) =
+            ∑ x ∈ I, weightsI x • f x := by
+              apply Finset.sum_congr rfl
+              intro x hx
+              simp [weightsUnion, hx]
+        _ = 0 := hIsum
+    have hright : (∑ x ∈ J, weightsUnion x • f x) = 0 := by
+      calc
+        (∑ x ∈ J, weightsUnion x • f x) =
+            ∑ x ∈ J, weightsJ x • f x := by
+              apply Finset.sum_congr rfl
+              intro x hx
+              have hxI : x ∉ I := by
+                intro hxI
+                exact (Finset.disjoint_left.mp hdis) hxI hx
+              simp [weightsUnion, hxI]
+        _ = 0 := hJsum
+    rw [hleft, hright, zero_add]
+  have hUnionGood : I ∪ J ∈ good := by
+    simp only [good, Finset.mem_filter, Finset.mem_univ, true_and]
+    exact ⟨Finset.union_subset hIsub hJsubR,
+      ⟨weightsUnion, hUnionWeights, hUnionSum⟩⟩
+  have hmax := hImax _ hUnionGood
+  rw [Finset.card_union_of_disjoint hdis] at hmax
+  have hJpos : 0 < J.card := Finset.card_pos.mpr hJne
+  omega
+
+/-- Pad the omitted part of a maximal weighted zero-sum block by the same
+number of genuine zero-valued reserve labels.  The returned selection has
+exactly the cardinality of `pool`, lies in `pool ∪ reserve`, and carries an
+explicit allowed weight on every selected label. -/
+theorem exists_weightedZeroSum_padded_selection
+    (W : Set ℤ) (pool reserve : Finset X) (f : X → B) (D : ℕ)
+    (hD : IsWeightedDavenportConstant W B D)
+    (hdis : Disjoint pool reserve)
+    (hreserveZero : ∀ x ∈ reserve, f x = 0)
+    (hreserveCard : D - 1 ≤ reserve.card) :
+    ∃ tail : Finset X,
+      tail ⊆ pool ∪ reserve ∧ tail.card = pool.card ∧
+      ∃ weights : X → ℤ,
+        (∀ x ∈ tail, weights x ∈ W) ∧
+        (∑ x ∈ tail, weights x • f x) = 0 := by
+  classical
+  have hDpos : 0 < D := weightedDavenportConstant_pos W D hD
+  have hWnonempty : W.Nonempty := by
+    obtain ⟨n, hn, ⟨z⟩⟩ :=
+      hD.1 (List.replicate D (0 : B)) (by simp)
+    have hzNonempty : z.selected.Nonempty := by
+      rw [← Finset.card_pos, z.card_selected]
+      exact hn
+    obtain ⟨i, hi⟩ := hzNonempty
+    exact ⟨z.weights i, z.weights_mem i hi⟩
+  obtain ⟨I, hIsub, ⟨weightsI, hIweights, hIsum⟩, hrem⟩ :=
+    exists_weightedZeroSum_subset_remainder_lt_davenport W pool f D hD.1
+  let k := pool.card - I.card
+  have hk : k ≤ reserve.card := by
+    dsimp only [k]
+    omega
+  obtain ⟨F, hFsub, hFcard⟩ :=
+    Finset.exists_subset_card_eq (s := reserve) hk
+  have hIF : Disjoint I F := hdis.mono hIsub hFsub
+  obtain ⟨w₀, hw₀⟩ := hWnonempty
+  let weights : X → ℤ := fun x =>
+    if x ∈ I then weightsI x else w₀
+  refine ⟨I ∪ F, ?_, ?_, weights, ?_, ?_⟩
+  · exact Finset.union_subset
+      (hIsub.trans Finset.subset_union_left)
+      (hFsub.trans Finset.subset_union_right)
+  · rw [Finset.card_union_of_disjoint hIF, hFcard]
+    dsimp only [k]
+    exact Nat.add_sub_of_le (Finset.card_le_card hIsub)
+  · intro x hx
+    by_cases hxI : x ∈ I
+    · simpa [weights, hxI] using hIweights x hxI
+    · simpa [weights, hxI] using hw₀
+  · rw [Finset.sum_union hIF]
+    have hleft : (∑ x ∈ I, weights x • f x) = 0 := by
+      calc
+        (∑ x ∈ I, weights x • f x) =
+            ∑ x ∈ I, weightsI x • f x := by
+              apply Finset.sum_congr rfl
+              intro x hx
+              simp [weights, hx]
+        _ = 0 := hIsum
+    have hright : (∑ x ∈ F, weights x • f x) = 0 := by
+      apply Finset.sum_eq_zero
+      intro x hx
+      have hxI : x ∉ I := by
+        intro hxI
+        exact (Finset.disjoint_left.mp hIF) hxI hx
+      simp [weights, hxI, hreserveZero x (hFsub hx)]
+    rw [hleft, hright, zero_add]
+
 end LabelledPool
 
 section Map
@@ -549,6 +691,8 @@ end GaoLean
 #print axioms GaoLean.weightedDavenportAtLeast_of_atMost
 #print axioms GaoLean.weightedDavenportConstant_pos
 #print axioms GaoLean.exists_nonempty_weightedZeroSum_finset_subset
+#print axioms GaoLean.exists_weightedZeroSum_subset_remainder_lt_davenport
+#print axioms GaoLean.exists_weightedZeroSum_padded_selection
 #print axioms GaoLean.hasWeightedSumOfCard_map_addMonoidHom
 #print axioms GaoLean.hasNonemptyWeightedZeroSum_map_addMonoidHom
 #print axioms GaoLean.hasWeightedSumOfCard_of_map_addMonoidHom

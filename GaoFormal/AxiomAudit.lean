@@ -372,8 +372,13 @@ import GaoFormal
 #print axioms GaoLean.generalLemma35Certificate_exists
 #print axioms GaoLean.generalWeightedLemma35Certificate_exists_of_quotient_singleton
 #print axioms GaoLean.generalWeightedLemma35Certificate_exists
+#print axioms GaoLean.exists_weightedSelection_of_mem_weightedStep1AffineSumset
+#print axioms GaoLean.quotient_weighted_sub_center_eq_zsmul_quotient_sub_center
+#print axioms GaoLean.weighted_sub_center_mem_liftedAddSubgroup_iff
+#print axioms GaoLean.exists_weightedCenteredFixedCardCompletion
 #print axioms GaoLean.generalWeightedStep1EnlargementCertificate_exists
 #print axioms GaoLean.generalWeightedStep1_fullAffineCore_or_concentration
+#print axioms GaoLean.GeneralWeightedStrongRecursionState.exists_liftedFullCore
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.core_exactSpectrumWithin_eq
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.nsmul_beta_mem_weightedExactSpectrum
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.weightedGMOExistenceConclusion
@@ -387,6 +392,9 @@ import GaoFormal
 #print axioms GaoLean.hasWeightedSumOfCard_of_take
 #print axioms GaoLean.weightedDavenportAtLeast_of_atMost
 #print axioms GaoLean.weightedDavenportConstant_pos
+#print axioms GaoLean.exists_nonempty_weightedZeroSum_finset_subset
+#print axioms GaoLean.exists_weightedZeroSum_subset_remainder_lt_davenport
+#print axioms GaoLean.exists_weightedZeroSum_padded_selection
 #print axioms GaoLean.weightedDavenportAtMost_quotient
 #print axioms GaoLean.weightedDavenportAtMost_of_ordinary
 #print axioms GaoLean.weightedDavenportConstant_le_ordinary

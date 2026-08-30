@@ -210,6 +210,164 @@ noncomputable def weightedStep1QuotientAffineSumset
       quotientLayer H
         (weightedStep1AffineCell W β (occurrenceValue xs i))) I
 
+/-- Once the affine centers satisfy equation (3) modulo `H`, a centered
+weighted value is exactly the corresponding weighted source difference in
+the quotient.  This is the algebraic bridge needed before applying weighted
+Davenport arguments to quotient-valued source differences. -/
+theorem quotient_weighted_sub_center_eq_zsmul_quotient_sub_center
+    (H : AddSubgroup A) (W : Set ℤ) (α β x : A)
+    (hα : ∀ w ∈ W, w • α - β ∈ H)
+    {w : ℤ} (hw : w ∈ W) :
+    QuotientAddGroup.mk' H (w • x - β) =
+      w • QuotientAddGroup.mk' H (x - α) := by
+  have hcenter :
+      w • QuotientAddGroup.mk' H α = QuotientAddGroup.mk' H β := by
+    rw [← map_zsmul]
+    exact QuotientAddGroup.eq_iff_sub_mem.mpr (hα w hw)
+  simp only [map_sub, map_zsmul, smul_sub, hcenter]
+
+/-- Membership version of
+`quotient_weighted_sub_center_eq_zsmul_quotient_sub_center` for the full
+preimage of a quotient subgroup. -/
+theorem weighted_sub_center_mem_liftedAddSubgroup_iff
+    (H : AddSubgroup A) (J : AddSubgroup (A ⧸ H))
+    (W : Set ℤ) (α β x : A)
+    (hα : ∀ w ∈ W, w • α - β ∈ H)
+    {w : ℤ} (hw : w ∈ W) :
+    w • x - β ∈ liftedAddSubgroup H J ↔
+      w • QuotientAddGroup.mk' H (x - α) ∈ J := by
+  change QuotientAddGroup.mk' H (w • x - β) ∈ J ↔ _
+  rw [quotient_weighted_sub_center_eq_zsmul_quotient_sub_center
+    H W α β x hα hw]
+
+/-- Complete a variable-cardinality centered weighted selection to the exact
+cardinality of `pool`.  The added labels are chosen by the weighted
+Davenport padding theorem from the unused part of `pool` together with a
+disjoint reserve whose centered quotient values are literally zero.
+
+The ambient correction `a' - a` therefore vanishes modulo `H`.  In
+particular, this is a data-producing completion theorem: it returns an
+explicit exact-cardinality weighted selection and does not assume the
+desired conclusion through a provider parameter. -/
+theorem exists_weightedCenteredFixedCardCompletion
+    {W : Set ℤ}
+    (xs : List A)
+    (H : AddSubgroup A) (J : AddSubgroup (A ⧸ H))
+    (α β : A) (hα : ∀ w ∈ W, w • α - β ∈ H)
+    (pool reserve : Selection xs)
+    (hpool : ∀ i ∈ pool,
+      QuotientAddGroup.mk' H (occurrenceValue xs i - α) ∈ J)
+    (hreserve : ∀ i ∈ reserve,
+      occurrenceValue xs i - α ∈ H)
+    (hdis : Disjoint pool reserve)
+    (D : ℕ) (hD : IsWeightedDavenportConstant W J D)
+    (hreserveCard : D - 1 ≤ reserve.card)
+    {k : ℕ} {a : A}
+    (z : HasWeightedSumOfCard W xs k (k • β + a))
+    (hzpool : z.selected ⊆ pool) :
+    ∃ a' : A,
+      QuotientAddGroup.mk' H a' = QuotientAddGroup.mk' H a ∧
+      ∃ z' : HasWeightedSumOfCard W xs pool.card
+          (pool.card • β + a'),
+        z'.selected ⊆ pool ∪ reserve := by
+  classical
+  let qcenter : Occurrence xs → A ⧸ H := fun i ↦
+    QuotientAddGroup.mk' H (occurrenceValue xs i - α)
+  let f : Occurrence xs → J := fun i ↦
+    if hi : qcenter i ∈ J then ⟨qcenter i, hi⟩ else 0
+  let rem : Selection xs := pool \ z.selected
+  have hremDisjoint : Disjoint rem reserve := by
+    exact hdis.mono Finset.sdiff_subset (fun _ hi ↦ hi)
+  have hfReserve : ∀ i ∈ reserve, f i = 0 := by
+    intro i hi
+    have hqzero : qcenter i = 0 := by
+      exact (QuotientAddGroup.eq_zero_iff _).2 (hreserve i hi)
+    simp [f, hqzero]
+  obtain ⟨tail, htailSub, htailCard, weights, hweights, hzero⟩ :=
+    exists_weightedZeroSum_padded_selection
+      W rem reserve f D hD hremDisjoint hfReserve hreserveCard
+  have hfPool : ∀ i ∈ pool, (f i : A ⧸ H) = qcenter i := by
+    intro i hi
+    have hqi : qcenter i ∈ J := hpool i hi
+    simp [f, hqi]
+  have hfTail : ∀ i ∈ tail, (f i : A ⧸ H) = qcenter i := by
+    intro i hi
+    rcases Finset.mem_union.mp (htailSub hi) with hiRem | hiReserve
+    · exact hfPool i (Finset.sdiff_subset hiRem)
+    · have hqzero : qcenter i = 0 := by
+        exact (QuotientAddGroup.eq_zero_iff _).2 (hreserve i hiReserve)
+      have hfzero := congrArg (fun y : J ↦ (y : A ⧸ H))
+        (hfReserve i hiReserve)
+      simpa [hqzero] using hfzero
+  have hzTailDisjoint : Disjoint z.selected tail := by
+    rw [Finset.disjoint_left]
+    intro i hiz hitail
+    rcases Finset.mem_union.mp (htailSub hitail) with hiRem | hiReserve
+    · exact (Finset.mem_sdiff.mp hiRem).2 hiz
+    · exact (Finset.disjoint_left.mp hdis) (hzpool hiz) hiReserve
+  let tailSum : A :=
+    ∑ i ∈ tail, weights i • occurrenceValue xs i
+  let zTail : HasWeightedSumOfCard W xs tail.card tailSum := {
+    selected := tail
+    weights := weights
+    weights_mem := hweights
+    card_selected := rfl
+    weighted_sum := rfl
+  }
+  have hkPool : k ≤ pool.card := by
+    rw [← z.card_selected]
+    exact Finset.card_le_card hzpool
+  have hremCard : rem.card = pool.card - k := by
+    dsimp only [rem]
+    rw [Finset.card_sdiff, Finset.inter_eq_left.mpr hzpool,
+      z.card_selected]
+  have htotalCard : k + tail.card = pool.card := by
+    rw [htailCard, hremCard]
+    omega
+  have hzeroQuotient :
+      (∑ i ∈ tail, weights i • (f i : A ⧸ H)) = 0 := by
+    have hcoerced := congrArg (fun y : J ↦ (y : A ⧸ H)) hzero
+    simpa using hcoerced
+  have hcenterZero :
+      QuotientAddGroup.mk' H (tailSum - tail.card • β) = 0 := by
+    calc
+      QuotientAddGroup.mk' H (tailSum - tail.card • β) =
+          ∑ i ∈ tail,
+            QuotientAddGroup.mk' H
+              (weights i • occurrenceValue xs i - β) := by
+            simp [tailSum, Finset.sum_sub_distrib]
+      _ = ∑ i ∈ tail, weights i • (f i : A ⧸ H) := by
+            apply Finset.sum_congr rfl
+            intro i hi
+            rw [quotient_weighted_sub_center_eq_zsmul_quotient_sub_center
+              H W α β (occurrenceValue xs i) hα (hweights i hi), hfTail i hi]
+      _ = 0 := hzeroQuotient
+  let a' : A := a + (tailSum - tail.card • β)
+  have ha' : QuotientAddGroup.mk' H a' = QuotientAddGroup.mk' H a := by
+    simp [a', map_add, hcenterZero]
+  let zUnion := z.disjointUnion zTail hzTailDisjoint
+  have htarget :
+      (k • β + a) + tailSum = pool.card • β + a' := by
+    dsimp only [a']
+    rw [← htotalCard, add_nsmul]
+    abel
+  let zFinal : HasWeightedSumOfCard W xs pool.card
+      (pool.card • β + a') := {
+    selected := zUnion.selected
+    weights := zUnion.weights
+    weights_mem := zUnion.weights_mem
+    card_selected := zUnion.card_selected.trans htotalCard
+    weighted_sum := zUnion.weighted_sum.trans htarget
+  }
+  refine ⟨a', ha', zFinal, ?_⟩
+  intro i hi
+  change i ∈ z.selected ∪ tail at hi
+  rcases Finset.mem_union.mp hi with hiz | hitail
+  · exact Finset.mem_union_left reserve (hzpool hiz)
+  · rcases Finset.mem_union.mp (htailSub hitail) with hiRem | hiReserve
+    · exact Finset.mem_union_left reserve (Finset.sdiff_subset hiRem)
+    · exact Finset.mem_union_right pool hiReserve
+
 /-- The complete labelled affine container at fixed weighted center `β`:
 these and only these occurrences have a one-point zero-adjoined cell modulo
 `H`. -/
@@ -1203,6 +1361,9 @@ theorem generalWeightedStep1_fullAffineCore_or_concentration
 end GaoLean
 
 #print axioms GaoLean.exists_weightedSelection_of_mem_weightedStep1AffineSumset
+#print axioms GaoLean.quotient_weighted_sub_center_eq_zsmul_quotient_sub_center
+#print axioms GaoLean.weighted_sub_center_mem_liftedAddSubgroup_iff
+#print axioms GaoLean.exists_weightedCenteredFixedCardCompletion
 #print axioms GaoLean.finset_subset_subgroupFinset_of_zero_mem_of_quotientLayer_card_eq_one
 #print axioms GaoLean.selectedCellSumset_eq_subgroupFinset_of_zero_singleton_card
 #print axioms GaoLean.GeneralWeightedLemma35Certificate.affineProfile
