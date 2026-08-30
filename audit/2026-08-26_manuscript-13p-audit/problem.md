@@ -30,5 +30,5 @@
 - 不修改冻结正文的前提、量词或结论；
 - 不把 proposition parameter 称为该 proposition 已证明；
 - 不把项目构建通过称为无条件主定理通过；
-- 不访问或遍历 `C:\canglan`；
+- 不访问或遍历任务范围外的旧迁移目录；
 - 不修改只读来源仓库 `gao0823`、`gao0824` 或 PR worktree。

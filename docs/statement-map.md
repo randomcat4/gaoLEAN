@@ -26,11 +26,11 @@
 | `aᵢ-u₀∉W` implies `c=[aᵢ-u₀]`, `d=[δᵢ]` are independent modulo `Wᵢ` | `quotient_pair_independent_of_left_outside` | Exact source implication; no quotient independence remains as a hypothesis. Checked. |
 | Write unused-point classes as `tδᵢ,sδᵢ` and obtain the four crossed formulas | `exists_quotient_eq_smul_of_mem_fullSpan`, `exists_crossed_quotient_coordinates` | Derives all four displayed coefficient pairs from membership in `W`. Checked. |
 | Every matched endpoint lies in `u₀+W` | `left_sub_mem_fullSpan_of_maximum`, `right_sub_mem_fullSpan_of_maximum` | Composes the quotient bridge, determinant, crossed replacement, and maximum contradiction. Checked. |
-| Strictly below `⌊|A|/2⌋` leaves two distinct unmatched vertices | `card_usedVertices`, `exists_two_unused_of_card_lt_half` | Counts the injective tagged endpoint image and extracts two elements from the finite complement. Checked. |
+| Strictly below `⌊\|A\|/2⌋` leaves two distinct unmatched vertices | `card_usedVertices`, `exists_two_unused_of_card_lt_half` | Counts the injective tagged endpoint image and extracts two elements from the finite complement. Checked. |
 | All of `A` lies in one affine coset of `W` | `exists_base_all_sub_mem_fullSpan` | Handles both unused and matched occurrence-labelled vertices. Checked. |
 | `affdim A≤dim W=k` | `card_eq_min_finrank_vectorSpan_half_of_maximum` | Uses Mathlib `vectorSpan`, `finrank_mono`, and `finrank_span_eq_card`; also proves both immediate upper bounds. Checked. |
-| Choose a maximum matching in a finite search space | `exists_maximum_matching` | Bounds sizes by `|A|/2`, transports arbitrary finite labels to `Fin n`, and selects the maximum achievable `n`. Checked. |
-| Theorem 1.1: `νΔ(A)=min(affdim A,⌊|A|/2⌋)` for `char F≠2` | `exists_maximum_matching_at_formula` together with `card_eq_min_finrank_vectorSpan_half_of_maximum` | `2≠0` is the field-level characteristic hypothesis; `finrank (vectorSpan F A)` is the affine dimension. A maximum matching of exactly the formula size exists and every maximum has that size. `LEAN_FULLY_CHECKED` for this theorem statement. |
+| Choose a maximum matching in a finite search space | `exists_maximum_matching` | Bounds sizes by `\|A\|/2`, transports arbitrary finite labels to `Fin n`, and selects the maximum achievable `n`. Checked. |
+| Theorem 1.1: `νΔ(A)=min(affdim A,⌊\|A\|/2⌋)` for `char F≠2` | `exists_maximum_matching_at_formula` together with `card_eq_min_finrank_vectorSpan_half_of_maximum` | `2≠0` is the field-level characteristic hypothesis; `finrank (vectorSpan F A)` is the affine dimension. A maximum matching of exactly the formula size exists and every maximum has that size. `LEAN_FULLY_CHECKED` for this theorem statement. |
 | Threshold support `A_t={x:v_x(C)≥t}` for an occurrence-labelled sequence | `thresholdSupport` | A sequence is a finite occurrence type `Ω` with value map `C : Ω → V`; fiber cardinality is multiplicity. Checked. |
 | Choose `t` distinct copies of every selected support value | `chooseCopies`, `chooseCopies_value`, `chooseCopies_injective` | Uses an explicit injection `Fin t` into the occurrence fiber; labels, not values, are the disjointness objects. Checked. |
 | Corollary 2.1: `k` independent directions, `t` pairs per direction, all `2tk` endpoints disjoint | `OccurrenceReservoir`, `toOccurrenceReservoir`, `exists_occurrenceReservoir_at_threshold` | The tagged endpoint map on `(Fin k×Fin t)⊕(Fin k×Fin t)` is injective and every row has its stated direction. `k` is the exact threshold-support formula. `LEAN_FULLY_CHECKED`. |
@@ -304,7 +304,7 @@ proof of those predecessors or of PG-GAO-v1.
 | Natural-language step | Lean declaration | Fidelity / remaining boundary |
 |---|---|---|
 | Rotation channel `C`, outside reservoir `Bprime`, full selection `(C\\D0)∪Bprime`, and exact (5.14) size/sum | `RotationChannelAlternative`; `hasAllRotationProductOneSubsequence_of_rotationChannelAlternative` | `C` and `Bprime` remain occurrence-disjoint and separate. Full complement algebra and exact `2Q` closure checked. The alternative is an explicit preparation output, not GMO. |
-| Non-full ordinary GMO concentration measured by `M=|C|`, strict `H<K`, translation, (5.10)-(5.11), smaller `ZR`, pullback | non-full branch of `RotationChannelAlternative`; `RotationChannelPreparedData.hasAllRotationProductOneSubsequence` | Checked after the labelled concentration output. No stronger count involving `Bprime` is assumed. |
+| Non-full ordinary GMO concentration measured by `M=\|C\|`, strict `H<K`, translation, (5.10)-(5.11), smaller `ZR`, pullback | non-full branch of `RotationChannelAlternative`; `RotationChannelPreparedData.hasAllRotationProductOneSubsequence` | Checked after the labelled concentration output. No stronger count involving `Bprime` is assumed. |
 | Arbitrary-auxiliary positive `ZR` step | `RotationChannelPreparation`; `concreteZRPositiveStep_of_rotationChannelPreparations` | The conclusion is constructed from preparations for every eligible `X,K`; smaller fixed-source `RC` is intentionally unused, matching lines 556-566. |
 | Reflection channel full output after signed GMO and exact `2Q` ordering | `ReflectionChannelFullOutput`; `.hasProductOneSubsequence` | Checked consumer of a balanced occurrence certificate. The source construction of `U`, defect `z`, and the signed GMO output is still hidden inside the explicit preparation and is not formalized. |
 | Reflection non-full weighted cosets, `x∈H`, capacity composition, and smaller fixed-source `RC_S(H)` | `ReflectionChannelAlternative`; `ReflectionChannelPreparedData.hasProductOneSubsequence` | Lines 455-480 checked after the labelled alternative. The provisional `U,z` are not carried through descent. |
@@ -326,7 +326,7 @@ PG-GAO-v1.
 | `z=σ(Bprime)∈K` | `RotationQuotientExtraction.coordinateSum_Bprime_mem`; `RotationChannelPreGMOData.coordinateSum_Bprime_mem` | Derived from the quotient coordinate sum being zero; not assumed. |
 | Reflections together with `B0` are product-one-free in `G(A/K)` | `reflection_union_B0_quotientProductOneFree` | Reflection-containing selections contradict `QuotientNoReflection`; rotation-only selections contradict `B0` quotient-zero-sum-freeness. Checked. |
 | `a+r0≤D(A/K)` from the quotient small-Davenport theorem | `QuotientSmallDavenportProductOneFreeAtMost`; `exists_rotationChannelPreGMOData` | The implication and labelled carrier are checked; the numerical quotient bound is an explicit GJM/Olson-facing parameter. |
-| `d=D-a-r0`, exact (5.14) size, (5.13), GMO length threshold, and (5.16) `m≥|K|` | `RotationChannelPreGMOData`; `.defect_ge_of_davenport_split`; `.reservoir_threshold`; `.target_ge_card_subgroup` | Exact natural-subtraction and quotient-cardinality arithmetic checked. The Davenport convolution identity remains explicit where used. |
+| `d=D-a-r0`, exact (5.14) size, (5.13), GMO length threshold, and (5.16) `m≥\|K\|` | `RotationChannelPreGMOData`; `.defect_ge_of_davenport_split`; `.reservoir_threshold`; `.target_ge_card_subgroup` | Exact natural-subtraction and quotient-cardinality arithmetic checked. The Davenport convolution identity remains explicit where used. |
 | Produce `RotationChannelPreparation` after extraction | `rotationChannelPreparation_of_extraction` | Only the quotient small-Davenport bound, its comparison with `D`, controller capacity, and `RotationChannelGMOProvider` remain parameters. |
 | Assemble the controller without assuming a rotation preparation family | `concretePGO3ControllerSkeleton_of_rotationGMOProviders` | The arbitrary-`X` extraction is constructed internally. Reflection preparation, ambient/quotient GJM inputs, and GMO remain explicit. |
 
@@ -344,7 +344,7 @@ identities.  The reflection channel still lacks the labelled construction of
 | Start with a reflection-containing quotient-product-one block, add disjoint blocks, leave product-one-free `R`, put `U=T\R` | `exists_reflectionQuotientExtraction`; `ReflectionQuotientExtraction` | Lean chooses a maximum-cardinality reflection-containing quotient-product-one labelled selection and takes its exact complement. It does not encode one procedural greedy order, but proves exactly the partition, reflection, product-one, and free-remainder postconditions used by the source. |
 | Lift the quotient ordering to `G`; obtain defect `z∈K` | `exists_liftedQuotientOrdering`; `LiftedQuotientOrdering.product_isRotation_and_coordinate_mem` | The lift is multiplicity-faithful even when quotient images collide. Kernel membership is derived from the quotient product, not assumed. |
 | `U` contains a positive even number of reflections | `even_reflectionCount_of_word_prod_one`; `positive_even_selectedReflectionCount` | Checked through the `C₂` right coordinate and `ZMod 2`; count is on the selected source multiset. |
-| `τ=D-|R|`, `m=M-τ`, (5.7) threshold, (5.8) `m≥|K|`, and (5.9) `|U|+m=2Q` | `ReflectionChannelPreGMOData`; `.tau_ge_of_davenport_split`; `.signed_reservoir_threshold`; `.target_ge_card_subgroup`; `exists_reflectionChannelPreGMOData` | Exact truncated-natural arithmetic and quotient-cardinality factorization checked. Quotient small-Davenport and the Davenport split remain explicit inputs where used. |
+| `τ=D-\|R\|`, `m=M-τ`, (5.7) threshold, (5.8) `m≥\|K\|`, and (5.9) `\|U\|+m=2Q` | `ReflectionChannelPreGMOData`; `.tau_ge_of_davenport_split`; `.signed_reservoir_threshold`; `.target_ge_card_subgroup`; `exists_reflectionChannelPreGMOData` | Exact truncated-natural arithmetic and quotient-cardinality factorization checked. Quotient small-Davenport and the Davenport split remain explicit inputs where used. |
 | Full signed-GMO output uses exactly `U` plus `m` occurrences from `C`; non-full output uses unchanged `C` | `ReflectionChannelExtractedFullOutput`; `ReflectionChannelExtractedAlternative`; `ReflectionChannelGMOProvider` | The provider is a proposition parameter, not an axiom. Full carrier/count linkage is checked; producing the balanced assignment from the published signed theorem and lifted ordering is still external. |
 | Produce reflection preparation and assemble the controller without either preparation family | `reflectionChannelPreparation_of_extraction`; `concretePGO3ControllerSkeleton_of_channelGMOProviders` | Both extraction families are internal. Remaining channel assumptions are explicit GMO and quotient small-Davenport providers. |
 
@@ -360,10 +360,10 @@ remain unformalized.
 | Natural-language step | Lean declaration | Fidelity / coverage |
 |---|---|---|
 | Split every source occurrence into rotations and reflections | `rotationOccurrences`; `reflectionOccurrences`; `rotationOccurrences_union_reflectionOccurrences`; `card_reflectionOccurrences_add_card_rotationOccurrences` | Exact partition on source indices. Equal-valued repeated terms remain distinct occurrences. Checked. |
-| Invoke low/high output only in its numerical regime and the residual controller only in the middle regime | `ReflectionRegimeClosureInputs`; `hasProductOneSubsequenceOfTwice_of_reflectionRegimeClosureInputs` | The three-way route uses the actual reflection count `a` and checked cardinality identity `a+b=|source|`. No global controller is assumed outside the middle branch. Checked. |
-| Obtain the exact upper threshold `2|A|+D` | `PGGaoUpperInputs`; `hasExactProductOneBlockAtLength_of_pgGaoUpperInputs` | Internal PG-O4 dispatch is checked. The branch outputs and external theorem bridges are still explicit proposition fields. Conditional, not a proof of their existence. |
+| Invoke low/high output only in its numerical regime and the residual controller only in the middle regime | `ReflectionRegimeClosureInputs`; `hasProductOneSubsequenceOfTwice_of_reflectionRegimeClosureInputs` | The three-way route uses the actual reflection count `a` and checked cardinality identity `a+b=\|source\|`. No global controller is assumed outside the middle branch. Checked. |
+| Obtain the exact upper threshold `2\|A\|+D` | `PGGaoUpperInputs`; `hasExactProductOneBlockAtLength_of_pgGaoUpperInputs` | Internal PG-O4 dispatch is checked. The branch outputs and external theorem bridges are still explicit proposition fields. Conditional, not a proof of their existence. |
 | Pad a length-`D` product-one-free word by identities without losing occurrence labels | `SmallDavenportWitness`; `noProductOneBlock_of_identityPadding` | Prefix/suffix separation is by `Fin` occurrence embeddings, not by value. Identity-valued entries already in the witness are preserved. Checked. |
-| Produce a counterexample for every `n<2|A|+D` | `pgGaoThresholdCounterexamples_of_smallDavenportWitness` | Handles `n<2|A|` by the cardinality obstruction and `2|A|≤n` by exact identity padding. Checked. |
+| Produce a counterexample for every `n<2\|A\|+D` | `pgGaoThresholdCounterexamples_of_smallDavenportWitness` | Handles `n<2\|A\|` by the cardinality obstruction and `2\|A\|≤n` by exact identity padding. Checked. |
 | Conclude the frozen threshold equality | `pgGaoV1_of_upperInputs_and_smallDavenportWitness` | Checked only as implication from `PGGaoUpperInputs` and `SmallDavenportWitness`. It neither constructs those inputs nor asserts PG-GAO-v1 unconditionally. |
 
 Consequently the occurrence bookkeeping and lower-bound transformation are no
@@ -425,13 +425,13 @@ Davenport hypothesis.
 |---|---|---|
 | A finite `p`-group has cardinality `p^n` | `odd_natCard_of_odd_prime_pgroup` via `IsPGroup.iff_card` | Uses the frozen `IsPGroup p (Multiplicative A)` hypothesis and pinned Mathlib. Checked. |
 | An odd prime power is odd | `odd_natCard_of_odd_prime_pgroup` via `Prime.odd_of_ne_two` and `Odd.pow` | Exact numerical implication, checked. |
-| Remove the separate odd-cardinality parameter | `pgGaoV1_of_externalUpperInputs_and_ordinaryDavenport_of_pgroup` | Conditional on the upper source package and `D≤|A|`; no longer conditional on an independently supplied oddness fact. |
+| Remove the separate odd-cardinality parameter | `pgGaoV1_of_externalUpperInputs_and_ordinaryDavenport_of_pgroup` | Conditional on the upper source package and `D≤\|A\|`; no longer conditional on an independently supplied oddness fact. |
 
 ## Exact frozen-statement residual map (M30)
 
 | Natural-language step | Lean declaration | Fidelity / coverage |
 |---|---|---|
-| List every remaining obligation under the exact frozen quantifiers | `PGGaoRemainingInputs` | Contains only `D≤|A|` and `PGGaoExternalUpperInputs`; lower witness and oddness are no longer fields. |
+| List every remaining obligation under the exact frozen quantifiers | `PGGaoRemainingInputs` | Contains only `D≤\|A\|` and `PGGaoExternalUpperInputs`; lower witness and oddness are no longer fields. |
 | Close the fully quantified frozen theorem from those obligations | `pgGaoV1Statement_of_remainingInputs` | Universe-matched to `PGGaoV1Statement`; mechanically checked. The residual interface is not proved. |
 
 ## Finite Davenport cardinality bound (M31; supersedes M29--M30 residual descriptions)
@@ -442,10 +442,10 @@ additive group, not the p-group hypotheses.
 
 | Natural-language step | Lean declaration | Fidelity / coverage |
 |---|---|---|
-| Among `|A|+1` prefix sums, two are equal | `hasNonemptyZeroSum_of_length_natCard`; `finitePrefixSum` | Finite pigeonhole is proved from `Fintype.card_le_of_injective`; no external combinatorial theorem parameter. Checked. |
+| Among `\|A\|+1` prefix sums, two are equal | `hasNonemptyZeroSum_of_length_natCard`; `finitePrefixSum` | Finite pigeonhole is proved from `Fintype.card_le_of_injective`; no external combinatorial theorem parameter. Checked. |
 | Equal prefixes select a nonempty zero-sum block | `intervalSelection`; `sum_intervalSelection_eq_sum_Ico`; `hasNonemptyZeroSum_of_equal_prefixes` | The block is a `Finset (Fin s.length)` on the half-open source interval. Equal values at different positions remain different occurrences. Checked. |
-| The exact ordinary Davenport value satisfies `D≤|A|` | `ordinaryDavenportConstant_le_natCard` | Contradicts the defining length-`|A|` zero-sum-free counterexample if `|A|<D`. This relies on the frozen exact definition, not a new axiom. Checked. |
-| Remove the numerical residual field | `pgGaoV1_of_externalUpperInputs_and_ordinaryDavenport_of_pgroup`; `PGGaoRemainingInputs` | Both oddness and `D≤|A|` are now internal. The only residual input is `PGGaoExternalUpperInputs`; its existence is still unproved. |
+| The exact ordinary Davenport value satisfies `D≤\|A\|` | `ordinaryDavenportConstant_le_natCard` | Contradicts the defining length-`\|A\|` zero-sum-free counterexample if `\|A\|<D`. This relies on the frozen exact definition, not a new axiom. Checked. |
+| Remove the numerical residual field | `pgGaoV1_of_externalUpperInputs_and_ordinaryDavenport_of_pgroup`; `PGGaoRemainingInputs` | Both oddness and `D≤\|A\|` are now internal. The only residual input is `PGGaoExternalUpperInputs`; its existence is still unproved. |
 
 ## Ordinary GMO to low-reflection transport (M32)
 
@@ -453,7 +453,7 @@ Natural-language anchor: `A-R6/proof.md:205--216` (Section 4.1).
 
 | Natural-language step | Lean declaration | Fidelity / coverage |
 |---|---|---|
-| Ordinary prescribed-length GMO: `|S|≥k+D-1`, `k≥|A|`, exact `k` terms, sum in `kA` | `OrdinaryGMOTargetOutput`; `OrdinaryGMOPrescribedLengthProvider` | Exact occurrence-labelled theorem interface. It is a proposition parameter, not proved or declared as an axiom. |
+| Ordinary prescribed-length GMO: `\|S\|≥k+D-1`, `k≥\|A\|`, exact `k` terms, sum in `kA` | `OrdinaryGMOTargetOutput`; `OrdinaryGMOPrescribedLengthProvider` | Exact occurrence-labelled theorem interface. It is a proposition parameter, not proved or declared as an axiom. |
 | Form the additive sequence of all rotation coordinates | `rotationCoordinateSequence`; `rotationSourceOccurrence` | Uses the canonical `Finset.toList` of source rotation positions. Equal coordinates are retained as separate list occurrences. |
 | Pull an additive selection back to the original source | `rotationSourceOccurrence_injective`; `rotationSourceOccurrence_mem`; `LowReflectionTargetOutput.ofOrdinaryGMOTargetOutput` | Proves injectivity from nodup source positions, exact cardinality preservation, rotation membership, and coordinate-sum equality. Checked. |
 | Close the `a≤1` source field from ordinary GMO | `exists_lowReflectionTargetOutput_of_ordinaryGMO`; `pgGaoUpperInputs_of_externalUpperInputs` | The checked count `2Q+D-1≤b` supplies the theorem threshold. `PGGaoExternalUpperInputs` now asks for the natural GMO provider, not an arbitrary `LowReflectionTargetOutput` for each source. |

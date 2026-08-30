@@ -1,10 +1,10 @@
 # Provenance
 
-- Statement and proof architecture: final arbitrary-rank manuscript under
-  `gao0823/projects/gao-ci2/arbitrary-rank/manuscript`.
+- Statement and proof architecture: the self-contained manuscript under
+  `paper/arxiv/` in this repository.
 - Existing formal components: public `randomcat4/gaoLEAN` repository.
 - Lean verification environment: Lean 4.32.0, Lake 5.0.0, Mathlib v4.32.0
-  (`81a5d257...`) on the authorized server.
+  (`81a5d257...`) in the recorded remote verification environment.
 - This run does not edit the source manuscript repositories.
 
 Each formal declaration must be traceable either to a manuscript obligation,

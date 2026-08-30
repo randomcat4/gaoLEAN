@@ -9,10 +9,10 @@ Lean directory may be treated as a substitute for the paper proof.
 
 The ambient data are
 
-\[
+$$
 A=\bigoplus_i C_{p^{\lambda_i}},\qquad p\text{ odd},\qquad
 Q=|A|,\qquad D_A=D(A),\qquad G=A\rtimes_{-1}C_2.
-\]
+$$
 
 The target length in every terminal branch is `2Q = |G|`.
 
@@ -22,9 +22,9 @@ The target length in every terminal branch is `2Q = |G|`.
 
 Used for
 
-\[
+$$
 D(A)=1+\sum_i(p^{\lambda_i}-1)
-\]
+$$
 
 and the same formula for every subgroup of `A`. Consequences used internally:
 `D_A <= Q`, `exp(A) | Q`, and oddness of `D_A` and `Q`.
@@ -33,9 +33,9 @@ and the same formula for every subgroup of `A`. Consequences used internally:
 
 The paper uses the rewriting of their Theorem 1.1
 
-\[
+$$
 d\bigl(B\rtimes_{-1}C_2\bigr)=D(B)
-\]
+$$
 
 for finite abelian `B`. It is applied with `B=A` and `B=A/K`.
 
@@ -49,9 +49,9 @@ The manuscript specializes Corollaries 1.2 and 1.3. The structural alternative
 must retain the **same** coset `beta + H` for `w x`, simultaneously for every
 weight `w` and every selected value `x`:
 
-\[
+$$
 W x\subseteq \beta+H.
-\]
+$$
 
 A formulation in which the coset depends on `w` is insufficient for the signed
 branches and must be rejected.
@@ -69,9 +69,9 @@ Corollaries 1.2-1.3 in arXiv:0903.2810 or the published Ramanujan Journal versio
 - Target: `n=2Q`.
 - Target floor: `2Q >= |A|=Q`.
 - Length threshold:
-  \[
+  $$
   b\ge 2Q+D_A-1=n+D_{\{1\}}(A)-1.
-  \]
+  $$
 - Output set: the existence corollary gives a value in `2Q A = {0}`.
 - Required conclusion: exactly `2Q` rotations with ordinary sum zero.
 
@@ -82,15 +82,15 @@ Corollaries 1.2-1.3 in arXiv:0903.2810 or the published Ramanujan Journal versio
 - Weight set: `{-1,1}`.
 - Target: `n=Q=|A|`.
 - Pair-sequence length:
-  \[
+  $$
   Q+\frac{D_A-1}{2}.
-  \]
+  $$
 - Surplus check:
-  \[
+  $$
   D_{\pm}(A)\le\frac{D_A+1}{2}
   \quad\Longrightarrow\quad
   Q+\frac{D_A-1}{2}\ge Q+D_{\pm}(A)-1.
-  \]
+  $$
 - Output set: `Q A={0}`.
 - Noncommutative reconstruction: each selected reflection pair contributes one
   positive and one negative reflection sign; at least one reflection pair is
@@ -103,14 +103,14 @@ Corollaries 1.2-1.3 in arXiv:0903.2810 or the published Ramanujan Journal versio
 - Sequence: all `b` rotation vectors.
 - Weight set: `{-1,1}`.
 - Target:
-  \[
+  $$
   e=2\lfloor a/2\rfloor,\qquad \ell=2Q-e.
-  \]
+  $$
 - Target floor: `ell >= Q=|A|`.
 - Length surplus:
-  \[
+  $$
   b-\ell=D_A\text{ or }D_A-1\ge D_{\pm}(A)-1.
-  \]
+  $$
 - Full branch: choose `e` reflections with balanced signs and `ell` rotations
   with the opposite signed sum; total length `e+ell=2Q`.
 - Structural branch: the common weighted coset gives `x,-x in beta+K`, hence
@@ -126,22 +126,22 @@ Corollaries 1.2-1.3 in arXiv:0903.2810 or the published Ramanujan Journal versio
 - Quotient remainder: after removing product-one blocks from `T_K(S)`, the
   product-one-free remainder `R` satisfies `|R| <= D(A/K)`.
 - Defect surplus:
-  \[
+  $$
   \tau=D_A-|R|\ge D(K)-1\ge D_{\pm}(K)-1.
-  \]
+  $$
 - Target:
-  \[
+  $$
   m=M-\tau=M-D_A+|R|.
-  \]
+  $$
 - Target floor: `m >= |K|` by the concentration threshold and Lemma 5.3.
 - Length threshold: `M >= m+D_pm(K)-1`.
 - Full branch: choose a signed `m`-term rotation subsequence summing to the
   negative quotient-lift defect; disjointness holds because `T_K(S)` omits the
   rotations in `K`.
 - Length check:
-  \[
+  $$
   |U|+m=a+c-|R|+M-D_A+|R|=2Q.
-  \]
+  $$
 - Structural branch: the common weighted coset again implies actual membership
   in `H`, and the concentration estimate composes from `K` to `H`.
 
@@ -154,9 +154,9 @@ Corollaries 1.2-1.3 in arXiv:0903.2810 or the published Ramanujan Journal versio
   the remainder `B_0`, together with all reflections, is product-one-free in
   `Dih(A/K)`; hence `a+|B_0| <= D(A/K)`.
 - Define
-  \[
+  $$
   d_0=D_A-a-|B_0|,\qquad m=M-d_0.
-  \]
+  $$
 - Surplus: `d_0 >= D(K)-1`, hence `M >= m+D(K)-1`.
 - Target floor: `m >= |K|`.
 - Full branch: positional complementation converts `Sigma_m(C)=K` to

@@ -110,4 +110,5 @@ import GaoLean.PGGeneralWeightedProviderQuotient
 import GaoLean.PGGeneralWeightedInductionDriver
 import GaoLean.PGGeneralWeightedPrimitiveExistence
 import GaoLean.PGGaoOrdinaryComplete
+import GaoLean.GaoGeneralizedDihedral
 import GaoLean.PGManuscriptConsequences

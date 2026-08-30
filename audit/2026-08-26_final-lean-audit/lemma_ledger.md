@@ -11,7 +11,7 @@
 | Rank 2 middle first GMO split | rank-two section, `2 ≤ a ≤ 2q-1` | proved | structural GMO provider |
 | Rank 2 `K=0` middle leaf | rank-two section | proved | explicit small-Davenport provider |
 | Rank 2 subgroup classification | rank-two section | proved | internal linear algebra |
-| `D_±(K) ≤ |K|` | rank-two line branch | proved | internal ordinary zero-sum reduction |
+| `D_±(K) ≤ \|K\|` | rank-two line branch | proved | internal ordinary zero-sum reduction |
 | Rank 2 line, `s ≤ q` | rank-two section | proved | ordinary GMO provider on the line |
 | Dihedral reflection block | preliminaries, Lemma `Dihedral blocks` (1) | proved | internal Cauchy--Davenport argument |
 | `d(D₂q) ≤ q` | preliminaries, Lemma `Dihedral blocks` (2), upper half | proved | internal occurrence-labelled extraction |
@@ -23,7 +23,7 @@
 | Rank 3 outer reflection ranges | rank-three section | proved | ordinary/weighted GMO + explicit `D_±(F_q³)` input |
 | Rank 3 first stabilizer descent | rank-three section | proved | structural GMO + explicit `D_±(F_q³)` input |
 | Rank 3 subgroup classification | rank-three section | proved | internal `ZMod q` linear algebra; nonzero proper subgroups have size `q` or `q²` |
-| `D_±(K) ≤ 2q-1` for `|K|=q²` | rank-three plane descent | proved | internal labelled subset-sum collision |
+| `D_±(K) ≤ 2q-1` for `\|K\|=q²` | rank-three plane descent | proved | internal labelled subset-sum collision |
 | Rank 3 plane stabilizer descent | rank-three section | proved | ordinary/signed structural GMO interfaces + checked zero/line descent |
 | Rank 3 upper bound | rank-three section | proved | complete low/middle/high assembly |
 | Line completion: signed lifting | rank-three section | proved | structural GMO on the prime line; non-full branch contradicted internally |

@@ -11,7 +11,7 @@ endpoint is conditional and is never reported as a completed proof.
 The current manuscript-wide verdict for the frozen 13-page `gao0824` PR #7
 source is **`PARTIALLY_VERIFIED`**. Two facts must remain separate:
 
-1. `GaoLean.ConcreteGDihedral.pr7ThirteenPageMain` proves the main Gao
+1. `GaoLean.ConcreteGDihedral.gaoGeneralizedDihedralOddPGroup` proves the main Gao
    statement unconditionally. It has the frozen p-group quantifiers and no
    remaining-input, provider, or recursive-output argument. The ordinary
    `W={1}` and signed `W={±1}` GMO specializations actually used by that proof
@@ -44,7 +44,7 @@ frozen 13-page main Gao statement
     │      └── structural provider for ambient/subgroups          [CHECKED]
     ├── quotient extraction, channel consumers, strict descent    [CHECKED]
     ├── exact upper and lower bounds                              [CHECKED]
-    └── pr7ThirteenPageMain                                       [CHECKED]
+    └── gaoGeneralizedDihedralOddPGroup                           [CHECKED]
 
 manuscript Theorem 2.2 in its full source range
     ├── arbitrary nonempty W : Set ℤ statement/interface          [CHECKED]
@@ -75,7 +75,7 @@ manuscript Theorem 2.2 in its full source range
 
 | Area | Representative Lean endpoint | State |
 |---|---|---|
-| Frozen main theorem | `ConcreteGDihedral.pr7ThirteenPageMain` | `CHECKED`, unconditional |
+| Stable public main theorem | `ConcreteGDihedral.gaoGeneralizedDihedralOddPGroup` | `CHECKED`, unconditional |
 | Ordinary GMO used by the paper | `ordinaryGMOPrescribedLengthProvider_of_canonicalDStar` | `CHECKED`, `W={1}` specialization |
 | Ordinary structural GMO | `ordinaryGMOStructuralProvider_addSubgroup_of_oddPrimePGroup` | `CHECKED`, `W={1}` specialization |
 | Signed GMO used by the paper | `oddPlusMinusGMOProviders_for_finalAssembly_of_doubleInduction` | `CHECKED`, `W={±1}` specialization |
@@ -172,7 +172,7 @@ specialized structural providers are derived from it.
 
 ### G4 — Manuscript closure audit
 
-- Update `pr7-13-page-map.md` so every Theorem 2.2 row points to the G1--G3
+- Update `manuscript-lean-map.md` so every Theorem 2.2 row points to the G1--G3
   endpoint and proof, not merely to its two specializations.
 - Run a fresh default build and `GaoFormal.AxiomAudit` in a clean clone.
 - Repeat forbidden-declaration scanning and two-way source/Lean review.
@@ -213,4 +213,4 @@ here as a running diary:
 Statements such as “still missing” in an older milestone describe that
 revision. Conversely, an older specialized “complete” label does not prove
 the currently open arbitrary-weight Theorem 2.2. The current status is
-defined only by this plan, `pr7-13-page-map.md`, and the latest audit verdict.
+defined only by this plan, `manuscript-lean-map.md`, and the latest audit verdict.

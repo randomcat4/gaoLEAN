@@ -16,4 +16,4 @@ rev = "v4.32.0"
 [[require]]
 name = "MiscYD"
 git = "https://github.com/YaelDillies/misc-yd.git"
-rev = "3c3f6d2"
+rev = "3c3f6d2ef31dd82c82ea90fb0fef8508c976afb7"

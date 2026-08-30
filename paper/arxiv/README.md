@@ -2,9 +2,9 @@
 
 This directory contains the self-contained 13-page manuscript proving
 
-\[
+$$
 E\bigl(A\rtimes_{-1}C_2\bigr)=2|A|+D(A)
-\]
+$$
 
 for nontrivial finite abelian `p`-groups `A`, with `p` odd. The checked PDF is
 available as [`main.pdf`](main.pdf); the complete LaTeX source is stored beside
@@ -55,7 +55,7 @@ final generalized-dihedral Gao theorem stated in this manuscript has an
 unconditional Lean endpoint. The repository-wide verdict nevertheless remains
 `PARTIALLY_VERIFIED`, because the manuscript also states a general arbitrary-
 weight GMO theorem whose full source range is still being formalized. The root
-README and the [manuscript-to-Lean evidence map](../../docs/pr7-13-page-map.md)
+README and the [manuscript-to-Lean evidence map](../../docs/manuscript-lean-map.md)
 record this boundary precisely.
 
 The author field is intentionally blank because author metadata has not been

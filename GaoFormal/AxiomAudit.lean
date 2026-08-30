@@ -324,6 +324,7 @@ import GaoFormal
 #print axioms GaoLean.ordinaryGMOStructuralProvider_addSubgroup_of_oddPrimePGroup
 #print axioms GaoLean.ConcreteGDihedral.pgGaoOrdinaryRemainingInputs
 #print axioms GaoLean.ConcreteGDihedral.pr7ThirteenPageMain
+#print axioms GaoLean.ConcreteGDihedral.gaoGeneralizedDihedralOddPGroup
 #print axioms GaoLean.ConcreteGDihedral.pgGao_homocyclic_display
 #print axioms GaoLean.ConcreteGDihedral.pgGao_elementaryAbelian_display
 #print axioms GaoLean.ConcreteGDihedral.c3SquaredDavenportWitness_zeroSumFree

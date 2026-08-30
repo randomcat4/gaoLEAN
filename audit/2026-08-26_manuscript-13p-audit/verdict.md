@@ -41,4 +41,4 @@
 早期逐项材料仍保留在 `verifications/agent-a.md`、`agent-b.md`、
 `main-review.md` 与 `lemma52-addendum.md`，用于追踪当时发现和闭合的缺口。最新 Lean
 构建与信任边界见 `verifications/lean.md`，当前逐段范围见仓库根目录
-`pr7-13-page-map.md`。
+`docs/manuscript-lean-map.md`。

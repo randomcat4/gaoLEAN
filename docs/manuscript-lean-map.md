@@ -1,13 +1,16 @@
-# gao0824 PR #7（13 页）正文—Lean 映射
+# 13 页正文—Lean 映射
 
 ## 冻结来源
 
-- 仓库：`randomcat4/gao0824`
-- PR：[#7](https://github.com/randomcat4/gao0824/pull/7)
-- 分支：`paper/arxiv-rewrite-2026-08-24`
-- 提交：`6d4ab81b14f49aaa61d7aeb8c02182f1259a736b`
-- 正文：`paper/arxiv/main.tex` 与 `paper/arxiv/sections/*.tex`
-- 构建回执：13 页
+- 自包含正文：[`paper/arxiv/main.tex`](../paper/arxiv/main.tex) 与
+  [`paper/arxiv/sections/`](../paper/arxiv/sections/)
+- 可读成稿：[`paper/arxiv/main.pdf`](../paper/arxiv/main.pdf)，13 页
+- 完整性清单：[`paper/arxiv/MANIFEST.sha256`](../paper/arxiv/MANIFEST.sha256)
+- 构建回执：[`paper/arxiv/BUILD-REPORT.md`](../paper/arxiv/BUILD-REPORT.md)
+
+本映射只以本仓库内的冻结正文为审计基准，不依赖外部拉取请求、私有仓库或历史工作区。
+上游提交 `6d4ab81b14f49aaa61d7aeb8c02182f1259a736b` 仅保留为导入溯源信息，
+不是理解或复现本仓库的逻辑依赖。
 
 当前整篇裁决：`PARTIALLY_VERIFIED`。下列状态词只评价所在行，不能把某个主定理行的
 `FULLY_CHECKED` 提升为整篇逐命题完全覆盖。
@@ -24,7 +27,7 @@
 
 | 正文位置 | 数学内容 | Lean 锚点 | 状态与边界 |
 |---|---|---|---|
-| Abstract, Introduction Theorem 1.1 | `E(Dih(A))=2|A|+D(A)`，奇阿贝尔 `p` 群核 | `PGStatements.PGGaoV1Statement`; `PR7ThirteenPage.PR7ThirteenPageMainStatement`; `ConcreteGDihedral.pr7ThirteenPageMain` | `FULLY_CHECKED`；无 remaining-input/provider 参数，完整量词、exact `2|A|`、exact/at-least 语义桥与 `|Dih(A)|=2|A|` 均已证 |
+| Abstract, Introduction Theorem 1.1 | `E(Dih(A))=2\|A\|+D(A)`，奇阿贝尔 `p` 群核 | `ConcreteGDihedral.gaoGeneralizedDihedralOddPGroup`（稳定公开入口）；历史冻结类型 `PR7ThirteenPageMainStatement` | `FULLY_CHECKED`；无 remaining-input/provider 参数，完整量词、exact `2\|A\|`、exact/at-least 语义桥与 `\|Dih(A)\|=2\|A\|` 均已证 |
 | Introduction, explicit invariant-factor formula | `D(A)=1+sum(p^lambda_i-1)` | `PGOlson.exists_olsonInvariantProduct`; `PGOlson.isOrdinaryDavenportConstant_invariantProduct` | `CHECKED`；从有限阿贝尔 `p` 群分类构造有限循环直积，并在 Lean 内证明精确 ordinary Davenport 常数公式 |
 | Introduction, `d(Dih(A))=D(A)` equivalence | GJM small Davenport identity | `PGGJM.smallDavenportProductOneFreeAtMost_of_ordinaryDavenport`; `PGDavenportBridge.smallDavenportWitness_of_isOrdinaryDavenportConstant` | `CHECKED`；长度 `D` 的 product-one-free 下界见证与任意长度至多 `D` 的上界均已 occurrence-faithfully 证明 |
 | Introduction, `C_3^2` example | 五项积一自由见证、17 个单位元补齐与 `E=23` | `PGManuscriptConsequences.c3SquaredDavenportWitness`; `c3SquaredDavenportWitnessOccurrenceEquiv`; `c3SquaredProductOneFreeWord_isProductOneFree`; `c3SquaredPaddedLowerWord_no_eighteenBlock`; `pgGao_c3Squared_threshold` | `CHECKED`；四个 additive occurrences 由 `Σ i : Fin 2, Fin 2` 标记，故是两坐标各两份生成元；再接一枚反射与 17 个单位元，长度 22 且无 18 项积一块。内部枚举顺序未冒充正文的字面排列，但 occurrence-labelled 多重集与数值阈值均已核验 |
@@ -57,15 +60,16 @@
 | Lemma 5.9 | `2Q alpha=0` 的全旋转回拉 | `PGTranslation.hasAllRotationProductOneSubsequence_pullback_translatedSequence` | `CHECKED` |
 | Theorem 5.1 base cases | `P_S(0)` 与 `Q(0)` 分别证明 | `PGBase`; `PGInduction.concreteControllerAt_bot_of_smallDavenport`; `PGGJM` | `CHECKED`；所需 small-Davenport 上界已内部供给 |
 | Theorem 5.1 induction | 每次严格下降 `H<K`，同时强归纳 | `PGInduction`; `PGControllerClosure`; `GAOARResidualController`; `ordinaryGMOStructuralProvider_addSubgroup_of_oddPrimePGroup` | `CHECKED`；source providers 已内部实现 |
-| §6 main completion | 三个 reflection regimes 与上下界装配 | `PGReflectionRegimes`; `PGSynthesis`; `GAOARFinal`; `ConcreteGDihedral.pr7ThirteenPageMain` | `FULLY_CHECKED`；未把 desired upper bound 作为参数 |
-| Corollary 6.1 | homocyclic / elementary-abelian 数值公式 | `PGManuscriptConsequences.pgGao_homocyclic_display`; `PGManuscriptConsequences.pgGao_elementaryAbelian_display` | `FULLY_CHECKED`；无 remaining-input 参数，保持原来的 prime/odd/Nontrivial 量词；Lean 核验 `|C_(p^k)^r|=p^(kr)` 与 `D=1+r(p^k-1)` |
+| §6 main completion | 三个 reflection regimes 与上下界装配 | `PGReflectionRegimes`; `PGSynthesis`; `GAOARFinal`; `ConcreteGDihedral.gaoGeneralizedDihedralOddPGroup` | `FULLY_CHECKED`；未把 desired upper bound 作为参数 |
+| Corollary 6.1 | homocyclic / elementary-abelian 数值公式 | `PGManuscriptConsequences.pgGao_homocyclic_display`; `PGManuscriptConsequences.pgGao_elementaryAbelian_display` | `FULLY_CHECKED`；无 remaining-input 参数，保持原来的 prime/odd/Nontrivial 量词；Lean 核验 `\|C_(p^k)^r\|=p^(kr)` 与 `D=1+r(p^k-1)` |
 
 ## 当前严格裁决
 
 13 页稿的 occurrence 语义、广义二面体排序、三个反射区间、商群抽取、缺陷修正、
 平移保持、严格同时下降、主证明所用 ordinary/signed GMO 特化与最终装配均有实质
-Lean 覆盖。公开最终端点是 `GaoLean.ConcreteGDihedral.pr7ThirteenPageMain`；它直接
-证明冻结的 `PR7ThirteenPageMainStatement`，没有 remaining-input、provider 或递归
+Lean 覆盖。公开最终端点是
+`GaoLean.ConcreteGDihedral.gaoGeneralizedDihedralOddPGroup`；它经由已核验的历史装配
+端点直接证明冻结的 `PR7ThirteenPageMainStatement`，没有 remaining-input、provider 或递归
 结论参数。因此**主 Gao 结论本身已无条件核验**。
 
 此前两轮独立审计发现并保留的自然数截断、人工 padding、标签不交、错误 raw
@@ -77,8 +81,9 @@ induction、canonical subgroup extension 与已证明的 signed General-DGM prov
 `gcd(W)=1`。现有端点只覆盖主证明实际需要的 `W={1}` 与 `W={±1}`，不能冒充这一
 一般权重定理的完整形式化。故当前整篇准确裁决为 `PARTIALLY_VERIFIED`，而不是
 `LEAN_FULLY_CHECKED`。
-`pr7ThirteenPageMain` 是核心冻结阈值端点；正文的完整显示式由它与 Olson、GJM、
-无条件 Corollary 6.1、`C₃²` 独立端点共同覆盖，并不声称单一端点逐字包含全部
-显示公式。早期两名独立审计员对已实现主线没有给出 blocking/major 问题；后续
+`gaoGeneralizedDihedralOddPGroup` 是稳定公开入口；正文的完整显示式由该入口、
+Olson、GJM、无条件 Corollary 6.1 与 `C₃²` 独立端点共同覆盖，并不声称单一端点
+逐字包含全部显示公式。历史核心冻结阈值端点 `pr7ThirteenPageMain` 仅保留用于
+来源追踪。早期两名独立审计员对已实现主线没有给出 blocking/major 问题；后续
 独立冷审计进一步检查正文全范围后，以一般权重 Theorem 2.2 未覆盖为由给出
 `PARTIALLY_VERIFIED`。后者是当前整篇裁决。

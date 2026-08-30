@@ -14,6 +14,6 @@
 | P7-L10 | simultaneous strict subgroup controller | PROVED_HERE conditionally | STRICTLY_WEAKER | `GAOARResidualController` |
 | P7-L11 | exact lower threshold | PROVED_HERE from ordinary Davenport | STRICTLY_WEAKER | `PGDavenportBridge`, `PGLowerBound` |
 | P7-L12 | exact PR #7 main statement | PROVED_HERE conditionally | EQUIVALENT | `PR7ThirteenPage.pr7ThirteenPageMain_of_remainingInputs` |
-| P7-L13 | invariant-factor/homocyclic numeric corollaries | PROVED_HERE conditionally | EXACT | `PGHomocyclic`: `|C_(p^k)^r|=p^(kr)`、`D=1+r(p^k-1)` 与 homocyclic/elementary-abelian 字面 Gao 展示式；唯一条件为主定理同一 GMO 输入包 |
-| P7-L14 | `|Dih(A)|=2|A|` | PROVED_HERE | STRICTLY_WEAKER | `ConcreteGDihedral.card_group` |
+| P7-L13 | invariant-factor/homocyclic numeric corollaries | PROVED_HERE conditionally | EXACT | `PGHomocyclic`: `\|C_(p^k)^r\|=p^(kr)`、`D=1+r(p^k-1)` 与 homocyclic/elementary-abelian 字面 Gao 展示式；唯一条件为主定理同一 GMO 输入包 |
+| P7-L14 | `\|Dih(A)\|=2\|A\|` | PROVED_HERE | STRICTLY_WEAKER | `ConcreteGDihedral.card_group` |
 | P7-L15 | exact threshold 与 all-lengths-at-least threshold 等价 | PROVED_HERE | EQUIVALENT | `PGStatements.isExactProductOneThreshold_iff_isAtLeast` |

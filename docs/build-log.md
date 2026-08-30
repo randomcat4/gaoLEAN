@@ -391,7 +391,7 @@ The p-group hypotheses now supply odd cardinality internally.
   report only `propext`, `Classical.choice`, and `Quot.sound`.
 - Declaration-level forbidden scan over `*.lean`: no `sorry`, `admit`, new
   `axiom`, or `unsafe`; raw `rg` exit 1, normalized exit 0.
-- Scoped `git diff --check -- projects/gao-ci2/arbitrary-rank/formalization/lean`:
+- Scoped `git diff --check` over the formalization repository:
   exit 0. A repository-wide check separately encountered pre-existing
   whitespace in another team's `B-R3` JSON; that file was not modified.
 
@@ -1022,3 +1022,21 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
   complete displayed consequences are covered jointly by that theorem and the
   independent Olson, GJM, unconditional Corollary 6.1, and `C₃²` endpoints;
   no single endpoint is claimed to contain every displayed equation literally.
+
+## 2026-08-29: general-weight strong-state base integration
+
+- Integrated `PGGeneralWeightedStrongRecursionState` and the unconditional
+  bottom-overgroup construction `generalWeightedStrongRecursionAt_bot`.
+- The base case constructs a real one-occurrence core and small carrier and
+  proves all frozen equation-(3)--(9) fields directly; it does not receive a
+  provider, engine, or conclusion-shaped parameter.
+- Recorded branch commit: `2c580b7` (`prove bottom strong-recursion base`).
+- Remote integration command:
+  `lake build GaoLean GaoFormal.AxiomAudit` under Lean/Mathlib `v4.32.0`.
+- Result: `Build completed successfully (8850 jobs)`, exit 0.
+- The three new public endpoint audits report only `propext`,
+  `Classical.choice`, and `Quot.sound` as applicable.  The scoped forbidden
+  scan found no `sorry`, `admit`, top-level project `axiom`, `unsafe`,
+  `native_decide`, or `sorryAx` escape.
+- This is a working-branch integration receipt, not a fresh independent
+  cold-clone audit; the README preserves that distinction.
