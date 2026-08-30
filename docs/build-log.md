@@ -1204,3 +1204,20 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
   admitted; no equality theorem or `sorryAx` remains.  The next blocker is
   the enlargement-certificate reserve/capacity lemma and parent full-core
   assembly, followed by periodicity and the small-carrier identity.
+
+## 2026-08-30: exact server regression for `ebee5f5`
+
+- A separate clean server checkout was fetched and detached at exact commit
+  `ebee5f5c4f7b696c1fe8b3d70fb4f37c924cfe43`.
+- The repository-surface check passed with 201 Lean sources, 26 Markdown
+  tables, and 16 paper-manifest entries.
+- `lake build GaoLean GaoFormal.AxiomAudit` completed successfully with 8853
+  jobs and exit code 0.
+- The checkout remained clean at the same exact commit after the build.
+- The successful raw build log has SHA-256
+  `1c0e1ceed8e816f92c045dc2276fd0d2a90a7d03a40bea75fbaa2c17a5e6d125`.
+- Receipt: `docs/build-receipts/2026-08-30-ebee5f5.md`.
+- This regression certifies the direct quotient affine witness bridge, not
+  the remaining capacity, parent full-core/state assembly, periodicity, or
+  small-carrier obligations; the arbitrary-weight theorem remains
+  `PARTIALLY_VERIFIED`.
