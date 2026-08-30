@@ -53,6 +53,23 @@ theorem enlargementCore_disjoint_extractDavenportReserve
   exact (disjoint_weightedStep1AffineContainer_outside
     S.H W xs S.beta).symm.mono hpoolOutside hreserveInside
 
+/-- The complete quotient pool is disjoint from every retained label of the
+old strong state, not only from a particular extracted reserve. -/
+theorem enlargementCore_disjoint_retained
+    (hprimitive : IsPrimitiveWeightSet W)
+    (S : GeneralWeightedStrongRecursionState W G gamma delta xs n D)
+    (C : GeneralWeightedStep1EnlargementCertificate
+      W xs S.H S.alpha S.beta) :
+    Disjoint C.core S.retained := by
+  have hpoolOutside : C.core ⊆
+      weightedStep1OutsideAffineContainer S.H W xs S.beta :=
+    C.core_subset_retained.trans C.retained_subset_outside
+  have hretainedInside : S.retained ⊆
+      weightedStep1AffineContainer S.H W xs S.beta :=
+    S.retained_subset_weightedStep1AffineContainer hprimitive
+  exact (disjoint_weightedStep1AffineContainer_outside
+    S.H W xs S.beta).symm.mono hpoolOutside hretainedInside
+
 /-- A quotient affine-sumset member from the enlargement certificate is
 realized by an exact-cardinality source block, using only the old recursive
 state's honest centred reserve.  The output preserves literal occurrence
@@ -92,10 +109,101 @@ theorem exists_fixedCard_quotientBlock_of_enlargement
     (W := W) xs S.H C.J S.alpha S.beta S.alpha_weightCoset
       C.core R.reserve hpool hreserve hdis DJ hDJ hreserveCard y hy
 
+/-- The literal carrier ledger for the lifted parent core.  It chooses a
+fixed filler outside the old core, local reserve, and quotient pool, then
+extends their union to an exact critical-size core inside the complete lifted
+affine container.  This theorem constructs only the carrier; the following
+block-expansion step supplies its operational full-spectrum witnesses. -/
+theorem exists_liftedCoreCarrier
+    (hprimitive : IsPrimitiveWeightSet W)
+    (S : GeneralWeightedStrongRecursionState W G gamma delta xs n D)
+    (C : GeneralWeightedStep1EnlargementCertificate
+      W xs S.H S.alpha S.beta)
+    (DJ : ℕ) (hDJ : IsWeightedDavenportConstant W C.J DJ)
+    (hDJle : DJ ≤ S.DQ)
+    (DK : ℕ)
+    (hDK : IsWeightedDavenportConstant W
+      (liftedAddSubgroup S.H C.J) DK)
+    (hcontainerLower :
+      Nat.card (liftedAddSubgroup S.H C.J) + DK - 1 ≤
+        (weightedStep1AffineContainer
+          (liftedAddSubgroup S.H C.J) W xs S.beta).card) :
+    ∃ filler parentCore : Selection xs,
+      Disjoint
+        ((S.core ∪ (S.extractDavenportReserve DJ hDJle).reserve) ∪ C.core)
+        filler ∧
+      filler.card =
+        Nat.card (liftedAddSubgroup S.H C.J) -
+          (Nat.card S.H + Nat.card C.J - 1) ∧
+      ((S.core ∪ (S.extractDavenportReserve DJ hDJle).reserve) ∪ C.core) ∪
+          filler ⊆ parentCore ∧
+      parentCore ⊆ weightedStep1AffineContainer
+        (liftedAddSubgroup S.H C.J) W xs S.beta ∧
+      parentCore.card =
+        Nat.card (liftedAddSubgroup S.H C.J) + DK - 1 := by
+  classical
+  let R := S.extractDavenportReserve DJ hDJle
+  let K := liftedAddSubgroup S.H C.J
+  let container := weightedStep1AffineContainer K W xs S.beta
+  let pre : Selection xs := (S.core ∪ R.reserve) ∪ C.core
+  let fillerCard := Nat.card K - (Nat.card S.H + Nat.card C.J - 1)
+  have hcoreReserve : Disjoint S.core R.reserve := R.disjoint_core_reserve
+  have hOldUnionSubset : S.core ∪ R.reserve ⊆ S.retained :=
+    Finset.union_subset S.core_subset_retained R.reserve_subset_retained
+  have hOldUnionPool : Disjoint (S.core ∪ R.reserve) C.core :=
+    (S.enlargementCore_disjoint_retained hprimitive C).symm.mono
+      hOldUnionSubset (fun _ hi ↦ hi)
+  have hpreCard : pre.card =
+      (Nat.card S.H + S.DH - 1) + (DJ - 1) + (Nat.card C.J - 1) := by
+    dsimp only [pre]
+    rw [Finset.card_union_of_disjoint hOldUnionPool,
+      Finset.card_union_of_disjoint hcoreReserve,
+      S.core_card, R.reserve_card, C.core_card]
+  have hretainedBase : S.retained ⊆
+      weightedStep1AffineContainer S.H W xs S.beta :=
+    S.retained_subset_weightedStep1AffineContainer hprimitive
+  have hretainedEnlarged : S.retained ⊆ C.enlarged := by
+    rw [C.enlarged_eq]
+    exact hretainedBase.trans Finset.subset_union_left
+  have hCcoreEnlarged : C.core ⊆ C.enlarged := by
+    rw [C.enlarged_eq]
+    exact C.core_subset_retained.trans Finset.subset_union_right
+  have hpreEnlarged : pre ⊆ C.enlarged := by
+    dsimp only [pre]
+    exact Finset.union_subset
+      (hOldUnionSubset.trans hretainedEnlarged) hCcoreEnlarged
+  have hpreContainer : pre ⊆ container := by
+    exact hpreEnlarged.trans C.enlarged_subset_lifted_container
+  have hcapacity := weighted_liftedCore_pool_reserve_filler_capacity
+    S.H C.J S.DH DJ DK S.DH_exact hDJ hDK
+  have hpreAddFiller : pre.card + fillerCard ≤ Nat.card K + DK - 1 := by
+    rw [hpreCard]
+    simpa [K, fillerCard, Nat.add_comm, Nat.add_left_comm, Nat.add_assoc]
+      using hcapacity
+  have hbudget : pre.card + fillerCard ≤ container.card :=
+    hpreAddFiller.trans hcontainerLower
+  let F := extractOccurrenceReserveOfCoreCardAddLe
+    container pre fillerCard hbudget
+  have hessentialContainer : pre ∪ F.reserve ⊆ container :=
+    F.core_union_reserve_subset hpreContainer
+  have hessentialCard : (pre ∪ F.reserve).card = pre.card + fillerCard :=
+    F.card_core_union_reserve
+  have hessentialTarget : (pre ∪ F.reserve).card ≤ Nat.card K + DK - 1 := by
+    rw [hessentialCard]
+    exact hpreAddFiller
+  obtain ⟨parentCore, hessentialCore, hcoreContainer, hcoreCard⟩ :=
+    Finset.exists_subsuperset_card_eq hessentialContainer
+      hessentialTarget hcontainerLower
+  refine ⟨F.reserve, parentCore, ?_, F.reserve_card, ?_, hcoreContainer, hcoreCard⟩
+  · exact F.disjoint_core_reserve
+  · exact hessentialCore
+
 end GeneralWeightedStrongRecursionState
 
 end GaoLean
 
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.retained_subset_weightedStep1AffineContainer
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.enlargementCore_disjoint_extractDavenportReserve
+#print axioms GaoLean.GeneralWeightedStrongRecursionState.enlargementCore_disjoint_retained
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.exists_fixedCard_quotientBlock_of_enlargement
+#print axioms GaoLean.GeneralWeightedStrongRecursionState.exists_liftedCoreCarrier
