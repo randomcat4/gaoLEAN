@@ -1103,3 +1103,25 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
 - The parent equation-(3)--(9) state is still open: kernel full-block
   expansion and quotient-state assembly have not been inferred from the
   local zero core.
+
+## 2026-08-30: direct cross-type IH wiring for the proper-kernel split
+
+- Verified commit `d67d981cb8a7d66a866d8aacfe3c1a9a89d4d449` in a fresh,
+  separate server clone.
+- Added `applySubgroupTop`, which changes the ambient type to a strict
+  subgroup `K` and obtains the strong theorem at `⊤ : AddSubgroup K` from the
+  cross-type smaller-card hypothesis.
+- Wired that result directly into the primitive proper-kernel zero-core /
+  Lemma-3.5 split, removing the intermediate family-of-strong-states adapter.
+- Repository-surface checks passed: 201 Lean sources, 26 Markdown tables, and
+  16 paper-manifest entries.
+- `lake build GaoLean GaoFormal.AxiomAudit` completed successfully with
+  `8853` jobs and exit code 0.
+- Both new endpoints report only `propext`, `Classical.choice`, and
+  `Quot.sound`; no `sorryAx` appears.
+- Raw server log SHA-256:
+  `24d61200ebf92a22321365077f9a522064535458f25b72ca4483662a619b41b8`.
+  Compact receipt: `docs/build-receipts/2026-08-30-d67d981.md`.
+- The result is a faithfully recursive local-product split.  It still does
+  not construct the parent full core, periodic spectrum, or small-carrier
+  identity required by equations (3)--(9).
