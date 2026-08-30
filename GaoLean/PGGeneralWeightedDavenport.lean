@@ -393,6 +393,24 @@ theorem weightedDavenportAtMost_of_surjective
     exact Function.surjInv_eq hf y
   simpa [xs, List.map_map, hsection] using hmapped
 
+/-- Exact weighted Davenport constants are invariant under additive
+equivalence.  The upper threshold is transported by surjectivity, while each
+shorter zero-sum-free witness is mapped forward and pulled back by
+injectivity if a weighted zero sum were to appear. -/
+theorem isWeightedDavenportConstant_addEquiv
+    (W : Set ℤ) (e : A ≃+ B) {D : ℕ}
+    (hA : IsWeightedDavenportConstant W A D) :
+    IsWeightedDavenportConstant W B D := by
+  refine ⟨weightedDavenportAtMost_of_surjective W e.toAddMonoidHom
+    e.surjective D hA.1, ?_⟩
+  intro n hn
+  rcases hA.2 n hn with ⟨xs, hxsCard, hxsFree⟩
+  refine ⟨xs.map e, by simpa using hxsCard, ?_⟩
+  intro hzero
+  exact hxsFree
+    (hasNonemptyWeightedZeroSum_of_map_addMonoidHom W e.toAddMonoidHom
+      e.injective xs hzero)
+
 /-- In particular, a weighted Davenport upper bound descends to every
 additive quotient. -/
 theorem weightedDavenportAtMost_quotient
@@ -698,6 +716,7 @@ end GaoLean
 #print axioms GaoLean.hasWeightedSumOfCard_of_map_addMonoidHom
 #print axioms GaoLean.hasNonemptyWeightedZeroSum_of_map_addMonoidHom
 #print axioms GaoLean.weightedDavenportAtMost_of_surjective
+#print axioms GaoLean.isWeightedDavenportConstant_addEquiv
 #print axioms GaoLean.weightedDavenportAtMost_quotient
 #print axioms GaoLean.sum_weighted_prefixSelection_add_sum_weighted_suffixSelection
 #print axioms GaoLean.hasNonemptyWeightedZeroSum_of_hasNonemptyZeroSum

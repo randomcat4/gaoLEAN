@@ -398,6 +398,7 @@ import GaoFormal
 #print axioms GaoLean.exists_weightedZeroSum_subset_remainder_lt_davenport
 #print axioms GaoLean.exists_weightedZeroSum_padded_selection
 #print axioms GaoLean.weightedDavenportAtMost_quotient
+#print axioms GaoLean.isWeightedDavenportConstant_addEquiv
 #print axioms GaoLean.weightedDavenportAtMost_of_ordinary
 #print axioms GaoLean.weightedDavenportConstant_le_ordinary
 #print axioms GaoLean.davenportConvolutionWord_weightedZeroSumFree
@@ -414,6 +415,8 @@ import GaoFormal
 #print axioms GaoLean.weightedStep6_quotient_length_after_subgroup_pred
 #print axioms GaoLean.weighted_properSubgroupPadding_add_quotientCritical_le_length
 #print axioms GaoLean.weightedStep6_quotient_length_after_properSubgroupPadding
+#print axioms GaoLean.weightedDavenport_lifted_subgroup_quotient
+#print axioms GaoLean.weighted_liftedCore_pool_reserve_capacity
 #print axioms GaoLean.exists_weightClosureGenerator
 #print axioms GaoLean.normalizedWeightSet_isPrimitive
 #print axioms GaoLean.hasWeightedSumOfCard_of_normalized_range

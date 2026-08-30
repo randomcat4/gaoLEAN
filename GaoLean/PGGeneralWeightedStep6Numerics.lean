@@ -1,4 +1,5 @@
 import GaoLean.PGGeneralWeightedDavenportMinimum
+import GaoLean.PGGMOOrdinaryLiftedSubgroupCore
 import Mathlib.GroupTheory.Coset.Card
 
 /-!
@@ -254,6 +255,52 @@ theorem weightedStep6_quotient_length_after_properSubgroupPadding
       hW H hHbot hHtop L hL
   omega
 
+/-! ## Lifted subgroup capacity -/
+
+/-- Exact weighted Davenport constants on `H` and `J` obey the internal
+subgroup--quotient convolution after `J` is lifted back to the ambient group.
+The exactness witnesses are transported through the additive equivalences in
+the short exact sequence `H → lift(H,J) → J`. -/
+theorem weightedDavenport_lifted_subgroup_quotient
+    {W : Set ℤ} (H : AddSubgroup A) (J : AddSubgroup (A ⧸ H))
+    (DH DJ DK : ℕ)
+    (hH : IsWeightedDavenportConstant W H DH)
+    (hJ : IsWeightedDavenportConstant W J DJ)
+    (hK : IsWeightedDavenportConstant W (liftedAddSubgroup H J) DK) :
+    DH + DJ ≤ DK + 1 := by
+  let K := liftedAddSubgroup H J
+  let Hinside := internalAddSubgroup H K
+  have hHinside : IsWeightedDavenportConstant W Hinside DH :=
+    isWeightedDavenportConstant_addEquiv W
+      (internalAddSubgroupEquiv H K (le_liftedAddSubgroup H J)).symm hH
+  have hQ : IsWeightedDavenportConstant W (K ⧸ Hinside) DJ :=
+    isWeightedDavenportConstant_addEquiv W
+      (liftedInternalQuotientEquiv H J).symm hJ
+  exact weightedDavenport_subgroup_quotient W Hinside DK DH DJ hK hHinside hQ
+
+/-- The old `H`-full core, the `|J|-1` quotient pool, and a `D_J-1`
+zero-reserve all fit inside the critical capacity of the lifted subgroup.
+This is the carrier budget needed before choosing a filler and assembling the
+parent full core. -/
+theorem weighted_liftedCore_pool_reserve_capacity
+    {W : Set ℤ} (H : AddSubgroup A) (J : AddSubgroup (A ⧸ H))
+    (DH DJ DK : ℕ)
+    (hH : IsWeightedDavenportConstant W H DH)
+    (hJ : IsWeightedDavenportConstant W J DJ)
+    (hK : IsWeightedDavenportConstant W (liftedAddSubgroup H J) DK) :
+    (Nat.card H + DH - 1) + (Nat.card J - 1) + (DJ - 1) ≤
+      Nat.card (liftedAddSubgroup H J) + DK - 1 := by
+  have hcard : Nat.card H + Nat.card J - 1 ≤
+      Nat.card (liftedAddSubgroup H J) := by
+    rw [natCard_liftedAddSubgroup H J]
+    exact generalWeighted_add_sub_one_le_mul_of_pos
+      (Nat.card H) (Nat.card J) Nat.card_pos Nat.card_pos
+  have hconv := weightedDavenport_lifted_subgroup_quotient
+    H J DH DJ DK hH hJ hK
+  have hDHpos := weightedDavenportConstant_pos W DH hH
+  have hDJpos := weightedDavenportConstant_pos W DJ hJ
+  omega
+
 end GaoLean
 
 #print axioms GaoLean.natCard_add_quotient_sub_one_le_ambient
@@ -268,4 +315,6 @@ end GaoLean
 #print axioms GaoLean.weighted_quotientPadding_add_subgroupCritical_le_length
 #print axioms GaoLean.natCard_add_quotient_le_ambient_of_ne_bot_of_lt_top
 #print axioms GaoLean.weighted_properSubgroupPadding_add_quotientCritical_le_length
+#print axioms GaoLean.weightedDavenport_lifted_subgroup_quotient
+#print axioms GaoLean.weighted_liftedCore_pool_reserve_capacity
 #print axioms GaoLean.weightedStep6_quotient_length_after_properSubgroupPadding
