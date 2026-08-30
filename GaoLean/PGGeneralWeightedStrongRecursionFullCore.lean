@@ -198,6 +198,140 @@ theorem exists_liftedCoreCarrier
   · exact F.disjoint_core_reserve
   · exact hessentialCore
 
+/-- Operational expansion of a lifted carrier.  For every element of the
+lifted subgroup it combines one old `H`-full block, one exact quotient block,
+and the same fixed filler.  All three pieces are literal disjoint occurrence
+selections, and their weighted sum is exactly `|lift(H,J)| beta + k`. -/
+theorem liftedCore_full_of_carrier
+    (hW : W.Nonempty) (hprimitive : IsPrimitiveWeightSet W)
+    (S : GeneralWeightedStrongRecursionState W G gamma delta xs n D)
+    (C : GeneralWeightedStep1EnlargementCertificate
+      W xs S.H S.alpha S.beta)
+    (DJ : ℕ) (hDJ : IsWeightedDavenportConstant W C.J DJ)
+    (hDJle : DJ ≤ S.DQ)
+    (filler parentCore : Selection xs)
+    (hFdis : Disjoint
+      ((S.core ∪ (S.extractDavenportReserve DJ hDJle).reserve) ∪ C.core)
+      filler)
+    (hFcard : filler.card =
+      Nat.card (liftedAddSubgroup S.H C.J) -
+        (Nat.card S.H + Nat.card C.J - 1))
+    (hpreFsub :
+      ((S.core ∪ (S.extractDavenportReserve DJ hDJle).reserve) ∪ C.core) ∪
+        filler ⊆ parentCore)
+    (hparentContainer : parentCore ⊆ weightedStep1AffineContainer
+      (liftedAddSubgroup S.H C.J) W xs S.beta) :
+    ∀ k : liftedAddSubgroup S.H C.J,
+      ∃ z : HasWeightedSumOfCard W xs
+          (Nat.card (liftedAddSubgroup S.H C.J))
+          (Nat.card (liftedAddSubgroup S.H C.J) • S.beta + (k : G₀)),
+        z.selected ⊆ parentCore := by
+  classical
+  obtain ⟨w₀, hw₀⟩ := hW
+  let R := S.extractDavenportReserve DJ hDJle
+  let K := liftedAddSubgroup S.H C.J
+  let fillerSum : G₀ :=
+    ∑ i ∈ filler, w₀ • occurrenceValue xs i
+  let fillerWitness : HasWeightedSumOfCard W xs filler.card fillerSum := {
+    selected := filler
+    weights := fun _ ↦ w₀
+    weights_mem := fun _ _ ↦ hw₀
+    card_selected := rfl
+    weighted_sum := rfl
+  }
+  have hFdisp : fillerSum - filler.card • S.beta ∈ K := by
+    rw [show fillerSum - filler.card • S.beta =
+        ∑ i ∈ filler, (w₀ • occurrenceValue xs i - S.beta) by
+      simp [fillerSum, Finset.sum_sub_distrib]]
+    apply K.sum_mem
+    intro i hi
+    apply C.lifted_container_weightCoset i
+    · apply hparentContainer
+      apply hpreFsub
+      exact Finset.mem_union_right _ hi
+    · exact hw₀
+  intro k
+  let y : G₀ ⧸ S.H := QuotientAddGroup.mk' S.H
+    ((k : G₀) - (fillerSum - filler.card • S.beta))
+  have hyJ : y ∈ weightedStep1SubgroupFinset C.J := by
+    apply (mem_weightedStep1SubgroupFinset C.J y).2
+    exact (mem_liftedAddSubgroup_iff S.H C.J _).1
+      (K.sub_mem k.property hFdisp)
+  have hySum : y ∈ weightedStep1QuotientAffineSumset
+      S.H W xs S.beta C.core := by
+    rw [C.core_quotient_sumset]
+    exact hyJ
+  obtain ⟨a, ha, block, hblockSub⟩ :=
+    S.exists_fixedCard_quotientBlock_of_enlargement
+      hprimitive C DJ hDJ hDJle y hySum
+  let residual : G₀ :=
+    (k : G₀) - (fillerSum - filler.card • S.beta) - a
+  have hresidual : residual ∈ S.H := by
+    have haMem := QuotientAddGroup.eq_iff_sub_mem.mp ha
+    have hneg := S.H.neg_mem haMem
+    dsimp only [residual, y] at hneg ⊢
+    convert hneg using 1 <;> abel
+  obtain ⟨old, holdSub⟩ := S.core_full ⟨residual, hresidual⟩
+  have holdBlock : Disjoint old.selected block.selected := by
+    rw [Finset.disjoint_left]
+    intro i hiOld hiBlock
+    have hiCore := holdSub hiOld
+    rcases Finset.mem_union.mp (hblockSub hiBlock) with hiPool | hiReserve
+    · exact (Finset.disjoint_left.mp
+        (S.enlargementCore_disjoint_retained hprimitive C).symm)
+          (S.core_subset_retained hiCore) hiPool
+    · exact (Finset.disjoint_left.mp R.disjoint_core_reserve) hiCore hiReserve
+  have hblockPre : block.selected ⊆
+      (S.core ∪ R.reserve) ∪ C.core := by
+    intro i hi
+    rcases Finset.mem_union.mp (hblockSub hi) with hiPool | hiReserve
+    · exact Finset.mem_union_right _ hiPool
+    · exact Finset.mem_union_left C.core
+        (Finset.mem_union_right S.core hiReserve)
+  have holdBlockPre : old.selected ∪ block.selected ⊆
+      (S.core ∪ R.reserve) ∪ C.core := by
+    exact Finset.union_subset
+      (holdSub.trans (Finset.subset_union_left.trans Finset.subset_union_left))
+      hblockPre
+  have holdBlockFiller : Disjoint (old.selected ∪ block.selected) filler :=
+    hFdis.mono_left holdBlockPre
+  let oldBlock := old.disjointUnion block holdBlock
+  let all := oldBlock.disjointUnion fillerWitness holdBlockFiller
+  have hbase : Nat.card S.H + Nat.card C.J - 1 ≤ Nat.card K := by
+    dsimp only [K]
+    rw [natCard_liftedAddSubgroup S.H C.J]
+    exact generalWeighted_add_sub_one_le_mul_of_pos
+      (Nat.card S.H) (Nat.card C.J) Nat.card_pos Nat.card_pos
+  have htotalCard : Nat.card S.H + C.core.card + filler.card = Nat.card K := by
+    rw [C.core_card, hFcard]
+    have hJcardPos : 1 ≤ Nat.card C.J := Nat.card_pos
+    have hbaseEq : Nat.card S.H + (Nat.card C.J - 1) =
+        Nat.card S.H + Nat.card C.J - 1 := by omega
+    rw [hbaseEq]
+    exact Nat.add_sub_of_le hbase
+  have htarget :
+      ((Nat.card S.H • S.beta + residual) +
+          (C.core.card • S.beta + a)) + fillerSum =
+        Nat.card K • S.beta + (k : G₀) := by
+    dsimp only [residual]
+    rw [← htotalCard, add_nsmul, add_nsmul]
+    abel
+  let final : HasWeightedSumOfCard W xs (Nat.card K)
+      (Nat.card K • S.beta + (k : G₀)) := {
+    selected := all.selected
+    weights := all.weights
+    weights_mem := all.weights_mem
+    card_selected := all.card_selected.trans htotalCard
+    weighted_sum := all.weighted_sum.trans htarget
+  }
+  refine ⟨final, ?_⟩
+  intro i hi
+  apply hpreFsub
+  change i ∈ (old.selected ∪ block.selected) ∪ filler at hi
+  rcases Finset.mem_union.mp hi with hiOldBlock | hiFiller
+  · exact Finset.mem_union_left filler (holdBlockPre hiOldBlock)
+  · exact Finset.mem_union_right _ hiFiller
+
 end GeneralWeightedStrongRecursionState
 
 end GaoLean
@@ -207,3 +341,4 @@ end GaoLean
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.enlargementCore_disjoint_retained
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.exists_fixedCard_quotientBlock_of_enlargement
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.exists_liftedCoreCarrier
+#print axioms GaoLean.GeneralWeightedStrongRecursionState.liftedCore_full_of_carrier
