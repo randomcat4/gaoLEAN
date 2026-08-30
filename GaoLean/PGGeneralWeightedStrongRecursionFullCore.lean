@@ -436,6 +436,45 @@ theorem exists_liftedFullCore_of_enlargement
   exact S.liftedCore_full_of_carrier hW hprimitive C DJ hDJ hDJle
     filler parentCore hFdis hFcard hpreFsub hparentContainer
 
+/-- Overgroup-aware packaging of the lifted full core.  The quotient
+Davenport compatibility and containment of the lifted subgroup in `G` are
+derived from the incoming equation-(3) overgroup data, rather than accepted
+as separate hypotheses.  The affine-container lower bound remains explicit
+until Step 1 records its internal-overgroup cardinal estimate. -/
+theorem exists_liftedFullCore_of_enlargement_overgroup
+    (hW : W.Nonempty) (hprimitive : IsPrimitiveWeightSet W)
+    (S : GeneralWeightedStrongRecursionState W G gamma delta xs n D)
+    (input : GeneralWeightedOvergroupInput W G gamma delta xs)
+    (C : GeneralWeightedStep1EnlargementCertificate
+      W xs S.H S.alpha S.beta)
+    (DJ : ℕ) (hDJ : IsWeightedDavenportConstant W C.J DJ)
+    (DK : ℕ)
+    (hDK : IsWeightedDavenportConstant W
+      (liftedAddSubgroup S.H C.J) DK)
+    (hcontainerLower :
+      Nat.card (liftedAddSubgroup S.H C.J) + DK - 1 ≤
+        (weightedStep1AffineContainer
+          (liftedAddSubgroup S.H C.J) W xs S.beta).card) :
+    liftedAddSubgroup S.H C.J ≤ G ∧
+      ∃ parentCore : Selection xs,
+        parentCore ⊆ weightedStep1AffineContainer
+          (liftedAddSubgroup S.H C.J) W xs S.beta ∧
+        parentCore.card =
+          Nat.card (liftedAddSubgroup S.H C.J) + DK - 1 ∧
+        ∀ k : liftedAddSubgroup S.H C.J,
+          ∃ z : HasWeightedSumOfCard W xs
+              (Nat.card (liftedAddSubgroup S.H C.J))
+              (Nat.card (liftedAddSubgroup S.H C.J) • S.beta + (k : G₀)),
+            z.selected ⊆ parentCore := by
+  have hJle : C.J ≤ generalWeightedQuotientSubgroup S.H G :=
+    S.enlargement_quotientSubgroup_le_overgroupQuotient input C
+  have hDJle : DJ ≤ S.DQ :=
+    weightedDavenportConstant_le_overgroupQuotient
+      S.H G S.H_le_G C.J hJle DJ S.DQ hDJ S.DQ_exact
+  exact ⟨S.enlargement_liftedAddSubgroup_le_overgroup input C,
+    S.exists_liftedFullCore_of_enlargement hW hprimitive C DJ hDJ hDJle
+      DK hDK hcontainerLower⟩
+
 end GeneralWeightedStrongRecursionState
 
 end GaoLean
@@ -450,3 +489,4 @@ end GaoLean
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.exists_liftedCoreCarrier
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.liftedCore_full_of_carrier
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.exists_liftedFullCore_of_enlargement
+#print axioms GaoLean.GeneralWeightedStrongRecursionState.exists_liftedFullCore_of_enlargement_overgroup
