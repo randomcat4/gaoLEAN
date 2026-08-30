@@ -144,7 +144,7 @@ theorem natCard_internalQuotient_top
     _ = Nat.card (⊤ : AddSubgroup (G₀ ⧸ L)) := by
       rw [generalWeightedQuotientSubgroup_top]
     _ = Nat.card (G₀ ⧸ L) :=
-      Nat.card_congr AddSubgroup.topEquiv
+      Nat.card_congr AddSubgroup.topEquiv.toEquiv
 
 /-- The position-preserving equivalence between a source and its quotient
 list.  Its existence uses only `List.length_map`, never source values. -/
