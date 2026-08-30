@@ -1,4 +1,4 @@
-import GaoLean.PGGeneralWeightedStrongRecursionState
+import GaoLean.PGGeneralWeightedOvergroupQuotient
 
 /-!
 # Strong-recursion quotient block assembly
@@ -19,6 +19,74 @@ namespace GeneralWeightedStrongRecursionState
 
 variable {W : Set ℤ} {G : AddSubgroup G₀} {gamma delta : G₀}
   {xs : List G₀} {n D : ℕ}
+
+/-- The incoming overgroup equation and a recursive state's output centre
+put every weighted source value in the parent `G`-coset centred at `S.beta`.
+This applies to all labelled source occurrences, not only those retained by
+the old state. -/
+theorem weighted_sub_beta_mem_overgroup
+    (S : GeneralWeightedStrongRecursionState W G gamma delta xs n D)
+    (input : GeneralWeightedOvergroupInput W G gamma delta xs)
+    (i : Occurrence xs) (w : ℤ) (hw : w ∈ W) :
+    w • occurrenceValue xs i - S.beta ∈ G := by
+  rw [show w • occurrenceValue xs i - S.beta =
+      (w • occurrenceValue xs i - delta) -
+        (S.beta - delta) by abel]
+  exact G.sub_mem (input.weighted_mem i w hw) S.beta_sub_delta_mem
+
+/-- The quotient subgroup produced by a Step 1 enlargement is contained in
+the image of the recursive overgroup.  The proof uses the certificate's
+literal quotient-sumset equality: every member is represented by a genuine
+weighted source selection whose centred correction lies in `G`. -/
+theorem enlargement_quotientSubgroup_le_overgroupQuotient
+    (S : GeneralWeightedStrongRecursionState W G gamma delta xs n D)
+    (input : GeneralWeightedOvergroupInput W G gamma delta xs)
+    (C : GeneralWeightedStep1EnlargementCertificate
+      W xs S.H S.alpha S.beta) :
+    C.J ≤ generalWeightedQuotientSubgroup S.H G := by
+  classical
+  intro y hyJ
+  have hySum : y ∈ weightedStep1QuotientAffineSumset
+      S.H W xs S.beta C.core := by
+    rw [C.core_quotient_sumset]
+    exact (mem_weightedStep1SubgroupFinset C.J y).2 hyJ
+  obtain ⟨k, _hk, a, ha, z, _hz⟩ :=
+    exists_weightedSelection_of_mem_weightedStep1QuotientAffineSumset
+      W xs S.H S.beta y C.core hySum
+  have hsum :
+      (∑ i ∈ z.selected,
+        (z.weights i • occurrenceValue xs i - S.beta)) ∈ G := by
+    apply G.sum_mem
+    intro i hi
+    exact S.weighted_sub_beta_mem_overgroup input i (z.weights i)
+      (z.weights_mem i hi)
+  have hsum' :
+      (∑ i ∈ z.selected, z.weights i • occurrenceValue xs i) -
+          z.selected.card • S.beta ∈ G := by
+    simpa [Finset.sum_sub_distrib] using hsum
+  have haEq :
+      (∑ i ∈ z.selected, z.weights i • occurrenceValue xs i) -
+          z.selected.card • S.beta = a := by
+    rw [z.weighted_sum, z.card_selected]
+    abel
+  rw [haEq] at hsum'
+  apply (mk_mem_generalWeightedQuotientSubgroup_iff S.H_le_G a).2 at hsum'
+  rw [ha] at hsum'
+  exact hsum'
+
+/-- Consequently, the lifted subgroup itself remains inside the recursive
+overgroup.  This is a geometric bridge only; it does not change the ambient
+quotient cardinality stored by the present Step 1 certificate. -/
+theorem enlargement_liftedAddSubgroup_le_overgroup
+    (S : GeneralWeightedStrongRecursionState W G gamma delta xs n D)
+    (input : GeneralWeightedOvergroupInput W G gamma delta xs)
+    (C : GeneralWeightedStep1EnlargementCertificate
+      W xs S.H S.alpha S.beta) :
+    liftedAddSubgroup S.H C.J ≤ G := by
+  intro x hx
+  apply (mk_mem_generalWeightedQuotientSubgroup_iff S.H_le_G x).1
+  exact S.enlargement_quotientSubgroup_le_overgroupQuotient input C
+    ((mem_liftedAddSubgroup_iff S.H C.J x).1 hx)
 
 /-- Every retained label of a strong state lies in its complete old affine
 container.  This is the geometric half of the later pool--reserve
@@ -373,6 +441,9 @@ end GeneralWeightedStrongRecursionState
 end GaoLean
 
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.retained_subset_weightedStep1AffineContainer
+#print axioms GaoLean.GeneralWeightedStrongRecursionState.weighted_sub_beta_mem_overgroup
+#print axioms GaoLean.GeneralWeightedStrongRecursionState.enlargement_quotientSubgroup_le_overgroupQuotient
+#print axioms GaoLean.GeneralWeightedStrongRecursionState.enlargement_liftedAddSubgroup_le_overgroup
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.enlargementCore_disjoint_extractDavenportReserve
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.enlargementCore_disjoint_retained
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.exists_fixedCard_quotientBlock_of_enlargement
