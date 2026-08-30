@@ -1186,3 +1186,21 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
 - This regression certifies the centred padding bridge, not the remaining
   parent full-core/state assembly; the arbitrary-weight theorem remains
   `PARTIALLY_VERIFIED`.
+
+## 2026-08-30: direct quotient affine witnesses
+
+- Added `exists_weightedSelection_of_mem_weightedStep1QuotientAffineSumset`.
+  It inducts over literal occurrence labels, lifts every selected quotient
+  layer member to its actual ambient affine cell, discards artificial zeros,
+  and returns a variable-cardinality weighted witness together with one
+  ambient correction mapping to the requested quotient target.
+- Added
+  `exists_weightedFixedCardSelection_of_mem_weightedStep1QuotientAffineSumset`.
+  It feeds that witness directly into the centred Davenport completion and
+  returns an exact `pool.card` labelled weighted selection.
+- Server targeted elaboration passed.  Both declarations report only
+  `propext`, `Classical.choice`, and `Quot.sound`.
+- The failed definitional Finset-image shortcut was discarded rather than
+  admitted; no equality theorem or `sorryAx` remains.  The next blocker is
+  the enlargement-certificate reserve/capacity lemma and parent full-core
+  assembly, followed by periodicity and the small-carrier identity.
