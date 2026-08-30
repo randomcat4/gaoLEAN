@@ -297,8 +297,12 @@ theorem weighted_liftedCore_pool_reserve_capacity
       (Nat.card H) (Nat.card J) Nat.card_pos Nat.card_pos
   have hconv := weightedDavenport_lifted_subgroup_quotient
     H J DH DJ DK hH hJ hK
+  have hHcardPos : 1 ≤ Nat.card H := Nat.card_pos
+  have hJcardPos : 1 ≤ Nat.card J := Nat.card_pos
+  have hKcardPos : 1 ≤ Nat.card (liftedAddSubgroup H J) := Nat.card_pos
   have hDHpos := weightedDavenportConstant_pos W DH hH
   have hDJpos := weightedDavenportConstant_pos W DJ hJ
+  have hDKpos := weightedDavenportConstant_pos W DK hK
   omega
 
 end GaoLean
