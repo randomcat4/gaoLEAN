@@ -305,6 +305,33 @@ theorem weighted_liftedCore_pool_reserve_capacity
   have hDKpos := weightedDavenportConstant_pos W DK hK
   omega
 
+/-- After reserving the old full core, quotient pool, and local zero reserve,
+the fixed filler needed to raise an `|H| + |J| - 1` realization to exactly
+`|lift(H,J)|` also fits in the new critical core carrier. -/
+theorem weighted_liftedCore_pool_reserve_filler_capacity
+    {W : Set ℤ} (H : AddSubgroup A) (J : AddSubgroup (A ⧸ H))
+    (DH DJ DK : ℕ)
+    (hH : IsWeightedDavenportConstant W H DH)
+    (hJ : IsWeightedDavenportConstant W J DJ)
+    (hK : IsWeightedDavenportConstant W (liftedAddSubgroup H J) DK) :
+    (Nat.card H + DH - 1) + (Nat.card J - 1) + (DJ - 1) +
+        (Nat.card (liftedAddSubgroup H J) -
+          (Nat.card H + Nat.card J - 1)) ≤
+      Nat.card (liftedAddSubgroup H J) + DK - 1 := by
+  have hbase : Nat.card H + Nat.card J - 1 ≤
+      Nat.card (liftedAddSubgroup H J) := by
+    rw [natCard_liftedAddSubgroup H J]
+    exact generalWeighted_add_sub_one_le_mul_of_pos
+      (Nat.card H) (Nat.card J) Nat.card_pos Nat.card_pos
+  have hconv := weightedDavenport_lifted_subgroup_quotient
+    H J DH DJ DK hH hJ hK
+  have hHcardPos : 1 ≤ Nat.card H := Nat.card_pos
+  have hJcardPos : 1 ≤ Nat.card J := Nat.card_pos
+  have hDHpos := weightedDavenportConstant_pos W DH hH
+  have hDJpos := weightedDavenportConstant_pos W DJ hJ
+  have hDKpos := weightedDavenportConstant_pos W DK hK
+  omega
+
 end GaoLean
 
 #print axioms GaoLean.natCard_add_quotient_sub_one_le_ambient
@@ -321,4 +348,5 @@ end GaoLean
 #print axioms GaoLean.weighted_properSubgroupPadding_add_quotientCritical_le_length
 #print axioms GaoLean.weightedDavenport_lifted_subgroup_quotient
 #print axioms GaoLean.weighted_liftedCore_pool_reserve_capacity
+#print axioms GaoLean.weighted_liftedCore_pool_reserve_filler_capacity
 #print axioms GaoLean.weightedStep6_quotient_length_after_properSubgroupPadding

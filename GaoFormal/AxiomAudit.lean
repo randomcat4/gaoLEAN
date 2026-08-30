@@ -425,6 +425,7 @@ import GaoFormal
 #print axioms GaoLean.weightedStep6_quotient_length_after_properSubgroupPadding
 #print axioms GaoLean.weightedDavenport_lifted_subgroup_quotient
 #print axioms GaoLean.weighted_liftedCore_pool_reserve_capacity
+#print axioms GaoLean.weighted_liftedCore_pool_reserve_filler_capacity
 #print axioms GaoLean.exists_weightClosureGenerator
 #print axioms GaoLean.normalizedWeightSet_isPrimitive
 #print axioms GaoLean.hasWeightedSumOfCard_of_normalized_range
