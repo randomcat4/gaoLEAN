@@ -276,6 +276,7 @@ theorem weighted_internalCritical_le_source_retained_threshold
     Nat.card K + DK - 1 ≤
       min L
         (L - Nat.card (G ⧸ K.addSubgroupOf G) + 2) := by
+  letI : Fintype G := Fintype.ofFinite G
   let Ki := K.addSubgroupOf G
   let DQ := weightedDavenportValue W (G ⧸ Ki) hW
   have hKi : IsWeightedDavenportConstant W Ki DK :=
@@ -295,7 +296,8 @@ theorem weighted_internalCritical_le_source_retained_threshold
   have hQpos : 1 ≤ Nat.card (G ⧸ Ki) := Nat.card_pos
   change Nat.card K + DK - 1 ≤
     min L (L - Nat.card (G ⧸ Ki) + 2)
-  apply Nat.le_min
+  rw [Nat.le_min]
+  constructor
   · omega
   · omega
 
