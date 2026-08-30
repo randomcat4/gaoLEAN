@@ -362,8 +362,8 @@ theorem exists_liftedFullCore_of_enlargement
           z.selected ⊆ parentCore := by
   obtain ⟨filler, parentCore, hFdis, hFcard, hpreFsub,
       hparentContainer, hparentCard⟩ :=
-    S.exists_liftedCoreCarrier C DJ hDJ hDJle DK hDK hcontainerLower
-      hprimitive
+    S.exists_liftedCoreCarrier hprimitive C DJ hDJ hDJle DK hDK
+      hcontainerLower
   refine ⟨parentCore, hparentContainer, hparentCard, ?_⟩
   exact S.liftedCore_full_of_carrier hW hprimitive C DJ hDJ hDJle
     filler parentCore hFdis hFcard hpreFsub hparentContainer
