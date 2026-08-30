@@ -159,10 +159,10 @@ noncomputable def HasWeightedSumOfCard.restrictOccurrenceSubsequence
     weighted_sum := ?_
   }
   · intro j hj
-    obtain ⟨i, hi, hij⟩ := Finset.mem_map.mp hj
-    subst j
-    have hiSel : i.1 ∈ h.selected := i.2
-    simpa [weights, emb, e] using h.weights_mem i.1 hiSel
+    obtain ⟨i, _hi, rfl⟩ := Finset.mem_map.mp hj
+    change h.weights (e (e.symm ⟨i.1, hsub i.2⟩)).1 ∈ W
+    rw [e.apply_symm_apply]
+    exact h.weights_mem i.1 i.2
   · simp [selected, h.card_selected]
   · rw [show
         (∑ j ∈ selected,
@@ -171,9 +171,17 @@ noncomputable def HasWeightedSumOfCard.restrictOccurrenceSubsequence
             h.weights i • occurrenceValue xs i by
       unfold selected
       rw [Finset.sum_map]
+      rw [Finset.sum_attach]
       apply Finset.sum_congr rfl
       intro i hi
-      simp [weights, emb, e, occurrenceValue_occurrenceSubsequence]]
+      have he : e (e.symm ⟨i, hsub hi⟩) = ⟨i, hsub hi⟩ :=
+        e.apply_symm_apply ⟨i, hsub hi⟩
+      have hsrc : occurrenceSubsequenceSource xs R
+          (e.symm ⟨i, hsub hi⟩) = i := by
+        change (e (e.symm ⟨i, hsub hi⟩)).1 = i
+        exact congrArg Subtype.val he
+      simp [weights, emb, occurrenceValue_occurrenceSubsequence,
+        he, hsrc]]
     exact h.weighted_sum
 
 section FiniteAmbient
