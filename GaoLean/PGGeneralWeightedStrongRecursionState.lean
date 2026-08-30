@@ -176,6 +176,53 @@ theorem core_card_le_retained_card
     S.core.card ≤ S.retained.card :=
   Finset.card_le_card S.core_subset_retained
 
+/-- The small-carrier identity already stored in a strong recursive state
+forces enough unused retained labels to supply a full `D_Q - 1` zero reserve.
+This is a local `H`-coset capacity statement; unlike the lifted total-carrier
+budget, it is strong enough for centred Davenport completion. -/
+theorem core_card_add_DQ_pred_le_retained_card
+    (S : GeneralWeightedStrongRecursionState W G gamma delta xs n D) :
+    S.core.card + (S.DQ - 1) ≤ S.retained.card := by
+  have hsmallLe : S.small.card ≤ xs.length := by
+    simpa [Occurrence] using
+      Finset.card_le_card (Finset.subset_univ S.small)
+  have hretained := S.retained_card_add_r
+  have hHcardPos : 1 ≤ Nat.card S.H := Nat.card_pos
+  have hDHpos := weightedDavenportConstant_pos W S.DH S.DH_exact
+  have hDQpos := weightedDavenportConstant_pos W S.DQ S.DQ_exact
+  rw [S.small_card] at hsmallLe
+  rw [S.core_card]
+  omega
+
+/-- Monotone local reserve budget for any quotient Davenport parameter no
+larger than the one stored by the recursive state. -/
+theorem core_card_add_Davenport_pred_le_retained_card
+    (S : GeneralWeightedStrongRecursionState W G gamma delta xs n D)
+    (DJ : ℕ) (hDJ : DJ ≤ S.DQ) :
+    S.core.card + (DJ - 1) ≤ S.retained.card := by
+  exact (Nat.add_le_add_left (Nat.sub_le_sub_right hDJ 1) S.core.card).trans
+    S.core_card_add_DQ_pred_le_retained_card
+
+/-- Extract the actual occurrence-labelled local reserve certified by the
+preceding budget.  Its labels lie in `retained \ core`, hence are disjoint
+from the old full core and remain in the old common source coset. -/
+noncomputable def extractDavenportReserve
+    (S : GeneralWeightedStrongRecursionState W G gamma delta xs n D)
+    (DJ : ℕ) (hDJ : DJ ≤ S.DQ) :
+    OccurrenceReserveExtraction xs S.retained S.core (DJ - 1) :=
+  extractOccurrenceReserveOfCoreCardAddLe S.retained S.core (DJ - 1)
+    (S.core_card_add_Davenport_pred_le_retained_card DJ hDJ)
+
+/-- Every label in a reserve extracted from the old recursive state is a
+literal zero after centring modulo `S.H`. -/
+theorem extractDavenportReserve_sourceCoset
+    (S : GeneralWeightedStrongRecursionState W G gamma delta xs n D)
+    (DJ : ℕ) (hDJ : DJ ≤ S.DQ)
+    (i : Occurrence xs) (hi : i ∈ (S.extractDavenportReserve DJ hDJ).reserve) :
+    occurrenceValue xs i - S.alpha ∈ S.H := by
+  exact S.retained_sourceCoset i
+    ((S.extractDavenportReserve DJ hDJ).reserve_subset_retained hi)
+
 /-- Lift the operational full core of a recursive state on an occurrence
 subsequence back to the original source labels.
 
@@ -341,6 +388,10 @@ theorem generalWeightedStrongRecursionAt_of_engine
 end GaoLean
 
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.retained_card_add_r
+#print axioms GaoLean.GeneralWeightedStrongRecursionState.core_card_add_DQ_pred_le_retained_card
+#print axioms GaoLean.GeneralWeightedStrongRecursionState.core_card_add_Davenport_pred_le_retained_card
+#print axioms GaoLean.GeneralWeightedStrongRecursionState.extractDavenportReserve
+#print axioms GaoLean.GeneralWeightedStrongRecursionState.extractDavenportReserve_sourceCoset
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.exists_liftedFullCore
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.core_exactSpectrumWithin_eq
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.nsmul_beta_mem_weightedExactSpectrum
