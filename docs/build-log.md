@@ -1040,3 +1040,20 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
   `native_decide`, or `sorryAx` escape.
 - This is a working-branch integration receipt, not a fresh independent
   cold-clone audit; the README preserves that distinction.
+
+## 2026-08-30: public-surface repair and separate-checkout regression
+
+- Verified commit `eb5f9e2644b4df55b0c0099210f07b3b69b33c62` in a newly cloned,
+  separate server directory.  Existing working directories and their
+  uncommitted Lean changes were not touched.
+- Ran `python3 scripts/check_repository_surface.py`: 201 Lean sources, 26
+  Markdown tables, and 16 paper-manifest entries passed.
+- Ran `lake build GaoLean GaoFormal.AxiomAudit` under Lean/Mathlib `v4.32.0`.
+- Result: `Build completed successfully (8851 jobs)`, exit 0.
+- The stable public theorem
+  `GaoLean.ConcreteGDihedral.gaoGeneralizedDihedralOddPGroup` reports exactly
+  `[propext, Classical.choice, Quot.sound]` in the axiom audit.
+- The raw server log SHA-256 is
+  `b038005f854ed3e3a1034376a0338f0e566ceaef6ef0e994cd0e4825a99ad12c`.
+  A compact public receipt is stored in
+  `docs/build-receipts/2026-08-30-eb5f9e2.md`.
