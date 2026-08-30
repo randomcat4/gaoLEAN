@@ -1,5 +1,6 @@
 import GaoLean.PGGeneralWeightedStrongRecursionState
 import GaoLean.PGDavenportBridge
+import GaoLean.PGDGMAmbientQuotient
 
 /-!
 # Quotient transport of the general-weighted overgroup input
@@ -81,6 +82,28 @@ theorem mk_mem_generalWeightedQuotientSubgroup_iff
   · intro hx
     exact ⟨x, hx, rfl⟩
 
+/-- Quotienting a recursive overgroup by a nontrivial subgroup strictly
+lowers the cardinality of that recursive overgroup.
+
+The rank is the cardinality of `G`, not that of the ambient type `G₀`.  This
+is the exact decrease needed by the cross-type strong-induction scheduler. -/
+theorem natCard_generalWeightedQuotientSubgroup_lt
+    {L G : AddSubgroup G₀} (hLG : L ≤ G) (hL : ⊥ < L) :
+    Nat.card (generalWeightedQuotientSubgroup L G) < Nat.card G := by
+  classical
+  have hLcard : 2 ≤ Nat.card L := by
+    have hcardlt : Nat.card (⊥ : AddSubgroup G₀) < Nat.card L :=
+      natCard_lt_of_addSubgroup_lt hL
+    have hbotcard : Nat.card (⊥ : AddSubgroup G₀) = 1 := by simp
+    rw [hbotcard] at hcardlt
+    omega
+  have hqpos : 0 < Nat.card (generalWeightedQuotientSubgroup L G) :=
+    Nat.card_pos
+  have hfactor := natCard_mul_natCard_map_quotient L G hLG
+  change Nat.card L * Nat.card (generalWeightedQuotientSubgroup L G) =
+    Nat.card G at hfactor
+  nlinarith
+
 /-- Quotienting equation (3) by a subgroup inside its recursive overgroup
 preserves both affine centres and every labelled source occurrence.
 
@@ -123,4 +146,5 @@ end GaoLean
 #print axioms GaoLean.occurrenceValue_quotientMapOccurrenceEquiv
 #print axioms GaoLean.occurrenceValue_quotientMapOccurrenceEquiv_symm
 #print axioms GaoLean.mk_mem_generalWeightedQuotientSubgroup_iff
+#print axioms GaoLean.natCard_generalWeightedQuotientSubgroup_lt
 #print axioms GaoLean.GeneralWeightedOvergroupInput.quotient

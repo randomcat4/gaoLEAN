@@ -1,4 +1,4 @@
-import GaoLean.PGGeneralWeightedStrongRecursionState
+import GaoLean.PGGeneralWeightedOvergroupQuotient
 
 /-!
 # Cross-type cardinal induction for the strong general-weight recursion
@@ -64,6 +64,22 @@ theorem applyQuotient
     GeneralWeightedStrongRecursionAt K :=
   ih (G₀ ⧸ L) K hKcard
 
+/-- Apply the cross-type induction hypothesis to the image of `G` in the
+ambient quotient by a nontrivial `L ≤ G`.
+
+Unlike `applyQuotient`, this entry point proves the rank decrease internally;
+the caller supplies only the mathematical subgroup hypotheses. -/
+theorem applyGeneralWeightedQuotient
+    {G₀ : Type u} [AddCommGroup G₀] [Fintype G₀]
+    {G L : AddSubgroup G₀}
+    (ih : GeneralWeightedCrossTypeSmallerCardRecursionHypothesis G)
+    [Fintype (G₀ ⧸ L)]
+    (hLG : L ≤ G) (hL : ⊥ < L) :
+    GeneralWeightedStrongRecursionAt
+      (generalWeightedQuotientSubgroup L G) :=
+  ih.applyQuotient L (generalWeightedQuotientSubgroup L G)
+    (natCard_generalWeightedQuotientSubgroup_lt hLG hL)
+
 end GeneralWeightedCrossTypeSmallerCardRecursionHypothesis
 
 /-! ## Ranked propositions and the local-step boundary -/
@@ -124,5 +140,6 @@ end GaoLean
 
 #print axioms GaoLean.GeneralWeightedCrossTypeSmallerCardRecursionHypothesis.toFixedAmbientStrictSubgroup
 #print axioms GaoLean.GeneralWeightedCrossTypeSmallerCardRecursionHypothesis.applyQuotient
+#print axioms GaoLean.GeneralWeightedCrossTypeSmallerCardRecursionHypothesis.applyGeneralWeightedQuotient
 #print axioms GaoLean.generalWeightedStrongRecursionAtCard_of_crossTypeEngine
 #print axioms GaoLean.generalWeightedStrongRecursionAt_of_crossTypeEngine
