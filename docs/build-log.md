@@ -1079,3 +1079,27 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
   theorem remains partial until nontrivial quotient-state transport,
   kernel/full-core block expansion, and the equation-(3)--(9) assembly are
   constructed without a conclusion-shaped provider or engine premise.
+
+## 2026-08-30: weighted quotient rank and fixed-weight kernel recursion
+
+- Verified commit `806526a64ea2e8963fe15c7e0efc8ea9dff77d3a` in a fresh,
+  separate server clone after the bridge implementation was pushed.
+- Added the recursive-overgroup image rank theorem and an entry point that
+  derives quotient rank decrease from `⊥ < L ≤ G` rather than accepting it
+  from the caller.
+- Replaced the proper-kernel branch's over-strong all-weight provider premise
+  with a fixed-`W` strong recursion state at the kernel top.  The resulting
+  theorem constructs a literal occurrence-labelled exact-`|K|` zero core.
+- Ran `python3 scripts/check_repository_surface.py`: 201 Lean sources, 26
+  Markdown tables, and 16 paper-manifest entries passed.
+- Ran `lake build GaoLean GaoFormal.AxiomAudit` under Lean/Mathlib `v4.32.0`.
+- Result: `Build completed successfully (8853 jobs)`, exit 0.
+- All four new bridge/assembly endpoints report only `propext`,
+  `Classical.choice`, and `Quot.sound`; no `sorryAx` appears.
+- The raw server log SHA-256 is
+  `1a9b02bda3d3941ab7d907918a0bafb27b7a29b51f13ad09b3c49647cb3787c6`.
+  A compact public receipt is stored in
+  `docs/build-receipts/2026-08-30-806526a.md`.
+- The parent equation-(3)--(9) state is still open: kernel full-block
+  expansion and quotient-state assembly have not been inferred from the
+  local zero core.
