@@ -1057,3 +1057,25 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
   `b038005f854ed3e3a1034376a0338f0e566ceaef6ef0e994cd0e4825a99ad12c`.
   A compact public receipt is stored in
   `docs/build-receipts/2026-08-30-eb5f9e2.md`.
+
+## 2026-08-30: cross-type weighted-GMO scheduler integration
+
+- Integrated the quotient equation-(3) input transport and the cross-type
+  `Nat.card` strong-induction scheduler at commit
+  `c5076bbec7f2011caa046d225cdd8fdaf62e1ef0`.
+- Verified that exact remote commit in a newly cloned, separate server
+  directory; no pre-existing working directory supplied build artifacts.
+- Ran `python3 scripts/check_repository_surface.py`: 201 Lean sources, 26
+  Markdown tables, and 16 paper-manifest entries passed.
+- Ran `lake build GaoLean GaoFormal.AxiomAudit` under Lean/Mathlib `v4.32.0`.
+- Result: `Build completed successfully (8853 jobs)`, exit 0.
+- The four new quotient/scheduler audit endpoints report only `propext`,
+  `Classical.choice`, and `Quot.sound` as applicable; no `sorryAx` appears.
+- The raw server log SHA-256 is
+  `a4ab5dae48c3a1ed65c2ca5fd64824b12068798755bfb019e8eaafc3b2adb38c`.
+  A compact public receipt is stored in
+  `docs/build-receipts/2026-08-30-c5076bb.md`.
+- This closes scheduling and input transport only.  The arbitrary-weight GMO
+  theorem remains partial until nontrivial quotient-state transport,
+  kernel/full-core block expansion, and the equation-(3)--(9) assembly are
+  constructed without a conclusion-shaped provider or engine premise.
