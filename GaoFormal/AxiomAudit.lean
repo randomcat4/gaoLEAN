@@ -445,6 +445,7 @@ import GaoFormal
 #print axioms GaoLean.weighted_internalCritical_le_source_retained_threshold
 #print axioms GaoLean.weighted_internalCore_quotientReserve_le_retainedThreshold
 #print axioms GaoLean.weightedDavenport_lifted_subgroup_quotient
+#print axioms GaoLean.weighted_candidateCore_reserve_capacity
 #print axioms GaoLean.weighted_liftedCore_pool_reserve_capacity
 #print axioms GaoLean.weighted_liftedCore_pool_reserve_filler_capacity
 #print axioms GaoLean.exists_weightClosureGenerator

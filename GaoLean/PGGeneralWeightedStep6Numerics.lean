@@ -360,6 +360,26 @@ theorem weightedDavenport_lifted_subgroup_quotient
       (liftedInternalQuotientEquiv H J).symm hJ
   exact weightedDavenport_subgroup_quotient W Hinside DK DH DJ hK hHinside hQ
 
+/-- The old critical `H` core and a `D_W(J)-1` reserve fit in the
+candidate-container threshold governed by the lifted subgroup constant.
+This is the numerical form of source equation (21), used before maximality;
+it does not assume that a mature strong state has already been built. -/
+theorem weighted_candidateCore_reserve_capacity
+    {W : Set ℤ} (H : AddSubgroup A) (J : AddSubgroup (A ⧸ H))
+    (DH DJ DK : ℕ)
+    (hH : IsWeightedDavenportConstant W H DH)
+    (hJ : IsWeightedDavenportConstant W J DJ)
+    (hK : IsWeightedDavenportConstant W (liftedAddSubgroup H J) DK) :
+    (Nat.card H + DH - 1) + (DJ - 1) ≤
+      Nat.card H + DK - 1 := by
+  have hconv := weightedDavenport_lifted_subgroup_quotient
+    H J DH DJ DK hH hJ hK
+  have hHcardPos : 1 ≤ Nat.card H := Nat.card_pos
+  have hDHpos := weightedDavenportConstant_pos W DH hH
+  have hDJpos := weightedDavenportConstant_pos W DJ hJ
+  have hDKpos := weightedDavenportConstant_pos W DK hK
+  omega
+
 /-- The old `H`-full core, the `|J|-1` quotient pool, and a `D_J-1`
 zero-reserve all fit inside the critical capacity of the lifted subgroup.
 This is the carrier budget needed before choosing a filler and assembling the
@@ -431,6 +451,7 @@ end GaoLean
 #print axioms GaoLean.weighted_internalCritical_le_source_retained_threshold
 #print axioms GaoLean.weighted_internalCore_quotientReserve_le_retainedThreshold
 #print axioms GaoLean.weightedDavenport_lifted_subgroup_quotient
+#print axioms GaoLean.weighted_candidateCore_reserve_capacity
 #print axioms GaoLean.weighted_liftedCore_pool_reserve_capacity
 #print axioms GaoLean.weighted_liftedCore_pool_reserve_filler_capacity
 #print axioms GaoLean.weightedStep6_quotient_length_after_properSubgroupPadding
