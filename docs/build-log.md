@@ -1172,3 +1172,17 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
   must next be lifted to the ambient variable witness consumed by the centred
   completion.  Full-core expansion, periodicity, and the small-carrier
   identity remain open.
+
+## 2026-08-30: exact server regression for `9699f20`
+
+- A separate clean server checkout was fetched and detached at exact commit
+  `9699f20090e902ef243e258319132df38c59403e`.
+- The repository-surface check passed with 201 Lean sources, 26 Markdown
+  tables, and 16 paper-manifest entries.
+- `lake build GaoLean GaoFormal.AxiomAudit` completed successfully with 8853
+  jobs and exit code 0 under Lean/Mathlib v4.32.0.
+- The checkout remained clean at the same exact commit after the build.
+- Receipt: `docs/build-receipts/2026-08-30-9699f20.md`.
+- This regression certifies the centred padding bridge, not the remaining
+  parent full-core/state assembly; the arbitrary-weight theorem remains
+  `PARTIALLY_VERIFIED`.
