@@ -171,17 +171,24 @@ noncomputable def HasWeightedSumOfCard.restrictOccurrenceSubsequence
             h.weights i • occurrenceValue xs i by
       unfold selected
       rw [Finset.sum_map]
-      rw [Finset.sum_attach]
-      apply Finset.sum_congr rfl
-      intro i hi
-      have he : e (e.symm ⟨i, hsub hi⟩) = ⟨i, hsub hi⟩ :=
-        e.apply_symm_apply ⟨i, hsub hi⟩
-      have hsrc : occurrenceSubsequenceSource xs R
-          (e.symm ⟨i, hsub hi⟩) = i := by
-        change (e (e.symm ⟨i, hsub hi⟩)).1 = i
-        exact congrArg Subtype.val he
-      simp [weights, emb, occurrenceValue_occurrenceSubsequence,
-        he, hsrc]]
+      refine Finset.sum_bij (fun i _ ↦ i.1) ?_ ?_ ?_ ?_
+      · intro i hi
+        exact i.2
+      · intro i₁ hi₁ i₂ hi₂ heq
+        exact Subtype.ext heq
+      · intro i hi
+        exact ⟨⟨i, hi⟩, by simp, rfl⟩
+      · intro i hi
+        have he : e (e.symm ⟨i.1, hsub i.2⟩) =
+            ⟨i.1, hsub i.2⟩ :=
+          e.apply_symm_apply ⟨i.1, hsub i.2⟩
+        have hsrc : occurrenceSubsequenceSource xs R
+            (e.symm ⟨i.1, hsub i.2⟩) = i.1 := by
+          change (e (e.symm ⟨i.1, hsub i.2⟩)).1 = i.1
+          exact congrArg Subtype.val he
+        simp [weights, emb, occurrenceValue_occurrenceSubsequence,
+          he, hsrc]
+      ]
     exact h.weighted_sum
 
 section FiniteAmbient
