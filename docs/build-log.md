@@ -1221,3 +1221,27 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
   the remaining capacity, parent full-core/state assembly, periodicity, or
   small-carrier obligations; the arbitrary-weight theorem remains
   `PARTIALLY_VERIFIED`.
+
+## 2026-08-30: operational lifted full-core assembly
+
+- Added a local centred reserve extracted from the old strong state's
+  retained-minus-core labels, with its source-coset property and exact
+  Davenport-budget cardinality.
+- Proved that the outside quotient pool is disjoint from the old retained
+  set, and constructed an exact quotient block from the pool plus the local
+  reserve.
+- Proved the lifted subgroup Davenport capacity inequality, including the
+  fixed filler budget, and constructed an exact critical-size parent carrier
+  inside the lifted affine container.
+- Added `liftedCore_full_of_carrier`, which combines an old `H` block, the
+  exact quotient block, and one honest fixed-weight filler on literal
+  disjoint occurrence labels.
+- Added `exists_liftedFullCore_of_enlargement`, which packages the carrier and
+  operational witnesses into one parent-core endpoint.  The server target
+  build at `65f9430` completed successfully with 8737 jobs; the new endpoint
+  reports only `propext`, `Classical.choice`, and `Quot.sound`.
+- This is not yet the unconditional local recursion theorem.  The endpoint
+  explicitly assumes the recursive branch's lifted-container lower bound and
+  compatible quotient/parent Davenport constants.  Parent periodicity,
+  small-carrier identity, and full equation-(3)--(9) state assembly remain
+  open, so the manuscript-wide verdict remains `PARTIALLY_VERIFIED`.

@@ -71,6 +71,9 @@ manuscript Theorem 2.2 in its full source range
     ├── recursive-overgroup quotient rank decrease                      [CHECKED]
     ├── proper-kernel fixed-W strong-IH zero-core bridge                [CHECKED]
     ├── cross-type IH to proper-kernel top-state wiring                 [CHECKED]
+    ├── old-state centred Davenport reserve extraction                  [CHECKED]
+    ├── quotient-pool/reserve disjoint exact block assembly             [CHECKED]
+    ├── exact lifted critical carrier and operational full core         [CHECKED]
     ├── quotient strong-state/output transport and local step          [OPEN]
     ├── unconditional strong-state construction/induction             [OPEN]
     └── literal source-statement and paragraph audit               [OPEN]
@@ -164,12 +167,20 @@ zero-generator branch.  The bottom-overgroup base is now unconditional and
   maximal-block argument bound the missing cardinality by `D_W(J)-1`.
   The quotient affine-sumset member is now directly lifted to an ambient
   variable-cardinality witness and fed to the centred completion, producing
-  an exact-cardinality labelled weighted selection.  The next local step must
-  extract a disjoint reserve with the required Davenport budget from the
-  enlargement certificate and prove the parent carrier-capacity inequality.
-  Afterwards the proof must expand kernel full blocks and
-  transport/assemble the parent equation-(3)--(9) state; it may not replace
-  that work by a conclusion-level provider.
+  an exact-cardinality labelled weighted selection.  The local reserve is now
+  extracted from the old strong state's retained-minus-core labels, where the
+  required centred `H`-coset relation is actually available; it is proved
+  disjoint from the quotient pool.  The lifted Davenport capacity inequality,
+  exact critical carrier, and operational parent full-core expansion are also
+  checked.  In particular,
+  `GeneralWeightedStrongRecursionState.exists_liftedFullCore_of_enlargement`
+  returns one exact-size parent core and literal exact-`|lift(H,J)|` witnesses
+  for every lifted-subgroup target.  This endpoint still assumes the actual
+  recursive branch's lifted-container lower bound and compatible quotient
+  Davenport data.  The remaining work is to derive those inputs through the
+  nontrivial quotient-state transport and then assemble periodicity and the
+  small-carrier equation-(3)--(9) fields; it may not be replaced by a
+  conclusion-level provider.
 
 Exit criterion: the G1 existence endpoint has an unconditional inhabitant
 and specializes definitionally or by proved transport to the current
@@ -206,10 +217,14 @@ current corollary-level providers after recursion.  The bottom-overgroup
   instance of this state is checked without a provider.  The quotient
   equation-(3) input and the cross-type cardinal scheduler are checked; the
   centred fixed-cardinality reserve padding and its direct quotient
-  affine-witness input bridge are now checked as data-producing theorems.
-  The remaining problem is the certificate-level reserve/capacity lemma,
-  nontrivial quotient state/output transport, and the full-core seed/extension
-  that implements the local step.
+  affine-witness input bridge are checked as data-producing theorems.  The
+  certificate/state join is now operational as well: the reserve comes from
+  the old centred state, the outside quotient pool is disjoint from it, an
+  exact quotient block is assembled, and an exact lifted critical carrier is
+  equipped with full-subgroup witnesses.  The remaining problem is to derive
+  the lifted-container bound and quotient Davenport compatibility inside the
+  actual nontrivial recursive branch, then transport/construct the parent
+  periodic spectrum and small-carrier identity required by equations (3)--(9).
 
 Exit criterion: the G1 structural endpoint is unconditional and all
 specialized structural providers are derived from it.
