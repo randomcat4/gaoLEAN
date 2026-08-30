@@ -255,6 +255,50 @@ theorem weightedStep6_quotient_length_after_properSubgroupPadding
       hW H hHbot hHtop L hL
   omega
 
+/-! ## Internal-overgroup critical threshold -/
+
+/-- The source-length hypotheses of the strong recursion leave enough room
+for the critical weighted core of every subgroup `K ≤ G`, measured against
+the internal quotient `G/K`.
+
+This is intentionally an internal-overgroup statement.  It does not replace
+`G/K` by the generally larger ambient quotient `A/K`; an overgroup-aware
+Step 1 certificate is still needed before this bound can supply a lifted
+affine-container lower bound in the recursive branch. -/
+theorem weighted_internalCritical_le_source_retained_threshold
+    {W : Set ℤ} (hW : W.Nonempty)
+    (K G : AddSubgroup A) (hKG : K ≤ G)
+    (DK D n L : ℕ)
+    (hDK : IsWeightedDavenportConstant W K DK)
+    (hD : IsWeightedDavenportConstant W G D)
+    (hn : Nat.card G ≤ n)
+    (hL : n + D - 1 ≤ L) :
+    Nat.card K + DK - 1 ≤
+      min L
+        (L - Nat.card (G ⧸ K.addSubgroupOf G) + 2) := by
+  let Ki := K.addSubgroupOf G
+  let DQ := weightedDavenportValue W (G ⧸ Ki) hW
+  have hKi : IsWeightedDavenportConstant W Ki DK :=
+    isWeightedDavenportConstant_addEquiv W
+      (AddSubgroup.addSubgroupOfEquivOfLe hKG).symm hDK
+  have hDQ : IsWeightedDavenportConstant W (G ⧸ Ki) DQ :=
+    weightedDavenportValue_spec W (G ⧸ Ki) hW
+  have hconv : DK + DQ ≤ D + 1 :=
+    weightedDavenport_subgroup_quotient W Ki D DK DQ hD hKi hDQ
+  have hDQpos : 1 ≤ DQ :=
+    weightedDavenportConstant_pos W DQ hDQ
+  have hDKle : DK ≤ D := by omega
+  have hKiCard : Nat.card Ki = Nat.card K :=
+    Nat.card_congr (AddSubgroup.addSubgroupOfEquivOfLe hKG)
+  have hcard := natCard_add_quotient_sub_one_le_ambient (A := G) Ki
+  rw [hKiCard] at hcard
+  have hQpos : 1 ≤ Nat.card (G ⧸ Ki) := Nat.card_pos
+  change Nat.card K + DK - 1 ≤
+    min L (L - Nat.card (G ⧸ Ki) + 2)
+  apply Nat.le_min
+  · omega
+  · omega
+
 /-! ## Lifted subgroup capacity -/
 
 /-- Exact weighted Davenport constants on `H` and `J` obey the internal
@@ -346,6 +390,7 @@ end GaoLean
 #print axioms GaoLean.weighted_quotientPadding_add_subgroupCritical_le_length
 #print axioms GaoLean.natCard_add_quotient_le_ambient_of_ne_bot_of_lt_top
 #print axioms GaoLean.weighted_properSubgroupPadding_add_quotientCritical_le_length
+#print axioms GaoLean.weighted_internalCritical_le_source_retained_threshold
 #print axioms GaoLean.weightedDavenport_lifted_subgroup_quotient
 #print axioms GaoLean.weighted_liftedCore_pool_reserve_capacity
 #print axioms GaoLean.weighted_liftedCore_pool_reserve_filler_capacity

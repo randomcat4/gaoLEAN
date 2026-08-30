@@ -427,6 +427,7 @@ import GaoFormal
 #print axioms GaoLean.weightedStep6_quotient_length_after_subgroup_pred
 #print axioms GaoLean.weighted_properSubgroupPadding_add_quotientCritical_le_length
 #print axioms GaoLean.weightedStep6_quotient_length_after_properSubgroupPadding
+#print axioms GaoLean.weighted_internalCritical_le_source_retained_threshold
 #print axioms GaoLean.weightedDavenport_lifted_subgroup_quotient
 #print axioms GaoLean.weighted_liftedCore_pool_reserve_capacity
 #print axioms GaoLean.weighted_liftedCore_pool_reserve_filler_capacity
