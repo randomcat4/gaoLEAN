@@ -113,8 +113,8 @@ lake exe cache get
 lake build GaoLean GaoFormal.AxiomAudit
 ~~~
 
-最近一次独立检出目录的服务器构建完成 **8853/8853 jobs**，退出码为 0
-（[构建回执](docs/build-receipts/2026-08-30-ebee5f5.md)）。公开审计端点只使用
+最近一次独立检出目录的服务器构建完成 **8854/8854 jobs**，退出码为 0
+（[构建回执](docs/build-receipts/2026-08-30-8a87472.md)）。公开审计端点只使用
 Lean/Mathlib 常规公理 propext、Classical.choice 与 Quot.sound（按定理实际需要）；
 扫描未发现 sorry、admit、项目自定义顶层公理、unsafe、native_decide 或 sorryAx
 逃逸。
@@ -225,8 +225,8 @@ lake exe cache get
 lake build GaoLean GaoFormal.AxiomAudit
 ~~~
 
-The latest server build from a separate checkout completed **8853/8853 jobs**
-with exit code 0 ([build receipt](docs/build-receipts/2026-08-30-ebee5f5.md)).
+The latest server build from a separate checkout completed **8854/8854 jobs**
+with exit code 0 ([build receipt](docs/build-receipts/2026-08-30-8a87472.md)).
 The public audit surface reports only the standard Lean/Mathlib axioms
 propext, Classical.choice, and Quot.sound as applicable, with no admitted or
 project-defined axiom escape.

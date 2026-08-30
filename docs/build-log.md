@@ -1245,3 +1245,25 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
   compatible quotient/parent Davenport constants.  Parent periodicity,
   small-carrier identity, and full equation-(3)--(9) state assembly remain
   open, so the manuscript-wide verdict remains `PARTIALLY_VERIFIED`.
+
+## 2026-08-30: exact server regression for `8a87472`
+
+- Three independent read-only audits found no blocking or major defect in the
+  carrier arithmetic, occurrence-level disjointness, quotient correction, or
+  documentation boundary.  All three classified the new endpoint as correct
+  under its explicit integration hypotheses, not as an unconditional local
+  recursion theorem.
+- A separate clean server checkout was fetched and detached at exact commit
+  `8a87472de72745c84fab229123e4a550d0db0afd`.
+- The repository-surface check passed with 202 Lean sources, 26 Markdown
+  tables, and 16 paper-manifest entries.
+- `lake build GaoLean GaoFormal.AxiomAudit` completed successfully with 8854
+  jobs and exit code 0 under Lean/Mathlib v4.32.0.
+- The checkout remained clean at the exact commit after the build.  The raw
+  build log SHA-256 is
+  `2fa6049dee11d69fb6266312b8161a7409bdf09d8cf1fc742c6a28d679c57fe5`.
+- Receipt: `docs/build-receipts/2026-08-30-8a87472.md`.
+- The regression certifies the operational lifted full-core milestone.  It
+  does not close quotient-state integration, periodicity, small-carrier
+  assembly, or arbitrary-weight Theorem 2.2; the manuscript-wide verdict
+  remains `PARTIALLY_VERIFIED`.
