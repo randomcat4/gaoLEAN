@@ -112,7 +112,7 @@ lake build GaoLean GaoFormal.AxiomAudit
 
 The latest server build from a separate checkout completed **8853/8853 jobs**
 with exit code 0; see the
-[build receipt](docs/build-receipts/2026-08-30-c5076bb.md). The public audit
+[build receipt](docs/build-receipts/2026-08-30-d67d981.md). The public audit
 surface uses only the standard Lean/Mathlib axioms `propext`,
 `Classical.choice`, and `Quot.sound` where applicable. The repository scan
 found no `sorry`, `admit`, project-defined top-level axiom, `unsafe`,

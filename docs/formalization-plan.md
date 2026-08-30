@@ -68,6 +68,9 @@ manuscript Theorem 2.2 in its full source range
     ├── bottom-overgroup strong-state base case                     [CHECKED]
     ├── equation-(3) quotient-input transport                          [CHECKED]
     ├── cross-type Nat.card induction scheduler                        [CHECKED]
+    ├── recursive-overgroup quotient rank decrease                      [CHECKED]
+    ├── proper-kernel fixed-W strong-IH zero-core bridge                [CHECKED]
+    ├── cross-type IH to proper-kernel top-state wiring                 [CHECKED]
     ├── quotient strong-state/output transport and local step          [OPEN]
     ├── unconditional strong-state construction/induction             [OPEN]
     └── literal source-statement and paragraph audit               [OPEN]
@@ -137,9 +140,17 @@ zero-generator branch.  The bottom-overgroup base is now unconditional and
   constructs every equation-(3)--(9) field from one real occurrence.  The
   equation-(3) overgroup input now transports to quotient types without losing
   occurrence labels, and the cross-type `Nat.card` strong-induction scheduler
-  is checked.  These are scheduling and input lemmas only: the next inductive
-  layer must still transport/assemble the full equation-(3)--(9) state, not
-  merely invoke a conclusion-level provider.
+  is checked.  The rank decrease for the image of a recursive overgroup in a
+  nontrivial quotient is now internal to the scheduler entry point.  On the
+  proper-kernel side, a fixed-`W` strong recursion state at the kernel top now
+  yields the literal ambient exact-`|K|` zero core; this removes the earlier
+  all-weight provider mismatch from that branch.  These are still scheduling
+  all-weight provider mismatch from that branch.  The primitive proper-kernel
+  split now consumes the actual cross-type smaller-card IH directly, using
+  strict kernel inclusion to obtain the kernel-top strong state.  These are
+  still scheduling and local-product lemmas only: the next inductive layer
+  must expand kernel full blocks and transport/assemble the parent
+  equation-(3)--(9) state, not merely invoke a conclusion-level provider.
 
 Exit criterion: the G1 existence endpoint has an unconditional inhabitant
 and specializes definitionally or by proved transport to the current

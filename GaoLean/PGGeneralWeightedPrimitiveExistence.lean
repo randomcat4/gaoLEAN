@@ -4,6 +4,7 @@ import GaoLean.PGGeneralWeightedSingletonRecursion
 import GaoLean.PGGeneralWeightedSelectionConvolution
 import GaoLean.PGGeneralWeightedReserveAssembly
 import GaoLean.PGGeneralWeightedLemma35
+import GaoLean.PGGeneralWeightedCrossTypeInduction
 import GaoLean.PGGaoOrdinaryComplete
 
 /-!
@@ -398,6 +399,60 @@ theorem hasWeightedSumOfCard_zero_of_kernelRecursiveProvider
     simpa [hzero] using hx
   exact ⟨hxzero.liftSingletonKernelSubsequence hW hw₀⟩
 
+/-- The kernel-budget branch needs only the strong recursion state for the
+top subgroup of the fixed difference kernel; it does not need a provider
+quantified over every weight set.
+
+The strong state supplies an exact `|K| • beta` witness on the literal
+singleton-kernel occurrence list.  Finiteness of `K` makes that target zero,
+after which the existing occurrence-faithful singleton lift returns the
+witness to the original source. -/
+theorem hasWeightedSumOfCard_zero_of_kernelStrongRecursionAtTop
+    {W : Set ℤ} (hW : W.Nonempty) (hprimitive : IsPrimitiveWeightSet W)
+    {w₀ : ℤ} (hw₀ : w₀ ∈ W)
+    (D : ℕ) (hD : IsWeightedDavenportConstant W A D)
+    (xs : List A)
+    (hcount : Nat.card (weightedDifferenceKernel W w₀ A) + D - 1 ≤
+      weightedSingletonOccurrenceCount W xs)
+    (hstrong : GeneralWeightedStrongRecursionAt
+      (⊤ : AddSubgroup (weightedDifferenceKernel W w₀ A))) :
+    Nonempty (HasWeightedSumOfCard W xs
+      (Nat.card (weightedDifferenceKernel W w₀ A)) 0) := by
+  classical
+  let K := weightedDifferenceKernel W w₀ A
+  let KT : AddSubgroup K := ⊤
+  let DKT := weightedDavenportValue W KT hW
+  let ks := weightedSingletonKernelSubsequence hW hw₀ xs
+  have hDAeq : weightedDavenportValue W A hW = D :=
+    isWeightedDavenportConstant_unique W A
+      (weightedDavenportValue_spec W A hW) hD
+  have hDKle : weightedDavenportValue W K hW ≤ D :=
+    (weightedDavenportValue_subgroup_le_ambient hW K).trans_eq hDAeq
+  have hDKTle : DKT ≤ D := by
+    exact (weightedDavenportValue_subgroup_le_ambient hW KT).trans hDKle
+  have hKTcard : Nat.card KT = Nat.card K := by
+    simpa [KT] using (AddSubgroup.card_top (G := K))
+  have hlength : Nat.card K + DKT - 1 ≤ ks.length := by
+    rw [length_weightedSingletonKernelSubsequence hW hw₀ xs]
+    have hcountK : Nat.card K + D - 1 ≤
+        weightedSingletonOccurrenceCount W xs := by
+      simpa [K] using hcount
+    omega
+  have hinput : GeneralWeightedOvergroupInput W KT 0 0 ks := by
+    constructor <;> intro i
+    · simp [KT]
+    · intro w hw
+      simp [KT]
+  obtain ⟨S⟩ := hstrong W hW hprimitive DKT
+    (weightedDavenportValue_spec W KT hW) 0 0 ks (Nat.card K)
+    hKTcard.le hinput hlength
+  obtain ⟨hx⟩ := S.nonempty_hasWeightedSumOfCard_nsmul_beta
+  have hzero : Nat.card K • S.beta = 0 := card_nsmul_eq_zero'
+  have hxzero : HasWeightedSumOfCard W ks (Nat.card K) 0 := by
+    rw [hzero] at hx
+    exact hx
+  exact ⟨hxzero.liftSingletonKernelSubsequence hW hw₀⟩
+
 /-- The range-budget side really invokes the occurrence-labelled weighted
 Lemma 3.5 on the literal nonsingleton occurrence pool.  Properness of the
 difference kernel makes its homomorphic range nontrivial. -/
@@ -492,11 +547,10 @@ theorem primitiveAperiodicExistence_or_step6KernelRangeResidual
         · omega
         · exact hbot
 
-/-- Strongest current proper-kernel assembly.  Given only the legitimate
-strong-induction hypothesis on strict nontrivial kernel subgroups, the kernel
-side is converted into an ambient labelled zero core and the range side into
-the full weighted Lemma 3.5 certificate.  No target conclusion is assumed.
--/
+/-- Legacy provider-based proper-kernel assembly.  This remains useful as a
+corollary interface, but its provider is quantified over all nonempty weight
+sets and is therefore stronger than the fixed-`W` strong recursion hypothesis
+used by the source proof. -/
 theorem primitiveAperiodicExistence_or_kernelZeroCore_or_rangeCertificate
     {W : Set ℤ} (hW : W.Nonempty) (hprimitive : IsPrimitiveWeightSet W)
     (D : ℕ) (hD : IsWeightedDavenportConstant W A D)
@@ -528,6 +582,75 @@ theorem primitiveAperiodicExistence_or_kernelZeroCore_or_rangeCertificate
       exact generalWeightedLemma35Certificate_of_differenceRangeBudget
         hW hw₀ xs hKtop hrange
 
+/-- Proper-kernel assembly driven by the honest fixed-weight strong recursion
+state on each strict nontrivial kernel.  Unlike the legacy provider version,
+this premise does not quantify over unrelated weight sets.
+
+The result is still a local zero core or a Lemma-3.5 certificate, not the full
+equation-(3)--(9) parent state. -/
+theorem primitiveAperiodicExistence_or_kernelZeroCore_or_rangeCertificate_of_strongRecursion
+    {W : Set ℤ} (hW : W.Nonempty) (hprimitive : IsPrimitiveWeightSet W)
+    (D : ℕ) (hD : IsWeightedDavenportConstant W A D)
+    (xs : List A) (n : ℕ)
+    (hn : Nat.card A ≤ n)
+    (hlen : n + D - 1 ≤ xs.length)
+    (hstab : weightedSpectrumStabilizer W xs n = ⊥)
+    (hrecursive : ∀ K : AddSubgroup A,
+      K ≠ ⊥ → K ≠ ⊤ →
+        GeneralWeightedStrongRecursionAt (⊤ : AddSubgroup K)) :
+    WeightedGMOExistenceConclusion W xs n ∨
+      ∃ w₀ ∈ W,
+        weightedDifferenceKernel W w₀ A ≠ ⊥ ∧
+        weightedDifferenceKernel W w₀ A ≠ ⊤ ∧
+          (Nonempty (HasWeightedSumOfCard W xs
+              (Nat.card (weightedDifferenceKernel W w₀ A)) 0) ∨
+            Nonempty (GeneralWeightedLemma35Certificate W xs
+              (weightedNonsingletonOccurrences W xs)
+              (weightedDifferenceRange W w₀ A))) := by
+  rcases primitiveAperiodicExistence_or_step6KernelRangeResidual
+      hW hprimitive D hD xs n hn hlen hstab with hdone | hresidual
+  · exact Or.inl hdone
+  · right
+    obtain ⟨w₀, hw₀, hKbot, hKtop, hkernel | hrange⟩ := hresidual
+    · refine ⟨w₀, hw₀, hKbot, hKtop, Or.inl ?_⟩
+      exact hasWeightedSumOfCard_zero_of_kernelStrongRecursionAtTop
+        hW hprimitive hw₀ D hD xs hkernel
+          (hrecursive (weightedDifferenceKernel W w₀ A) hKbot hKtop)
+    · refine ⟨w₀, hw₀, hKbot, hKtop, Or.inr ?_⟩
+      exact generalWeightedLemma35Certificate_of_differenceRangeBudget
+        hW hw₀ xs hKtop hrange
+
+/-- The proper-kernel local products obtained directly from the cross-type
+strict-cardinality recursion hypothesis at the ambient top subgroup.
+
+This theorem removes the last adapter premise from the preceding fixed-weight
+version: strictness of each proper kernel supplies the strong state on its own
+top subgroup through `applySubgroupTop`.  The parent equation-(3)--(9) state is
+still not claimed here. -/
+theorem primitiveAperiodicExistence_or_kernelZeroCore_or_rangeCertificate_of_crossTypeIH
+    {W : Set ℤ} (hW : W.Nonempty) (hprimitive : IsPrimitiveWeightSet W)
+    (D : ℕ) (hD : IsWeightedDavenportConstant W A D)
+    (xs : List A) (n : ℕ)
+    (hn : Nat.card A ≤ n)
+    (hlen : n + D - 1 ≤ xs.length)
+    (hstab : weightedSpectrumStabilizer W xs n = ⊥)
+    (ih : GeneralWeightedCrossTypeSmallerCardRecursionHypothesis
+      (⊤ : AddSubgroup A)) :
+    WeightedGMOExistenceConclusion W xs n ∨
+      ∃ w₀ ∈ W,
+        weightedDifferenceKernel W w₀ A ≠ ⊥ ∧
+        weightedDifferenceKernel W w₀ A ≠ ⊤ ∧
+          (Nonempty (HasWeightedSumOfCard W xs
+              (Nat.card (weightedDifferenceKernel W w₀ A)) 0) ∨
+            Nonempty (GeneralWeightedLemma35Certificate W xs
+              (weightedNonsingletonOccurrences W xs)
+              (weightedDifferenceRange W w₀ A))) := by
+  apply
+    primitiveAperiodicExistence_or_kernelZeroCore_or_rangeCertificate_of_strongRecursion
+      hW hprimitive D hD xs n hn hlen hstab
+  intro K hKbot hKtop
+  exact ih.applySubgroupTop K (lt_top_iff_ne_top.mpr hKtop)
+
 end GaoLean
 
 #print axioms GaoLean.IsWeightedZeroSelection.union
@@ -537,5 +660,8 @@ end GaoLean
 #print axioms GaoLean.weightedGMOExistenceConclusion_of_bottomDifferenceKernel_of_manySingleton
 #print axioms GaoLean.primitiveAperiodicExistence_or_step6KernelRangeResidual
 #print axioms GaoLean.hasWeightedSumOfCard_zero_of_kernelRecursiveProvider
+#print axioms GaoLean.hasWeightedSumOfCard_zero_of_kernelStrongRecursionAtTop
 #print axioms GaoLean.generalWeightedLemma35Certificate_of_differenceRangeBudget
 #print axioms GaoLean.primitiveAperiodicExistence_or_kernelZeroCore_or_rangeCertificate
+#print axioms GaoLean.primitiveAperiodicExistence_or_kernelZeroCore_or_rangeCertificate_of_strongRecursion
+#print axioms GaoLean.primitiveAperiodicExistence_or_kernelZeroCore_or_rangeCertificate_of_crossTypeIH
