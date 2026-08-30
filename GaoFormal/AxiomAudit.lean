@@ -337,9 +337,11 @@ import GaoFormal
 #print axioms GaoLean.weightedValueBlock_nonempty
 #print axioms GaoLean.weightedOccurrenceSetpartition_cells_nonempty
 #print axioms GaoLean.liftOccurrenceSubsequenceWeights_source
+#print axioms GaoLean.occurrenceSubsequenceEquivSelection_val
 #print axioms GaoLean.liftOccurrenceSubsequenceSelection_subset_and_card
 #print axioms GaoLean.weightedSum_liftOccurrenceSubsequenceSelection
 #print axioms GaoLean.HasWeightedSumOfCard.liftOccurrenceSubsequence
+#print axioms GaoLean.HasWeightedSumOfCard.restrictOccurrenceSubsequence
 #print axioms GaoLean.weightedExactSpectrum_occurrenceSubsequence_subset
 #print axioms GaoLean.weightedExactSpectrum_cons_succ
 #print axioms GaoLean.weightedExactSpectrum_eq_layerSubsumSpectrum
@@ -381,6 +383,7 @@ import GaoFormal
 #print axioms GaoLean.generalWeightedStep1EnlargementCertificate_exists
 #print axioms GaoLean.generalWeightedStep1_fullAffineCore_or_concentration
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.exists_liftedFullCore
+#print axioms GaoLean.weightedExactSpectrumOn_eq_weightedExactSpectrumWithin
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.alpha_weightCoset
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.core_card_add_DQ_pred_le_retained_card
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.core_card_add_Davenport_pred_le_retained_card
@@ -434,6 +437,7 @@ import GaoFormal
 #print axioms GaoLean.weighted_properSubgroupPadding_add_quotientCritical_le_length
 #print axioms GaoLean.weightedStep6_quotient_length_after_properSubgroupPadding
 #print axioms GaoLean.weighted_internalCritical_le_source_retained_threshold
+#print axioms GaoLean.weighted_internalCore_quotientReserve_le_retainedThreshold
 #print axioms GaoLean.weightedDavenport_lifted_subgroup_quotient
 #print axioms GaoLean.weighted_liftedCore_pool_reserve_capacity
 #print axioms GaoLean.weighted_liftedCore_pool_reserve_filler_capacity

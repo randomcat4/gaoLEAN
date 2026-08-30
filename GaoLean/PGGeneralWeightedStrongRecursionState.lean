@@ -53,6 +53,26 @@ theorem mem_weightedExactSpectrumWithin_iff
   classical
   simp [weightedExactSpectrumWithin]
 
+/-- The occurrence-subsequence spectrum is exactly the ambient spectrum
+whose witnesses are supported on the same literal selection.  Both
+directions preserve repeated equal values because they transport occurrence
+labels, not values. -/
+theorem weightedExactSpectrumOn_eq_weightedExactSpectrumWithin
+    (W : Set ℤ) (xs : List G₀) (I : Selection xs) (m : ℕ) :
+    weightedExactSpectrumOn W xs I m =
+      weightedExactSpectrumWithin W xs I m := by
+  classical
+  ext y
+  rw [mem_weightedExactSpectrumWithin_iff]
+  change y ∈ weightedExactSpectrum W (occurrenceSubsequence xs I) m ↔ _
+  rw [mem_weightedExactSpectrum_iff]
+  constructor
+  · rintro ⟨z⟩
+    let zLift := z.liftOccurrenceSubsequence
+    exact ⟨zLift, liftOccurrenceSubsequenceSelection_subset xs I z.selected⟩
+  · rintro ⟨z, hz⟩
+    exact ⟨z.restrictOccurrenceSubsequence hz⟩
+
 /-- Translate a finite spectrum by one fixed group element. -/
 noncomputable def translateWeightedSpectrum
     (c : G₀) (T : Finset G₀) : Finset G₀ :=
@@ -412,6 +432,7 @@ theorem generalWeightedStrongRecursionAt_of_engine
 end GaoLean
 
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.retained_card_add_r
+#print axioms GaoLean.weightedExactSpectrumOn_eq_weightedExactSpectrumWithin
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.alpha_weightCoset
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.core_card_add_DQ_pred_le_retained_card
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.core_card_add_Davenport_pred_le_retained_card

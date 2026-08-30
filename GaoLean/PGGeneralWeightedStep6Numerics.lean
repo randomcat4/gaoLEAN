@@ -301,6 +301,42 @@ theorem weighted_internalCritical_le_source_retained_threshold
   · omega
   · omega
 
+/-- The same internal-overgroup source threshold simultaneously pays for a
+critical `K` core and an additional `D_W(G/K)-1` reserve.  This is the exact
+carrier budget needed for the parent small-spectrum data; unlike the previous
+lemma, it uses exact Davenport data for the internal quotient. -/
+theorem weighted_internalCore_quotientReserve_le_retainedThreshold
+    {W : Set ℤ}
+    (K G : AddSubgroup A) (hKG : K ≤ G)
+    (DK DQ D n L : ℕ)
+    (hDK : IsWeightedDavenportConstant W K DK)
+    (hDQ : IsWeightedDavenportConstant W
+      (G ⧸ K.addSubgroupOf G) DQ)
+    (hD : IsWeightedDavenportConstant W G D)
+    (hn : Nat.card G ≤ n)
+    (hL : n + D - 1 ≤ L) :
+    (Nat.card K + DK - 1) + (DQ - 1) ≤
+      min L
+        (L - Nat.card (G ⧸ K.addSubgroupOf G) + 2) := by
+  letI : Fintype G := Fintype.ofFinite G
+  let Ki := K.addSubgroupOf G
+  have hKi : IsWeightedDavenportConstant W Ki DK :=
+    isWeightedDavenportConstant_addEquiv W
+      (AddSubgroup.addSubgroupOfEquivOfLe hKG).symm hDK
+  have hconv : DK + DQ ≤ D + 1 :=
+    weightedDavenport_subgroup_quotient W Ki D DK DQ hD hKi hDQ
+  have hKiCard : Nat.card Ki = Nat.card K :=
+    Nat.card_congr (AddSubgroup.addSubgroupOfEquivOfLe hKG)
+  have hcard := natCard_add_quotient_sub_one_le_ambient (A := G) Ki
+  rw [hKiCard] at hcard
+  have hQpos : 1 ≤ Nat.card (G ⧸ Ki) := Nat.card_pos
+  have hDKpos : 1 ≤ DK := weightedDavenportConstant_pos W DK hDK
+  have hDQpos : 1 ≤ DQ := weightedDavenportConstant_pos W DQ hDQ
+  change (Nat.card K + DK - 1) + (DQ - 1) ≤
+    min L (L - Nat.card (G ⧸ Ki) + 2)
+  rw [Nat.le_min]
+  constructor <;> omega
+
 /-! ## Lifted subgroup capacity -/
 
 /-- Exact weighted Davenport constants on `H` and `J` obey the internal
@@ -393,6 +429,7 @@ end GaoLean
 #print axioms GaoLean.natCard_add_quotient_le_ambient_of_ne_bot_of_lt_top
 #print axioms GaoLean.weighted_properSubgroupPadding_add_quotientCritical_le_length
 #print axioms GaoLean.weighted_internalCritical_le_source_retained_threshold
+#print axioms GaoLean.weighted_internalCore_quotientReserve_le_retainedThreshold
 #print axioms GaoLean.weightedDavenport_lifted_subgroup_quotient
 #print axioms GaoLean.weighted_liftedCore_pool_reserve_capacity
 #print axioms GaoLean.weighted_liftedCore_pool_reserve_filler_capacity

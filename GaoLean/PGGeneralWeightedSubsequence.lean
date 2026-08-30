@@ -18,6 +18,34 @@ universe u
 
 variable {A : Type u} [AddCommGroup A]
 
+/-- The source-occurrence map is an equivalence from occurrences of the
+subsequence to the subtype of original occurrences selected by `R`. -/
+noncomputable def occurrenceSubsequenceEquivSelection
+    (xs : List A) (R : Selection xs) :
+    Occurrence (occurrenceSubsequence xs R) ≃
+      {i : Occurrence xs // i ∈ R} := by
+  classical
+  let f : Occurrence (occurrenceSubsequence xs R) →
+      {i : Occurrence xs // i ∈ R} := fun j ↦
+    ⟨occurrenceSubsequenceSource xs R j,
+      occurrenceSubsequenceSource_mem xs R j⟩
+  apply Equiv.ofBijective f
+  apply (Fintype.bijective_iff_injective_and_card f).2
+  refine ⟨?_, ?_⟩
+  · intro i j hij
+    exact occurrenceSubsequenceSource_injective xs R
+      (congrArg Subtype.val hij)
+  · simp [f, Occurrence, occurrenceSubsequence,
+      Nat.card_eq_fintype_card]
+
+@[simp]
+theorem occurrenceSubsequenceEquivSelection_val
+    (xs : List A) (R : Selection xs)
+    (j : Occurrence (occurrenceSubsequence xs R)) :
+    (occurrenceSubsequenceEquivSelection xs R j).1 =
+      occurrenceSubsequenceSource xs R j :=
+  rfl
+
 /-- Extend weights from an occurrence subsequence to the original list.
 Outside the image of the occurrence-source map the value is immaterial and is
 set to zero. -/
@@ -98,6 +126,56 @@ noncomputable def HasWeightedSumOfCard.liftOccurrenceSubsequence
   weighted_sum := by
     rw [weightedSum_liftOccurrenceSubsequenceSelection, h.weighted_sum]
 
+/-- Restrict an ambient exact weighted-sum witness to an occurrence
+subsequence when every selected source label lies in the retained selection.
+This is the inverse transport to `liftOccurrenceSubsequence` on supported
+witnesses; equal source values remain distinct because the equivalence is on
+occurrence labels. -/
+noncomputable def HasWeightedSumOfCard.restrictOccurrenceSubsequence
+    {W : Set ℤ} {xs : List A} {R : Selection xs} {n : ℕ} {y : A}
+    (h : HasWeightedSumOfCard W xs n y)
+    (hsub : h.selected ⊆ R) :
+    HasWeightedSumOfCard W (occurrenceSubsequence xs R) n y := by
+  classical
+  let e := occurrenceSubsequenceEquivSelection xs R
+  let emb : {i : Occurrence xs // i ∈ h.selected} ↪
+      Occurrence (occurrenceSubsequence xs R) := {
+    toFun := fun i ↦ e.symm ⟨i.1, hsub i.2⟩
+    inj' := by
+      intro i j hij
+      apply Subtype.ext
+      have := congrArg e hij
+      simpa using congrArg (fun q ↦ q.1) this
+  }
+  let selected : Selection (occurrenceSubsequence xs R) :=
+    h.selected.attach.map emb
+  let weights : Occurrence (occurrenceSubsequence xs R) → ℤ :=
+    fun j ↦ h.weights (e j).1
+  refine {
+    selected := selected
+    weights := weights
+    weights_mem := ?_
+    card_selected := ?_
+    weighted_sum := ?_
+  }
+  · intro j hj
+    obtain ⟨i, hi, hij⟩ := Finset.mem_map.mp hj
+    subst j
+    have hiSel : i.1 ∈ h.selected := i.2
+    simpa [weights, emb, e] using h.weights_mem i.1 hiSel
+  · simp [selected, h.card_selected]
+  · rw [show
+        (∑ j ∈ selected,
+          weights j • occurrenceValue (occurrenceSubsequence xs R) j) =
+          ∑ i ∈ h.selected,
+            h.weights i • occurrenceValue xs i by
+      unfold selected
+      rw [Finset.sum_map]
+      apply Finset.sum_congr rfl
+      intro i hi
+      simp [weights, emb, e, occurrenceValue_occurrenceSubsequence]]
+    exact h.weighted_sum
+
 section FiniteAmbient
 
 variable [Fintype A]
@@ -117,7 +195,9 @@ end FiniteAmbient
 end GaoLean
 
 #print axioms GaoLean.liftOccurrenceSubsequenceWeights_source
+#print axioms GaoLean.occurrenceSubsequenceEquivSelection_val
 #print axioms GaoLean.liftOccurrenceSubsequenceSelection_subset_and_card
 #print axioms GaoLean.weightedSum_liftOccurrenceSubsequenceSelection
 #print axioms GaoLean.HasWeightedSumOfCard.liftOccurrenceSubsequence
+#print axioms GaoLean.HasWeightedSumOfCard.restrictOccurrenceSubsequence
 #print axioms GaoLean.weightedExactSpectrum_occurrenceSubsequence_subset
