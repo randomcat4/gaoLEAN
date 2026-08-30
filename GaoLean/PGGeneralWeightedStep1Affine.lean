@@ -85,6 +85,121 @@ noncomputable def weightedStep1AffineSumset
     (fun i : Occurrence xs ↦
       weightedStep1AffineCell W β (occurrenceValue xs i)) I
 
+/-- Membership in the zero-adjoined Step 1 sumset has an honest
+occurrence-labelled interpretation: after discarding precisely the cells in
+which the adjoined zero was chosen, the remaining choices are allowed
+weights on a literal sub-selection of `I`.
+
+The cardinality `k` is deliberately existential.  Replacing it by `I.card`
+would silently treat an adjoined zero as a genuine weighted source value and
+is false in general. -/
+theorem exists_weightedSelection_of_mem_weightedStep1AffineSumset
+    (W : Set ℤ) (xs : List A) (β y : A) (I : Selection xs)
+    (hy : y ∈ weightedStep1AffineSumset W xs β I) :
+    ∃ k : ℕ, k ≤ I.card ∧
+      ∃ z : HasWeightedSumOfCard W xs k (k • β + y),
+        z.selected ⊆ I := by
+  classical
+  letI : DecidableEq (Occurrence xs) := instDecidableEqFin xs.length
+  induction I using Finset.induction_on generalizing y with
+  | empty =>
+      have hy0 : y = 0 := by
+        simpa [weightedStep1AffineSumset,
+          selectedCellSumset_eq_commutativeCellSumset] using hy
+      subst y
+      refine ⟨0, by simp, ?_⟩
+      let z : HasWeightedSumOfCard W xs 0 (0 • β + 0) := {
+        selected := ∅
+        weights := fun _ ↦ 0
+        weights_mem := by simp
+        card_selected := by simp
+        weighted_sum := by simp
+      }
+      exact ⟨z, by simp [z]⟩
+  | @insert i s hi ih =>
+      let cells : Occurrence xs → Finset A := fun j ↦
+        weightedStep1AffineCell W β (occurrenceValue xs j)
+      have hy' : y ∈ cells i + commutativeCellSumset cells s := by
+        change y ∈ selectedCellSumset cells (insert i s) at hy
+        rw [selectedCellSumset_eq_commutativeCellSumset] at hy
+        have hinsert : commutativeCellSumset cells (insert i s) =
+            cells i + commutativeCellSumset cells s := by
+          unfold commutativeCellSumset selectedCellSumset indexedCellsOn
+          rw [fullLayerSumSpectrum_eq_iteratedFinsetSum,
+            fullLayerSumSpectrum_eq_iteratedFinsetSum]
+          calc
+            iteratedFinsetSum (List.map cells (insert i s).toList) =
+                iteratedFinsetSum (cells i :: List.map cells s.toList) :=
+              iteratedFinsetSum_eq_of_perm_general
+                ((Finset.toList_insert hi).map cells)
+            _ = cells i + iteratedFinsetSum (List.map cells s.toList) := rfl
+        exact Eq.mp
+          (congrArg (fun T : Finset A ↦ y ∈ T) hinsert) hy
+      obtain ⟨a, ha, b, hb, hab⟩ := Finset.mem_add.mp hy'
+      have hb' : b ∈ weightedStep1AffineSumset W xs β s := by
+        change b ∈ selectedCellSumset cells s
+        rw [selectedCellSumset_eq_commutativeCellSumset]
+        exact hb
+      obtain ⟨k, hk, z, hz⟩ := ih b hb'
+      change a ∈ ({0} : Finset A) ∪
+        (weightedValueBlock W (occurrenceValue xs i) + {-β}) at ha
+      rcases Finset.mem_union.mp ha with ha0 | haWeighted
+      · have haEq : a = 0 := by simpa using ha0
+        have hyEq : y = b := by simpa [haEq] using hab.symm
+        rw [hyEq]
+        refine ⟨k, ?_, z, ?_⟩
+        · have hk' : k ≤ s.card + 1 := hk.trans (Nat.le_succ _)
+          simpa [hi, Nat.add_comm] using hk'
+        · exact hz.trans (Finset.subset_insert i s)
+      · obtain ⟨v, hv, t, ht, hvt⟩ := Finset.mem_add.mp haWeighted
+        have htEq : t = -β := by simpa using ht
+        obtain ⟨w, hw, hvEq⟩ :=
+          (mem_weightedValueBlock_iff W (occurrenceValue xs i) v).1 hv
+        have haEq : a = w • occurrenceValue xs i - β := by
+          rw [← hvt, hvEq, htEq]
+          rw [sub_eq_add_neg]
+        let zHead : HasWeightedSumOfCard W xs 1
+            (w • occurrenceValue xs i) := {
+          selected := {i}
+          weights := fun j ↦ if j = i then w else 0
+          weights_mem := by
+            intro j hj
+            have hji : j = i := by simpa using hj
+            simpa [hji] using hw
+          card_selected := by simp
+          weighted_sum := by simp
+        }
+        have hdis : Disjoint zHead.selected z.selected := by
+          rw [Finset.disjoint_left]
+          intro j hjHead hjz
+          have hji : j = i := by simpa [zHead] using hjHead
+          subst j
+          exact hi (hz hjz)
+        let zUnion := zHead.disjointUnion z hdis
+        have htarget :
+            w • occurrenceValue xs i + (k • β + b) =
+              (1 + k) • β + y := by
+          rw [← hab, haEq]
+          simp only [add_nsmul, one_nsmul]
+          abel
+        let zFinal : HasWeightedSumOfCard W xs (1 + k)
+            ((1 + k) • β + y) := {
+          selected := zUnion.selected
+          weights := zUnion.weights
+          weights_mem := zUnion.weights_mem
+          card_selected := zUnion.card_selected
+          weighted_sum := zUnion.weighted_sum.trans htarget
+        }
+        refine ⟨1 + k, ?_, zFinal, ?_⟩
+        · have hk' : 1 + k ≤ s.card + 1 := by omega
+          simpa [hi, Nat.add_comm] using hk'
+        · intro j hj
+          dsimp [zFinal, zUnion] at hj
+          rcases Finset.mem_union.mp hj with hjHead | hjTail
+          · have hji : j = i := by simpa [zHead] using hjHead
+            simpa [hji]
+          · exact Finset.mem_insert_of_mem (hz hjTail)
+
 /-- Quotient full sumset of the Step 1 cells modulo an already constructed
 affine subgroup. -/
 noncomputable def weightedStep1QuotientAffineSumset
@@ -1087,6 +1202,7 @@ theorem generalWeightedStep1_fullAffineCore_or_concentration
 
 end GaoLean
 
+#print axioms GaoLean.exists_weightedSelection_of_mem_weightedStep1AffineSumset
 #print axioms GaoLean.finset_subset_subgroupFinset_of_zero_mem_of_quotientLayer_card_eq_one
 #print axioms GaoLean.selectedCellSumset_eq_subgroupFinset_of_zero_singleton_card
 #print axioms GaoLean.GeneralWeightedLemma35Certificate.affineProfile

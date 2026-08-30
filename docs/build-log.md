@@ -1125,3 +1125,29 @@ the new axiom prints contain no `sorryAx` or paper-specific axiom.
 - The result is a faithfully recursive local-product split.  It still does
   not construct the parent full core, periodic spectrum, or small-carrier
   identity required by equations (3)--(9).
+
+## 2026-08-30: honest affine witnesses and recursive full-core transport
+
+- Added `exists_weightedSelection_of_mem_weightedStep1AffineSumset`.  It
+  removes the artificial zero choices from a Step 1 affine-sumset witness and
+  returns an actual occurrence-labelled weighted selection of some
+  `k ≤ I.card`.  The theorem intentionally does not assert `k = I.card`.
+- Added `GeneralWeightedStrongRecursionState.exists_liftedFullCore`.  A full
+  core constructed by strong recursion on an occurrence subsequence now lifts
+  to the original source labels with the same stored core cardinality and all
+  exact `|H| beta + H` witnesses.
+- Added `exists_nonempty_weightedZeroSum_finset_subset`, the labelled weighted
+  Davenport extraction needed for maximal-block and fixed-cardinality reserve
+  padding.  Equal source values remain distinct labels and the selected
+  weights are returned explicitly.  This lemma is not by itself a centred
+  padding theorem: the later quotient application must also use
+  `w • alpha - beta ∈ H` to rewrite centred terms as weighted source
+  differences.
+- Server targeted builds passed for all three declarations.  Their axiom
+  reports contain only `propext`, `Classical.choice`, and `Quot.sound`.
+- This does not close Theorem 2.2.  The next load-bearing lemma is the
+  exact-cardinality quotient affine block obtained from a maximal centred
+  witness plus a disjoint zero-quotient reserve.  Its hypotheses must retain
+  the common source/weight centres; ordinary uncentred padding cannot simply
+  be renamed.  Parent full-core expansion, periodicity, and the small-carrier
+  identity remain open.

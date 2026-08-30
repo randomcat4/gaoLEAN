@@ -145,12 +145,25 @@ zero-generator branch.  The bottom-overgroup base is now unconditional and
   proper-kernel side, a fixed-`W` strong recursion state at the kernel top now
   yields the literal ambient exact-`|K|` zero core; this removes the earlier
   all-weight provider mismatch from that branch.  These are still scheduling
-  all-weight provider mismatch from that branch.  The primitive proper-kernel
-  split now consumes the actual cross-type smaller-card IH directly, using
+  and local-product results only.  The primitive proper-kernel split now
+  consumes the actual cross-type smaller-card IH directly, using
   strict kernel inclusion to obtain the kernel-top strong state.  These are
-  still scheduling and local-product lemmas only: the next inductive layer
-  must expand kernel full blocks and transport/assemble the parent
-  equation-(3)--(9) state, not merely invoke a conclusion-level provider.
+  still scheduling and local-product lemmas only.  The zero-adjoined Step 1
+  sumset now has an honest operational extractor: a member produces a real
+  occurrence-labelled weighted selection of some cardinality `k`, with
+  `k ≤ |I|`; the formal statement deliberately does not count an adjoined
+  zero as a source occurrence.  A recursive strong full core can also be
+  lifted from an occurrence subsequence back to the original source labels,
+  preserving its stored cardinality and every exact full-core witness.
+  Finally, a weighted Davenport bound can now extract a nonempty labelled
+  weighted zero-sum block from any sufficiently large finite pool.  This
+  alone is not centred padding: the next lemma must explicitly use the
+  Step 1 relation `w • alpha - beta ∈ H`, which turns quotient-centred terms
+  into weighted source differences `w • (x - alpha)`.  Only then may a
+  maximal-block argument bound the missing cardinality by `D_W(J)-1`.
+  Afterwards the proof must expand kernel full blocks and
+  transport/assemble the parent equation-(3)--(9) state; it may not replace
+  that work by a conclusion-level provider.
 
 Exit criterion: the G1 existence endpoint has an unconditional inhabitant
 and specializes definitionally or by proved transport to the current
@@ -175,15 +188,20 @@ to literal weighted occurrence cells without deduplicating repeated values.
 Step 1 now has a fixed-centre affine certificate and a strict enlargement
 certificate whose enlarged occurrence set is the disjoint union of the old
 complete container and the outside retained set, with exact cardinality and
-common source/weight cosets.  What remains is the source-level Theorem 1.1
+common source/weight cosets.  Membership in its zero-adjoined affine sumset
+now yields a real variable-cardinality weighted source selection, and a
+recursive full core on an occurrence subsequence now lifts back to original
+source labels without merging repetitions.  What remains is the
+source-level Theorem 1.1
 state from equations (3)--(9): an `H`-full core of size
 `|H| + D_W(H) - 1`, one fixed `beta`, periodic exact spectrum, and the small
 carrier `S0` spectrum identity.  These fields cannot be recovered from the
 current corollary-level providers after recursion.  The bottom-overgroup
   instance of this state is checked without a provider.  The quotient
   equation-(3) input and the cross-type cardinal scheduler are checked; the
-  remaining problem is the nontrivial quotient state/output transport and the
-  full-core seed/extension that implements the local step.
+  remaining problem is the exact-cardinality quotient reserve padding,
+  nontrivial quotient state/output transport, and the full-core
+  seed/extension that implements the local step.
 
 Exit criterion: the G1 structural endpoint is unconditional and all
 specialized structural providers are derived from it.

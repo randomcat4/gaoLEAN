@@ -1,4 +1,5 @@
 import GaoLean.PGGeneralWeightedStep1Affine
+import GaoLean.PGGeneralWeightedSubsequence
 import GaoLean.PGInduction
 
 /-!
@@ -175,6 +176,43 @@ theorem core_card_le_retained_card
     S.core.card ≤ S.retained.card :=
   Finset.card_le_card S.core_subset_retained
 
+/-- Lift the operational full core of a recursive state on an occurrence
+subsequence back to the original source labels.
+
+This transports only the fields that are genuinely invariant under the
+occurrence embedding: the stored core cardinality and every exact full-core
+witness.  It does not claim that the recursive retained bound, complement
+count, quotient Davenport constant, or spectrum-reduction fields lift to the
+larger source sequence. -/
+theorem exists_liftedFullCore
+    {xs : List G₀} {R : Selection xs}
+    (S : GeneralWeightedStrongRecursionState W G gamma delta
+      (occurrenceSubsequence xs R) n D) :
+    ∃ core : Selection xs,
+      core ⊆ R ∧
+      core.card = Nat.card S.H + S.DH - 1 ∧
+      ∀ h : S.H,
+        ∃ z : HasWeightedSumOfCard W xs (Nat.card S.H)
+            (Nat.card S.H • S.beta + (h : G₀)),
+          z.selected ⊆ core := by
+  classical
+  let core : Selection xs :=
+    liftOccurrenceSubsequenceSelection xs R S.core
+  refine ⟨core, liftOccurrenceSubsequenceSelection_subset xs R S.core,
+    ?_, ?_⟩
+  · rw [show core.card = S.core.card by
+      exact card_liftOccurrenceSubsequenceSelection xs R S.core]
+    exact S.core_card
+  · intro h
+    obtain ⟨z, hz⟩ := S.core_full h
+    let zLift := z.liftOccurrenceSubsequence
+    refine ⟨zLift, ?_⟩
+    intro i hi
+    change i ∈ liftOccurrenceSubsequenceSelection xs R z.selected at hi
+    obtain ⟨j, hj, rfl⟩ := Finset.mem_map.mp hi
+    apply Finset.mem_map.mpr
+    exact ⟨j, hz hj, rfl⟩
+
 /-- The operational `core_full` field and the common weighted coset condition
 recover equation (7) as an exact equality of the spectrum supported on the
 labelled core with the affine coset `|H| beta + H`. -/
@@ -303,6 +341,7 @@ theorem generalWeightedStrongRecursionAt_of_engine
 end GaoLean
 
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.retained_card_add_r
+#print axioms GaoLean.GeneralWeightedStrongRecursionState.exists_liftedFullCore
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.core_exactSpectrumWithin_eq
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.nsmul_beta_mem_weightedExactSpectrum
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.nonempty_hasWeightedSumOfCard_nsmul_beta

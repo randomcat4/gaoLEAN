@@ -88,6 +88,67 @@ theorem weightedDavenportConstant_pos
 
 end Take
 
+section LabelledPool
+
+variable {X B : Type*} [Fintype X] [DecidableEq X]
+variable [AddCommGroup B]
+
+/-- Apply a weighted Davenport bound to a finite labelled pool.  The
+returned zero-sum block is a literal subset of the input labels, with an
+explicit allowed weight on every selected label.  Equal values of `f` do
+not identify their source labels. -/
+theorem exists_nonempty_weightedZeroSum_finset_subset
+    (W : Set ℤ) (R : Finset X) (f : X → B) (D : ℕ)
+    (hD : WeightedDavenportAtMost W B D) (hcard : D ≤ R.card) :
+    ∃ J : Finset X, J.Nonempty ∧ J ⊆ R ∧
+      ∃ weights : X → ℤ,
+        (∀ x ∈ J, weights x ∈ W) ∧
+        (∑ x ∈ J, weights x • f x) = 0 := by
+  classical
+  let word : List B := R.toList.map f
+  have hwordLength : D ≤ word.length := by
+    simpa [word] using hcard
+  obtain ⟨n, hn, ⟨z⟩⟩ :=
+    weightedDavenportAtLeast_of_atMost W hD word hwordLength
+  let source : Occurrence word ↪ X :=
+    { toFun := fun i => R.toList.get
+        ⟨i.1, by simpa [word] using i.2⟩
+      inj' := by
+        intro i j hij
+        apply Fin.ext
+        exact congrArg (fun q : Fin R.toList.length => q.val)
+          (R.nodup_toList.injective_get hij) }
+  let J : Finset X := z.selected.map source
+  let weights : X → ℤ := fun x =>
+    if hx : ∃ i, source i = x then z.weights (Classical.choose hx) else 0
+  have hsourceMem (i : Occurrence word) : source i ∈ R := by
+    exact Finset.mem_toList.mp (List.get_mem R.toList _)
+  have hvalue (i : Occurrence word) :
+      f (source i) = occurrenceValue word i := by
+    simp [source, word, occurrenceValue, List.get_eq_getElem]
+  have hweights (i : Occurrence word) :
+      weights (source i) = z.weights i := by
+    have hi : ∃ j, source j = source i := ⟨i, rfl⟩
+    simp only [weights, dif_pos hi]
+    congr 1
+    exact source.injective (Classical.choose_spec hi)
+  have hzNonempty : z.selected.Nonempty := by
+    rw [← Finset.card_pos, z.card_selected]
+    exact hn
+  refine ⟨J, ?_, ?_, weights, ?_, ?_⟩
+  · obtain ⟨i, hi⟩ := hzNonempty
+    exact ⟨source i, Finset.mem_map.mpr ⟨i, hi, rfl⟩⟩
+  · intro x hx
+    obtain ⟨i, _hi, rfl⟩ := Finset.mem_map.mp hx
+    exact hsourceMem i
+  · intro x hx
+    obtain ⟨i, hi, rfl⟩ := Finset.mem_map.mp hx
+    rw [hweights]
+    exact z.weights_mem i hi
+  · simpa [J, Finset.sum_map, hweights, hvalue] using z.weighted_sum
+
+end LabelledPool
+
 section Map
 
 variable {A B : Type*} [AddCommGroup A] [AddCommGroup B]
@@ -487,6 +548,7 @@ end GaoLean
 #print axioms GaoLean.hasNonemptyWeightedZeroSum_of_take
 #print axioms GaoLean.weightedDavenportAtLeast_of_atMost
 #print axioms GaoLean.weightedDavenportConstant_pos
+#print axioms GaoLean.exists_nonempty_weightedZeroSum_finset_subset
 #print axioms GaoLean.hasWeightedSumOfCard_map_addMonoidHom
 #print axioms GaoLean.hasNonemptyWeightedZeroSum_map_addMonoidHom
 #print axioms GaoLean.hasWeightedSumOfCard_of_map_addMonoidHom
