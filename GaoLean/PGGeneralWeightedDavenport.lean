@@ -420,6 +420,18 @@ theorem weightedDavenportAtMost_quotient
   weightedDavenportAtMost_of_surjective W (QuotientAddGroup.mk' K)
     (QuotientAddGroup.mk'_surjective K) D hA
 
+/-- A weighted Davenport upper bound restricts to every additive subgroup.
+The source list is mapped through the injective subtype homomorphism; any
+ambient zero sum then pulls back to the original labelled subgroup list. -/
+theorem weightedDavenportAtMost_subgroup
+    {A : Type*} [AddCommGroup A] (W : Set ℤ) (K : AddSubgroup A) (D : ℕ)
+    (hA : WeightedDavenportAtMost W A D) :
+    WeightedDavenportAtMost W K D := by
+  intro xs hlen
+  apply hasNonemptyWeightedZeroSum_of_map_addMonoidHom
+    W K.subtype K.subtype_injective xs
+  exact hA (xs.map K.subtype) (by simpa using hlen)
+
 end Map
 
 section AppendSplit
@@ -715,6 +727,7 @@ end GaoLean
 #print axioms GaoLean.hasNonemptyWeightedZeroSum_map_addMonoidHom
 #print axioms GaoLean.hasWeightedSumOfCard_of_map_addMonoidHom
 #print axioms GaoLean.hasNonemptyWeightedZeroSum_of_map_addMonoidHom
+#print axioms GaoLean.weightedDavenportAtMost_subgroup
 #print axioms GaoLean.weightedDavenportAtMost_of_surjective
 #print axioms GaoLean.isWeightedDavenportConstant_addEquiv
 #print axioms GaoLean.weightedDavenportAtMost_quotient

@@ -26,6 +26,96 @@ def generalWeightedQuotientSubgroup
     (L G : AddSubgroup G₀) : AddSubgroup (G₀ ⧸ L) :=
   G.map (QuotientAddGroup.mk' L)
 
+/-- The ambient quotient map restricted to the recursive overgroup and with
+codomain restricted to its image. -/
+def generalWeightedQuotientRestrictedMap
+    (L G : AddSubgroup G₀) :
+    G →+ generalWeightedQuotientSubgroup L G where
+  toFun x := ⟨QuotientAddGroup.mk' L x.1, ⟨x.1, x.2, rfl⟩⟩
+  map_zero' := by ext; simp
+  map_add' x y := by ext; simp
+
+@[simp]
+theorem generalWeightedQuotientRestrictedMap_apply
+    (L G : AddSubgroup G₀) (x : G) :
+    ((generalWeightedQuotientRestrictedMap L G x :
+        generalWeightedQuotientSubgroup L G) : G₀ ⧸ L) =
+      QuotientAddGroup.mk' L x.1 :=
+  rfl
+
+theorem generalWeightedQuotientRestrictedMap_surjective
+    (L G : AddSubgroup G₀) :
+    Function.Surjective (generalWeightedQuotientRestrictedMap L G) := by
+  intro q
+  rcases q.2 with ⟨x, hxG, hxq⟩
+  refine ⟨⟨x, hxG⟩, ?_⟩
+  apply Subtype.ext
+  exact hxq
+
+/-- If `L ≤ G`, the kernel of the restricted quotient map is the internal
+copy of `L` inside `G`. -/
+theorem generalWeightedQuotientRestrictedMap_ker
+    (L G : AddSubgroup G₀) (hLG : L ≤ G) :
+    (generalWeightedQuotientRestrictedMap L G).ker =
+      L.addSubgroupOf G := by
+  ext x
+  change generalWeightedQuotientRestrictedMap L G x = 0 ↔ x.1 ∈ L
+  constructor
+  · intro hx
+    have hxq : QuotientAddGroup.mk' L x.1 = 0 :=
+      congrArg Subtype.val hx
+    have hmem := QuotientAddGroup.eq_iff_sub_mem.mp hxq
+    simpa using hmem
+  · intro hx
+    apply Subtype.ext
+    apply QuotientAddGroup.eq_iff_sub_mem.mpr
+    simpa using hx
+
+/-- The internal quotient `G/L` is additively equivalent to the image of the
+recursive overgroup in the ambient quotient by `L`. -/
+noncomputable def generalWeightedInternalQuotientEquiv
+    (L G : AddSubgroup G₀) (hLG : L ≤ G) :
+    G ⧸ L.addSubgroupOf G ≃+
+      generalWeightedQuotientSubgroup L G :=
+  (QuotientAddGroup.quotientAddEquivOfEq
+      (generalWeightedQuotientRestrictedMap_ker L G hLG).symm).trans
+    (QuotientAddGroup.quotientKerEquivOfSurjective
+      (generalWeightedQuotientRestrictedMap L G)
+      (generalWeightedQuotientRestrictedMap_surjective L G))
+
+/-- Exact weighted Davenport data transports from the internal quotient to
+the corresponding quotient-image subgroup. -/
+theorem isWeightedDavenportConstant_generalWeightedQuotientSubgroup
+    {W : Set ℤ} (L G : AddSubgroup G₀) (hLG : L ≤ G) (DQ : ℕ)
+    (hDQ : IsWeightedDavenportConstant W
+      (G ⧸ L.addSubgroupOf G) DQ) :
+    IsWeightedDavenportConstant W
+      (generalWeightedQuotientSubgroup L G) DQ :=
+  isWeightedDavenportConstant_addEquiv W
+    (generalWeightedInternalQuotientEquiv L G hLG) hDQ
+
+/-- Every quotient subgroup's exact weighted Davenport constant is at most
+the exact constant of the recursive quotient image containing it. -/
+theorem weightedDavenportConstant_le_overgroupQuotient
+    {W : Set ℤ} (L G : AddSubgroup G₀) (hLG : L ≤ G)
+    (J : AddSubgroup (G₀ ⧸ L))
+    (hJ : J ≤ generalWeightedQuotientSubgroup L G)
+    (DJ DQ : ℕ)
+    (hDJ : IsWeightedDavenportConstant W J DJ)
+    (hDQ : IsWeightedDavenportConstant W
+      (G ⧸ L.addSubgroupOf G) DQ) :
+    DJ ≤ DQ := by
+  let QG := generalWeightedQuotientSubgroup L G
+  let Jin := J.addSubgroupOf QG
+  have hQG : IsWeightedDavenportConstant W QG DQ :=
+    isWeightedDavenportConstant_generalWeightedQuotientSubgroup
+      L G hLG DQ hDQ
+  have hJin : IsWeightedDavenportConstant W Jin DJ :=
+    isWeightedDavenportConstant_addEquiv W
+      (AddSubgroup.addSubgroupOfEquivOfLe hJ).symm hDJ
+  exact weightedDavenportConstant_le_of_atMost W Jin hJin
+    (weightedDavenportAtMost_subgroup W Jin DQ hQG.1)
+
 /-- The position-preserving equivalence between a source and its quotient
 list.  Its existence uses only `List.length_map`, never source values. -/
 def quotientMapOccurrenceEquiv
@@ -143,6 +233,12 @@ theorem GeneralWeightedOvergroupInput.quotient
 end GaoLean
 
 #print axioms GaoLean.quotientMapOccurrenceEquiv_val
+#print axioms GaoLean.generalWeightedQuotientRestrictedMap_apply
+#print axioms GaoLean.generalWeightedQuotientRestrictedMap_surjective
+#print axioms GaoLean.generalWeightedQuotientRestrictedMap_ker
+#print axioms GaoLean.generalWeightedInternalQuotientEquiv
+#print axioms GaoLean.isWeightedDavenportConstant_generalWeightedQuotientSubgroup
+#print axioms GaoLean.weightedDavenportConstant_le_overgroupQuotient
 #print axioms GaoLean.occurrenceValue_quotientMapOccurrenceEquiv
 #print axioms GaoLean.occurrenceValue_quotientMapOccurrenceEquiv_symm
 #print axioms GaoLean.mk_mem_generalWeightedQuotientSubgroup_iff

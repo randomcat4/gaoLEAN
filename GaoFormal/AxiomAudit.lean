@@ -413,6 +413,7 @@ import GaoFormal
 #print axioms GaoLean.exists_weightedZeroSum_subset_remainder_lt_davenport
 #print axioms GaoLean.exists_weightedZeroSum_padded_selection
 #print axioms GaoLean.weightedDavenportAtMost_quotient
+#print axioms GaoLean.weightedDavenportAtMost_subgroup
 #print axioms GaoLean.isWeightedDavenportConstant_addEquiv
 #print axioms GaoLean.weightedDavenportAtMost_of_ordinary
 #print axioms GaoLean.weightedDavenportConstant_le_ordinary
@@ -501,6 +502,12 @@ import GaoFormal
 #print axioms GaoLean.weightedExactSpectrum_eq_singleton_of_weightedValue_eq
 #print axioms GaoLean.generalWeightedStrongRecursionAt_bot
 #print axioms GaoLean.GeneralWeightedOvergroupInput.quotient
+#print axioms GaoLean.generalWeightedQuotientRestrictedMap_apply
+#print axioms GaoLean.generalWeightedQuotientRestrictedMap_surjective
+#print axioms GaoLean.generalWeightedQuotientRestrictedMap_ker
+#print axioms GaoLean.generalWeightedInternalQuotientEquiv
+#print axioms GaoLean.isWeightedDavenportConstant_generalWeightedQuotientSubgroup
+#print axioms GaoLean.weightedDavenportConstant_le_overgroupQuotient
 #print axioms GaoLean.natCard_generalWeightedQuotientSubgroup_lt
 #print axioms GaoLean.GeneralWeightedCrossTypeSmallerCardRecursionHypothesis.applyQuotient
 #print axioms GaoLean.GeneralWeightedCrossTypeSmallerCardRecursionHypothesis.applySubgroupTop
