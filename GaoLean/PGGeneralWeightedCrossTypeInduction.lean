@@ -58,7 +58,8 @@ theorem applyQuotient
     {G₀ : Type u} [AddCommGroup G₀] [Fintype G₀]
     {G : AddSubgroup G₀}
     (ih : GeneralWeightedCrossTypeSmallerCardRecursionHypothesis G)
-    (L : AddSubgroup G₀) (K : AddSubgroup (G₀ ⧸ L))
+    (L : AddSubgroup G₀) [Fintype (G₀ ⧸ L)]
+    (K : AddSubgroup (G₀ ⧸ L))
     (hKcard : Nat.card K < Nat.card G) :
     GeneralWeightedStrongRecursionAt K :=
   ih (G₀ ⧸ L) K hKcard

@@ -93,6 +93,8 @@ import GaoLean.PGGeneralWeightedLemma35
 import GaoLean.PGGeneralWeightedStep1Affine
 import GaoLean.PGGeneralWeightedStrongRecursionState
 import GaoLean.PGGeneralWeightedStrongRecursionBase
+import GaoLean.PGGeneralWeightedOvergroupQuotient
+import GaoLean.PGGeneralWeightedCrossTypeInduction
 import GaoLean.PGGeneralWeightedSpecializations
 import GaoLean.PGGeneralWeightedDavenport
 import GaoLean.PGGeneralWeightedDavenportMinimum

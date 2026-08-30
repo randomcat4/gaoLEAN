@@ -467,3 +467,7 @@ import GaoFormal
 #print axioms GaoLean.isWeightedDavenportConstant_one_of_subsingleton
 #print axioms GaoLean.weightedExactSpectrum_eq_singleton_of_weightedValue_eq
 #print axioms GaoLean.generalWeightedStrongRecursionAt_bot
+#print axioms GaoLean.GeneralWeightedOvergroupInput.quotient
+#print axioms GaoLean.GeneralWeightedCrossTypeSmallerCardRecursionHypothesis.applyQuotient
+#print axioms GaoLean.generalWeightedStrongRecursionAtCard_of_crossTypeEngine
+#print axioms GaoLean.generalWeightedStrongRecursionAt_of_crossTypeEngine
