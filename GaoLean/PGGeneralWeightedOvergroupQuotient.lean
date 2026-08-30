@@ -116,6 +116,36 @@ theorem weightedDavenportConstant_le_overgroupQuotient
   exact weightedDavenportConstant_le_of_atMost W Jin hJin
     (weightedDavenportAtMost_subgroup W Jin DQ hQG.1)
 
+/-- The image of the full recursive overgroup in any ambient quotient is the
+full quotient group. -/
+theorem generalWeightedQuotientSubgroup_top
+    (L : AddSubgroup G₀) :
+    generalWeightedQuotientSubgroup L (⊤ : AddSubgroup G₀) = ⊤ := by
+  apply top_unique
+  intro q _hq
+  obtain ⟨x, rfl⟩ := QuotientAddGroup.mk'_surjective L q
+  exact ⟨x, by simp, rfl⟩
+
+/-- At the full overgroup, the internal quotient cardinal is exactly the
+ambient quotient cardinal. -/
+theorem natCard_internalQuotient_top
+    (L : AddSubgroup G₀) :
+    Nat.card ((⊤ : AddSubgroup G₀) ⧸
+        L.addSubgroupOf (⊤ : AddSubgroup G₀)) =
+      Nat.card (G₀ ⧸ L) := by
+  calc
+    Nat.card ((⊤ : AddSubgroup G₀) ⧸
+        L.addSubgroupOf (⊤ : AddSubgroup G₀)) =
+        Nat.card (generalWeightedQuotientSubgroup L
+          (⊤ : AddSubgroup G₀)) :=
+      Nat.card_congr
+        (generalWeightedInternalQuotientEquiv L
+          (⊤ : AddSubgroup G₀) le_top)
+    _ = Nat.card (⊤ : AddSubgroup (G₀ ⧸ L)) := by
+      rw [generalWeightedQuotientSubgroup_top]
+    _ = Nat.card (G₀ ⧸ L) :=
+      Nat.card_congr AddSubgroup.topEquiv
+
 /-- The position-preserving equivalence between a source and its quotient
 list.  Its existence uses only `List.length_map`, never source values. -/
 def quotientMapOccurrenceEquiv
@@ -239,6 +269,8 @@ end GaoLean
 #print axioms GaoLean.generalWeightedInternalQuotientEquiv
 #print axioms GaoLean.isWeightedDavenportConstant_generalWeightedQuotientSubgroup
 #print axioms GaoLean.weightedDavenportConstant_le_overgroupQuotient
+#print axioms GaoLean.generalWeightedQuotientSubgroup_top
+#print axioms GaoLean.natCard_internalQuotient_top
 #print axioms GaoLean.occurrenceValue_quotientMapOccurrenceEquiv
 #print axioms GaoLean.occurrenceValue_quotientMapOccurrenceEquiv_symm
 #print axioms GaoLean.mk_mem_generalWeightedQuotientSubgroup_iff

@@ -475,6 +475,46 @@ theorem exists_liftedFullCore_of_enlargement_overgroup
     S.exists_liftedFullCore_of_enlargement hW hprimitive C DJ hDJ hDJle
       DK hDK hcontainerLower⟩
 
+/-- At the full recursive overgroup, the source-length assumptions discharge
+the remaining affine-container lower bound.  Thus the operational lifted
+full core needs no separate Davenport-compatibility or capacity premise in
+the root-level branch. -/
+theorem exists_liftedFullCore_of_enlargement_top
+    (hW : W.Nonempty) (hprimitive : IsPrimitiveWeightSet W)
+    (S : GeneralWeightedStrongRecursionState W
+      (⊤ : AddSubgroup G₀) gamma delta xs n D)
+    (input : GeneralWeightedOvergroupInput W
+      (⊤ : AddSubgroup G₀) gamma delta xs)
+    (C : GeneralWeightedStep1EnlargementCertificate
+      W xs S.H S.alpha S.beta)
+    (DJ : ℕ) (hDJ : IsWeightedDavenportConstant W C.J DJ)
+    (DK : ℕ)
+    (hDK : IsWeightedDavenportConstant W
+      (liftedAddSubgroup S.H C.J) DK)
+    (hD : IsWeightedDavenportConstant W
+      (⊤ : AddSubgroup G₀) D)
+    (hn : Nat.card (⊤ : AddSubgroup G₀) ≤ n)
+    (hL : n + D - 1 ≤ xs.length) :
+    ∃ parentCore : Selection xs,
+      parentCore ⊆ weightedStep1AffineContainer
+        (liftedAddSubgroup S.H C.J) W xs S.beta ∧
+      parentCore.card =
+        Nat.card (liftedAddSubgroup S.H C.J) + DK - 1 ∧
+      ∀ k : liftedAddSubgroup S.H C.J,
+        ∃ z : HasWeightedSumOfCard W xs
+            (Nat.card (liftedAddSubgroup S.H C.J))
+            (Nat.card (liftedAddSubgroup S.H C.J) • S.beta + (k : G₀)),
+          z.selected ⊆ parentCore := by
+  let K := liftedAddSubgroup S.H C.J
+  have hcritical := weighted_internalCritical_le_source_retained_threshold
+    hW K (⊤ : AddSubgroup G₀) le_top DK D n xs.length hDK hD hn hL
+  rw [natCard_internalQuotient_top K] at hcritical
+  have hcontainerLower : Nat.card K + DK - 1 ≤
+      (weightedStep1AffineContainer K W xs S.beta).card :=
+    hcritical.trans C.lifted_container_card_lower
+  exact (S.exists_liftedFullCore_of_enlargement_overgroup
+    hW hprimitive input C DJ hDJ DK hDK hcontainerLower).2
+
 end GeneralWeightedStrongRecursionState
 
 end GaoLean
@@ -490,3 +530,4 @@ end GaoLean
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.liftedCore_full_of_carrier
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.exists_liftedFullCore_of_enlargement
 #print axioms GaoLean.GeneralWeightedStrongRecursionState.exists_liftedFullCore_of_enlargement_overgroup
+#print axioms GaoLean.GeneralWeightedStrongRecursionState.exists_liftedFullCore_of_enlargement_top
