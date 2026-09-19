@@ -143,3 +143,10 @@ audit/             Frozen statements and independent review material
 Please use GitHub Issues for proof suggestions, reproduction failures, and
 other questions. Any upgrade to the verification status must update the
 evidence map, axiom audit, and independent clean-build record together.
+
+## Cross-project Zhao / Gao / C8 research status report (2026-09-19)
+
+- [PDF: progress, completion estimates, and proof-probability assessment](https://github.com/randomcat4/zhao/blob/main/docs/research-status/2026-09-19-zhao-gao-portfolio.pdf)
+- [LaTeX source](https://github.com/randomcat4/zhao/blob/main/docs/research-status/2026-09-19-zhao-gao-portfolio.tex)
+
+The report starts with a plain-Chinese overview and continues with an expandable English technical appendix. Its completion/proof probabilities are research judgments based on the current evidence; they do not replace this repository's formal theorem, candidate, counterexample, or verification status.
